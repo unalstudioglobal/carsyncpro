@@ -113,24 +113,7 @@ export const Analytics: React.FC = () => {
     const v1 = vehicles.find(v => v.id === v1Id) || vehicles[0];
     const v2 = vehicles.find(v => v.id === v2Id) || vehicles[0];
 
-    if (dataLoading) {
-        return (
-            <div className="p-5 h-full flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
 
-    if (vehicles.length === 0) {
-        return (
-            <div className="p-5 h-full flex flex-col items-center justify-center text-center">
-                <TrendingUp size={48} className="text-slate-600 mb-4" />
-                <h2 className="text-xl font-bold text-white mb-2">{t('analytics.no_data')}</h2>
-                <p className="text-slate-400 mb-6">{t('analytics.no_data_desc')}</p>
-                <button onClick={() => navigate('/')} className="text-blue-500 font-medium">{t('analytics.go_to_garage')}</button>
-            </div>
-        );
-    }
 
     // Gerçek log verisinden aylık harcama grafiği oluştur
     const DYNAMIC_COST_HISTORY = useMemo(() => {
@@ -608,6 +591,25 @@ export const Analytics: React.FC = () => {
         </div>
     );
 
+    if (dataLoading) {
+        return (
+            <div className="p-5 h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
+
+    if (vehicles.length === 0) {
+        return (
+            <div className="p-5 h-full flex flex-col items-center justify-center text-center">
+                <TrendingUp size={48} className="text-slate-600 mb-4" />
+                <h2 className="text-xl font-bold text-white mb-2">{t('analytics.no_data')}</h2>
+                <p className="text-slate-400 mb-6">{t('analytics.no_data_desc')}</p>
+                <button onClick={() => navigate('/')} className="text-blue-500 font-medium">{t('analytics.go_to_garage')}</button>
+            </div>
+        );
+    }
+
     const timeFilters: Array<'1A' | '3A' | '6A' | '1Y' | 'Tümü'> = ['1A', '3A', '6A', '1Y', 'Tümü'];
 
     return (
@@ -932,8 +934,8 @@ export const Analytics: React.FC = () => {
                                 <button
                                     onClick={handleDownload}
                                     className={`w-full font-medium py-4 rounded-xl flex items-center justify-center space-x-2 transition-all active:scale-95 group relative overflow-hidden ${!isPremium
-                                            ? 'bg-slate-800 border border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-500 hover:shadow-lg hover:shadow-amber-900/10'
-                                            : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30'
+                                        ? 'bg-slate-800 border border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-500 hover:shadow-lg hover:shadow-amber-900/10'
+                                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30'
                                         }`}
                                 >
                                     {!isPremium && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 animate-shimmer"></div>}

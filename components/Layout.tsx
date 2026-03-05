@@ -3,10 +3,11 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Car, BarChart2, FileText, FileStack, Disc, Map, Brain, Scan,
   Target, ArrowRightLeft, Shield, Users, Search, Zap, Bell,
-  ChevronRight, Sparkles, Navigation, Calendar, Settings, QrCode, X,
+  ChevronRight, Sparkles, Navigation, Calendar, Settings, QrCode, X, Moon, Sun
 } from 'lucide-react';
 import { GlobalSearch, useGlobalSearch } from './GlobalSearch';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 interface LayoutProps { children: React.ReactNode; }
 
@@ -33,6 +34,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isOpen, open, close } = useGlobalSearch();
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [navBounce, setNavBounce] = useState<string | null>(null);
@@ -370,6 +372,33 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* ── Section: Tema ── */}
+            <div style={{ marginTop: 24, paddingBottom: 20, animation: 'fadeSlideUp 0.4s 0.28s ease both', opacity: 0, animationFillMode: 'forwards' }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={toggleDarkMode}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.028)',
+                    border: '1px solid rgba(255,255,255,0.065)',
+                    borderRadius: 18, padding: '16px 14px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    cursor: 'pointer', transition: 'all 0.22s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 12, background: isDarkMode ? 'rgba(168,85,247,0.15)' : 'rgba(245,158,11,0.15)', border: `1px solid ${isDarkMode ? 'rgba(168,85,247,0.3)' : 'rgba(245,158,11,0.3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isDarkMode ? <Moon size={18} color="#a855f7" /> : <Sun size={18} color="#f59e0b" />}
+                    </div>
+                    <span style={{ color: '#E8E6E0', fontSize: 13, fontWeight: 600 }}>{t('settings.dark_mode')}</span>
+                  </div>
+                  <div style={{ width: 44, height: 24, borderRadius: 12, background: isDarkMode ? '#a855f7' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.3s' }}>
+                    <div style={{ position: 'absolute', top: 2, left: isDarkMode ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                  </div>
+                </button>
               </div>
             </div>
 

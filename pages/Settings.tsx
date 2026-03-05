@@ -133,39 +133,16 @@ export const Settings: React.FC = () => {
         inspection: { km: '', months: '24' },
     });
 
-    // Dark Mode State
-    const [darkMode, setDarkMode] = useState(() => {
-        const stored = getSetting<string>('theme', '');
-        if (stored) return stored === 'dark';
-        return document.documentElement.classList.contains('dark');
-    });
-
-    useEffect(() => {
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-            saveSetting('theme', 'dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-            saveSetting('theme', 'light');
-        }
-    }, [darkMode]);
-
     useEffect(() => {
         if (view === 'archived') {
             const archivedIds = getSetting<string[]>('archivedVehicles', []);
             // Use real vehicles state instead of MOCK_VEHICLES
             // Note: fetchVehicles returns all vehicles, including those that might be considered "archived" if we filter them in UI
             // But here we are filtering from the full list based on ID.
-            // If fetchVehicles only returns active vehicles, we might need a different approach.
-            // Assuming fetchVehicles returns ALL vehicles for the user.
             const foundVehicles = vehicles.filter(v => archivedIds.includes(v.id));
             setArchivedVehicles(foundVehicles);
         }
     }, [view, vehicles]);
-
-    const toggleDarkMode = () => {
-        setDarkMode(prev => !prev);
-    };
 
     const handleFontSizeChange = (size: 'small' | 'medium' | 'large') => {
         setFontSize(size);
@@ -1141,17 +1118,6 @@ export const Settings: React.FC = () => {
                 <button onClick={() => setView('reminders')} className={`w-full ${commonCardClass} flex items-center justify-between group active:scale-95 hover:bg-slate-50 dark:hover:bg-slate-700/80`}>
                     <div className="flex items-center space-x-3"><div className="bg-amber-500/10 p-2.5 rounded-lg text-amber-500"><Clock size={20} /></div><span className="font-medium">{t('settings.reminders')}</span></div><ChevronRight size={20} className="text-slate-400" />
                 </button>
-
-                <div className={`${commonCardClass} flex items-center justify-between`}>
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-purple-500/10 p-2.5 rounded-lg text-purple-500"><Moon size={20} /></div>
-                        <span className="font-medium">{t('settings.dark_mode')}</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={darkMode} onChange={toggleDarkMode} />
-                        <div className="w-14 h-7 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
-                    </label>
-                </div>
 
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-2 pt-2">{t('settings.sec_sub')}</h3>
 

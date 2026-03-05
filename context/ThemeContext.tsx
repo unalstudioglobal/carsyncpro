@@ -91,6 +91,8 @@ interface ThemeContextValue {
   reset: () => void;
   accent: typeof ACCENT_VARS[ColorAccent];
   theme: typeof THEME_VARS[AppTheme];
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -99,6 +101,8 @@ const ThemeContext = createContext<ThemeContextValue>({
   reset: () => { },
   accent: ACCENT_VARS.indigo,
   theme: THEME_VARS.dark,
+  isDarkMode: false,
+  toggleDarkMode: () => { },
 });
 
 const loadConfig = (): ThemeConfig => {
@@ -131,6 +135,26 @@ const applyCSS = (config: ThemeConfig) => {
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<ThemeConfig>(loadConfig);
 
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const stored = getSetting<string>('theme', '');
+    if (stored) return stored === 'dark';
+    return document.documentElement.classList.contains('dark');
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      saveSetting('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      saveSetting('theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = useCallback(() => {
+    setIsDarkMode(prev => !prev);
+  }, []);
+
   useEffect(() => {
     applyCSS(config);
   }, [config]);
@@ -155,6 +179,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       reset,
       accent: ACCENT_VARS[config.colorAccent],
       theme: THEME_VARS[config.appTheme],
+      isDarkMode,
+      toggleDarkMode
     }}>
       {children}
     </ThemeContext.Provider>
