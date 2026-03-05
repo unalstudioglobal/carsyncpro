@@ -673,3 +673,47 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Blob Animations ─────────────────────────────────────── */
+@keyframes float-blob {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+    opacity: 0.8;
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+    opacity: 0.6;
+  }
+}
+
+.animate-float-blob {
+  animation: float-blob 15s ease-in-out infinite alternate;
+}
+
+.animate-float-blob-delayed {
+  animation: float-blob 18s ease-in-out infinite alternate-reverse;
+  animation-delay: -5s;
+}
+
+.animate-float-blob-slow {
+  animation: float-blob 22s ease-in-out infinite alternate;
+  animation-delay: -10s;
+}
+
+/* ── Premium Glass Panel ─────────────────────────────────── */
+.glass-panel-premium {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(36px);
+  -webkit-backdrop-filter: blur(36px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+}

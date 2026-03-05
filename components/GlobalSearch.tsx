@@ -245,29 +245,17 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
 
   return (
     <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        display: 'flex', flexDirection: 'column',
-        background: 'rgba(2,6,23,0.85)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-      }}
+      className="fixed inset-0 z-[200] flex flex-col bg-slate-950/80 backdrop-blur-xl animate-fadeIn overflow-hidden"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
-        width: '100%', maxWidth: 600, margin: '0 auto',
-        display: 'flex', flexDirection: 'column',
-        height: '100%', padding: '60px 16px 0',
-      }}>
+      {/* Ambient Animated Blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[100px] animate-float-blob pointer-events-none" />
+      <div className="absolute top-[20%] right-[-10%] w-[50%] h-[50%] bg-rose-500/10 rounded-full blur-[120px] animate-float-blob-delayed pointer-events-none" />
+      <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[40%] bg-amber-500/10 rounded-full blur-[100px] animate-float-blob-slow pointer-events-none" />
+
+      <div className="relative w-full max-w-2xl mx-auto h-full px-4 pt-16 flex flex-col pb-6">
         {/* Search input */}
-        <div style={{
-          background: 'rgba(15,23,42,0.95)',
-          border: '1px solid rgba(99,102,241,0.4)',
-          borderRadius: 20, padding: '4px 16px',
-          display: 'flex', alignItems: 'center', gap: 12,
-          boxShadow: '0 0 0 4px rgba(99,102,241,0.1), 0 20px 60px rgba(0,0,0,0.6)',
-          marginBottom: 8,
-        }}>
+        <div className="glass-panel-premium flex items-center gap-3 px-5 py-2 mb-4 relative z-10 transition-all focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-400/50">
           <Search size={18} color="#6366f1" style={{ flexShrink: 0 }} />
           <input
             ref={inputRef}
@@ -292,33 +280,22 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
         </div>
 
         {/* Results */}
-        <div style={{
-          flex: 1, overflowY: 'auto',
-          background: 'rgba(15,23,42,0.92)',
-          border: '1px solid rgba(30,41,59,0.8)',
-          borderRadius: 20,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-        }}>
+        <div className="glass-panel-premium flex-1 overflow-y-auto relative z-10 hide-scrollbar flex flex-col">
           {/* Empty state — show recent + shortcuts */}
           {!query && (
             <div style={{ padding: 20 }}>
               {recent.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <p style={{ color: '#475569', fontSize: 11, fontWeight: 700, letterSpacing: 0.5 }}>SON ARAMALAR</p>
-                    <button onClick={() => { clearRecent(); setRecent([]); }} style={{ background: 'none', border: 'none', color: '#475569', fontSize: 11, cursor: 'pointer' }}>
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-slate-500 text-xs font-bold tracking-wider">SON ARAMALAR</p>
+                    <button onClick={() => { clearRecent(); setRecent([]); }} className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">
                       Temizle
                     </button>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  <div className="flex flex-wrap gap-2">
                     {recent.map(r => (
-                      <button key={r} onClick={() => handleRecentClick(r)} style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(51,65,85,0.4)',
-                        borderRadius: 10, padding: '6px 12px',
-                        color: '#94a3b8', fontSize: 12, cursor: 'pointer',
-                      }}>
-                        <Clock size={11} color="#475569" />
+                      <button key={r} onClick={() => handleRecentClick(r)} className="flex items-center gap-2 bg-slate-800/50 hover:bg-slate-700/80 border border-slate-700/50 hover:border-slate-600 rounded-xl px-3 py-1.5 text-slate-300 hover:text-white text-xs font-medium transition-all group">
+                        <Clock size={12} className="text-slate-500 group-hover:text-amber-400 transition-colors" />
                         {r}
                       </button>
                     ))}
@@ -326,28 +303,19 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
                 </div>
               )}
 
-              <p style={{ color: '#475569', fontSize: 11, fontWeight: 700, letterSpacing: 0.5, marginBottom: 10 }}>HIZLI ERİŞİM</p>
+              <p className="text-slate-500 text-xs font-bold tracking-wider mb-3">HIZLI ERİŞİM</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {STATIC_RESULTS.filter(r => r.category === 'action').concat(
                   STATIC_RESULTS.filter(r => ['p-garage', 'p-logs', 'p-analytics', 'p-notif'].includes(r.id))
-                ).slice(0, 6).map(r => {
+                ).slice(0, 6).map((r, index) => {
                   const RIcon = r.icon;
                   return (
-                    <button key={r.id} onClick={() => handleSelect(r)} style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      background: 'rgba(30,41,59,0.5)', border: '1px solid rgba(51,65,85,0.3)',
-                      borderRadius: 14, padding: '12px 14px',
-                      cursor: 'pointer', textAlign: 'left',
-                      transition: 'all 0.15s',
-                    }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(30,41,59,0.5)')}
-                    >
-                      <div style={{ width: 30, height: 30, borderRadius: 9, background: r.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <RIcon size={14} color={r.iconColor} />
+                    <button key={r.id} onClick={() => handleSelect(r)} className="group flex items-center gap-3 bg-slate-800/40 hover:bg-slate-700/60 border border-slate-700/50 hover:border-indigo-500/50 rounded-2xl p-3 cursor-pointer text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] animate-slideDown" style={{ animationDelay: `${index * 0.05}s` }}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110" style={{ background: r.iconBg }}>
+                        <RIcon size={18} color={r.iconColor} />
                       </div>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-slate-200 text-sm font-bold whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-white transition-colors">{r.title}</p>
                       </div>
                     </button>
                   );
@@ -361,7 +329,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
             <div style={{ padding: '8px 0' }}>
               {CAT_ORDER.filter(c => grouped[c]).map(cat => (
                 <div key={cat}>
-                  <p style={{ color: '#475569', fontSize: 10, fontWeight: 700, letterSpacing: 0.8, padding: '10px 16px 6px' }}>
+                  <p className="text-slate-500 text-xs font-bold tracking-wider px-4 py-2 pt-4">
                     {cat.toUpperCase()} ({grouped[cat].length})
                   </p>
                   {grouped[cat].map(r => {
@@ -372,16 +340,10 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
                         key={r.id}
                         onClick={() => handleSelect(r)}
                         onMouseEnter={() => setActiveIdx(flatResults.indexOf(r))}
-                        style={{
-                          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                          padding: '10px 16px', background: isActive ? 'rgba(99,102,241,0.12)' : 'none',
-                          border: 'none', cursor: 'pointer', textAlign: 'left',
-                          borderLeft: isActive ? '2px solid #6366f1' : '2px solid transparent',
-                          transition: 'all 0.1s',
-                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 border-l-2 cursor-pointer text-left transition-all duration-200 ${isActive ? 'bg-indigo-500/10 border-indigo-500' : 'bg-transparent border-transparent hover:bg-slate-800/50'}`}
                       >
-                        <div style={{ width: 36, height: 36, borderRadius: 11, background: r.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <RIcon size={16} color={r.iconColor} />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: r.iconBg }}>
+                          <RIcon size={18} color={r.iconColor} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
