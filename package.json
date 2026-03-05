@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@google/genai": "1.39.0",
+    "@yudiel/react-qr-scanner": "^2.5.1",
     "date-fns": "4.1.0",
     "express": "4.21.2",
     "firebase": "11.2.0",
