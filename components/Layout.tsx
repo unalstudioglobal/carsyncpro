@@ -438,164 +438,112 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           }} />
 
           <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-            maxWidth: 480, margin: '0 auto',
-            padding: '8px 4px',
-            paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
-            height: 72,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            maxWidth: 500, margin: '0 auto',
+            padding: '4px 8px',
+            paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
+            height: 76,
           }}>
             {/* Left 2 */}
-            {NAV.slice(0, 2).map(({ path, icon: Icon, label }) => {
-              const active = isActive(path);
-              return (
-                <button
-                  key={path}
-                  onClick={() => go(path)}
-                  style={{
-                    flex: 1, display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', gap: 4,
-                    height: '100%', background: 'none', border: 'none',
-                    cursor: 'pointer', padding: 0, position: 'relative',
-                    animation: navBounce === path ? 'navPop 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
-                  }}
-                >
-                  <Icon
-                    size={21}
-                    strokeWidth={active ? 2.5 : 1.8}
-                    color={active ? '#C9A84C' : '#44445A'}
-                  />
-                  {active && (
-                    <div style={{
-                      position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)',
-                      width: 4, height: 4, borderRadius: '50%',
-                      background: '#C9A84C', boxShadow: '0 0 8px #C9A84C',
-                    }} />
-                  )}
-                  <span style={{
-                    fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6,
-                    color: active ? '#C9A84C' : '#44445A',
-                    fontFamily: 'var(--font-body)', textTransform: 'uppercase',
-                    transition: 'color 0.2s',
-                    marginTop: active ? 0 : 0,
-                  }}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
+            <div className="flex flex-1 justify-around">
+              {NAV.slice(0, 2).map(({ path, icon: Icon, label }) => {
+                const active = isActive(path);
+                return (
+                  <button
+                    key={path}
+                    onClick={() => go(path)}
+                    className={`flex flex-col items-center justify-center gap-1 h-12 px-3 rounded-2xl transition-all duration-300 ${active ? 'bg-gold/15 border border-gold/20' : 'bg-transparent border-transparent'}`}
+                    style={{
+                      animation: navBounce === path ? 'navPop 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+                    }}
+                  >
+                    <Icon
+                      size={20}
+                      strokeWidth={active ? 2.5 : 2}
+                      color={active ? 'var(--gold)' : 'var(--text-muted)'}
+                    />
+                    <span style={{
+                      fontSize: 8, fontWeight: 800, letterSpacing: '0.05em',
+                      color: active ? 'var(--gold)' : 'var(--text-muted)',
+                      textTransform: 'uppercase',
+                    }}>
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-            {/* Center — Garage */}
-            <div style={{ flex: 'none', padding: '0 8px', marginTop: -18 }}>
+            {/* Center — Floating Add Button */}
+            <div className="relative flex items-center justify-center w-20">
+              <button
+                onClick={() => navigate('/add-record')}
+                className="absolute -top-10 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-[0_8px_25px_rgba(59,130,246,0.5)] border-4 border-[var(--bg-card)] active:scale-90 transition-all duration-300 z-50 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity" />
+                <Navigation size={28} className="text-white rotate-45" />
+              </button>
               <button
                 onClick={() => go('/')}
-                style={{
-                  width: 60, height: 60, borderRadius: '50%',
-                  background: isActive('/')
-                    ? 'linear-gradient(135deg, #E8C96B 0%, #C9A84C 100%)'
-                    : 'linear-gradient(135deg, #1A1A2A 0%, #0D0D1A 100%)',
-                  boxShadow: isActive('/')
-                    ? '0 0 28px rgba(201,168,76,0.35), 0 8px 24px rgba(0,0,0,0.6)'
-                    : '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
-                  border: `1.5px solid ${isActive('/') ? 'rgba(232,201,107,0.5)' : 'rgba(255,255,255,0.07)'}`,
-                  cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
-                  position: 'relative',
-                  animation: navBounce === '/' ? 'navPop 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
-                }}
+                className={`flex flex-col items-center justify-center gap-1 h-12 px-3 rounded-2xl transition-all duration-300 mt-2 ${isActive('/') ? 'bg-gold/15 border border-gold/20' : 'bg-transparent'}`}
               >
-                <Car
-                  size={26}
-                  color={isActive('/') ? '#050508' : '#5A5A7A'}
-                  strokeWidth={isActive('/') ? 2.5 : 1.8}
-                />
-                {isActive('/') && (
-                  <div style={{
-                    position: 'absolute', inset: -7, borderRadius: '50%',
-                    border: '1px solid rgba(201,168,76,0.4)',
-                    animation: 'breathe 2.8s ease-in-out infinite',
-                  }} />
-                )}
+                <Car size={18} color={isActive('/') ? 'var(--gold)' : 'var(--text-muted)'} strokeWidth={2.5} />
+                <span className="text-[8px] font-extrabold uppercase tracking-widest text-muted">{t('nav.garage')}</span>
               </button>
             </div>
 
-            {/* Right 2 */}
-            {NAV.slice(2, 4).map(({ path, icon: Icon, label }) => {
-              const active = isActive(path);
-              return (
-                <button
-                  key={path}
-                  onClick={() => go(path)}
-                  style={{
-                    flex: 1, display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', gap: 4,
-                    height: '100%', background: 'none', border: 'none',
-                    cursor: 'pointer', padding: 0, position: 'relative',
-                    animation: navBounce === path ? 'navPop 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
-                  }}
-                >
-                  <Icon
-                    size={21}
-                    strokeWidth={active ? 2.5 : 1.8}
-                    color={active ? '#C9A84C' : '#44445A'}
-                  />
-                  {active && (
-                    <div style={{
-                      position: 'absolute', bottom: 2, left: '50%', transform: 'translateX(-50%)',
-                      width: 4, height: 4, borderRadius: '50%',
-                      background: '#C9A84C', boxShadow: '0 0 8px #C9A84C',
-                    }} />
-                  )}
-                  <span style={{
-                    fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6,
-                    color: active ? '#C9A84C' : '#44445A',
-                    fontFamily: 'var(--font-body)', textTransform: 'uppercase',
-                    transition: 'color 0.2s',
-                  }}>
-                    {label}
-                  </span>
-                </button>
-              );
-            })}
+            {/* Right Group (Doc + Menu) */}
+            <div className="flex flex-1 justify-around">
+              <button
+                onClick={() => go('/documents')}
+                className={`flex flex-col items-center justify-center gap-1 h-12 px-3 rounded-2xl transition-all duration-300 ${isActive('/documents') ? 'bg-gold/15 border border-gold/20' : 'bg-transparent'}`}
+                style={{
+                  animation: navBounce === '/documents' ? 'navPop 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+                }}
+              >
+                <FileStack size={20} color={isActive('/documents') ? 'var(--gold)' : 'var(--text-muted)'} strokeWidth={2} />
+                <span style={{
+                  fontSize: 8, fontWeight: 800, letterSpacing: '0.05em',
+                  color: isActive('/documents') ? 'var(--gold)' : 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                }}>
+                  {t('nav.documents')}
+                </span>
+              </button>
 
-            {/* Menu toggle */}
-            <button
-              onClick={() => setIsMenuOpen(v => !v)}
-              style={{
-                flex: 1, display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 4,
-                height: '100%', background: 'none', border: 'none',
-                cursor: 'pointer', padding: 0,
-              }}
-            >
-              <div style={{ width: 21, height: 14, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                {[0, 1, 2].map(i => (
-                  <span key={i} style={{
-                    display: 'block', height: 1.5, borderRadius: 2,
-                    background: isMenuOpen ? '#C9A84C' : '#44445A',
-                    transformOrigin: 'center',
-                    transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
-                    transform: isMenuOpen
-                      ? i === 0 ? 'translateY(6.25px) rotate(45deg)'
-                        : i === 2 ? 'translateY(-6.25px) rotate(-45deg)'
-                          : 'scaleX(0)'
-                      : 'none',
-                    opacity: isMenuOpen && i === 1 ? 0 : 1,
-                  }} />
-                ))}
-              </div>
-              <span style={{
-                fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6,
-                color: isMenuOpen ? '#C9A84C' : '#44445A',
-                fontFamily: 'var(--font-body)', textTransform: 'uppercase',
-                transition: 'color 0.2s',
-              }}>
-                {isMenuOpen ? t('nav.close') : t('nav.menu')}
-              </span>
-            </button>
+              <button
+                onClick={() => setIsMenuOpen(v => !v)}
+                className={`flex flex-col items-center justify-center gap-1 h-12 px-3 rounded-2xl transition-all duration-300 ${isMenuOpen ? 'bg-gold/15 border border-gold/20' : 'bg-transparent'}`}
+              >
+                <div style={{ width: 18, height: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  {[0, 1, 2].map(i => (
+                    <span key={i} style={{
+                      display: 'block', height: 1.5, borderRadius: 2,
+                      background: isMenuOpen ? 'var(--gold)' : 'var(--text-muted)',
+                      transformOrigin: 'center',
+                      transition: 'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                      transform: isMenuOpen
+                        ? i === 0 ? 'translateY(5.25px) rotate(45deg)'
+                          : i === 2 ? 'translateY(-5.25px) rotate(-45deg)'
+                            : 'scaleX(0)'
+                        : 'none',
+                      opacity: isMenuOpen && i === 1 ? 0 : 1,
+                    }} />
+                  ))}
+                </div>
+                <span style={{
+                  fontSize: 8, fontWeight: 800, letterSpacing: '0.05em',
+                  color: isMenuOpen ? 'var(--gold)' : 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                }}>
+                  {isMenuOpen ? t('nav.close') : t('nav.menu')}
+                </span>
+              </button>
+            </div>
           </div>
         </nav>
       )}
+
 
       <style>{`
         @keyframes breathe {
