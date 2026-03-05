@@ -1,0 +1,471 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ChevronLeft, Car, Calendar, Hash, Gauge, Camera, Check, ChevronRight, AlertCircle, Save, LayoutGrid } from 'lucide-react';
+import { Vehicle } from '../types';
+import { addVehicle, updateVehicle } from '../services/firestoreService';
+import { toast } from '../services/toast';
+
+export const AddVehicle: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if we are in edit mode
+  const editVehicle = location.state?.vehicle as Vehicle | undefined;
+  const isEditMode = !!editVehicle;
+
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({
+    brand: '',
+    model: '',
+    year: new Date().getFullYear().toString(),
+    plate: '',
+    mileage: '',
+    status: 'Sorun Yok' as Vehicle['status'],
+    image: null as string | null,
+    images: [] as string[]
+  });
+
+  // Initialize form if editing
+  useEffect(() => {
+    if (editVehicle) {
+      setFormData({
+        brand: editVehicle.brand,
+        model: editVehicle.model,
+        year: editVehicle.year.toString(),
+        plate: editVehicle.plate,
+        mileage: editVehicle.mileage.toString(),
+        status: editVehicle.status,
+        image: editVehicle.image,
+        images: editVehicle.images || [editVehicle.image].filter(Boolean) as string[]
+      });
+    }
+  }, [editVehicle]);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  const totalSteps = 3;
+
+  const validateStep = (currentStep: number) => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    if (currentStep === 1) {
+      if (!formData.brand.trim()) newErrors.brand = 'Lütfen aracın markasını giriniz.';
+
+      if (!formData.model.trim()) newErrors.model = 'Lütfen aracın modelini giriniz.';
+
+      const yearNum = parseInt(formData.year);
+      const currentYear = new Date().getFullYear();
+      if (!formData.year || isNaN(yearNum) || formData.year.length !== 4) {
+        newErrors.year = 'Yıl 4 haneli olmalıdır (Örn: 2020).';
+      } else if (yearNum < 1900 || yearNum > currentYear + 1) {
+        newErrors.year = `Yıl 1900 ile ${currentYear + 1} arasında olmalıdır.`;
+      }
+    }
+
+    if (currentStep === 2) {
+      // Plaka Doğrulaması (TR Formatı - Boşluksuz kontrol)
+      const cleanPlate = formData.plate.replace(/[\s\-]/g, '').toUpperCase();
+      // Türk plaka formatı: il kodu (01-81) + 1-3 harf + 2-5 rakam. Boşluk ve tire kabul edilir.
+      const plateRegex = /^(0[1-9]|[1-7][0-9]|8[01])[A-Z]{1,3}\d{2,5}$/;
+
+      if (!formData.plate.trim()) {
+        newErrors.plate = 'Plaka alanı zorunludur.';
+      } else if (!plateRegex.test(cleanPlate)) {
+        newErrors.plate = 'Geçerli bir Türk plakası giriniz. (Örn: 34ABC123 veya 34-ABC-123)';
+      }
+
+      if (!formData.mileage) {
+        newErrors.mileage = 'Kilometre alanı zorunludur.';
+      } else if (isNaN(Number(formData.mileage)) || Number(formData.mileage) < 0) {
+        newErrors.mileage = 'Geçerli bir kilometre değeri giriniz.';
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      isValid = false;
+    } else {
+      setErrors({});
+    }
+
+    return isValid;
+  };
+
+  const handleNext = async () => {
+    if (validateStep(step)) {
+      if (step < totalSteps) setStep(step + 1);
+      else {
+        setIsSaving(true);
+        try {
+          if (isEditMode && editVehicle) {
+            await updateVehicle(editVehicle.id, {
+              brand: formData.brand,
+              model: formData.model,
+              year: parseInt(formData.year),
+              plate: formData.plate.replace(/[\s\-]/g, '').toUpperCase(),
+              mileage: parseInt(formData.mileage),
+              status: formData.status,
+              image: formData.images[0] || formData.image || editVehicle.image,
+              images: formData.images,
+            });
+          } else {
+            await addVehicle({
+              brand: formData.brand,
+              model: formData.model,
+              year: parseInt(formData.year),
+              plate: formData.plate.replace(/[\s\-]/g, '').toUpperCase(),
+              mileage: parseInt(formData.mileage),
+              status: formData.status,
+              image: formData.images[0] || formData.image || `https://images.unsplash.com/photo-1555215695-3004980adade?auto=format&fit=crop&w=800&q=80`,
+              images: formData.images,
+              healthScore: 100,
+              marketValueMin: 0,
+              marketValueMax: 0,
+              lastLogDate: new Date().toLocaleDateString('tr-TR'),
+            });
+          }
+          toast.success(isEditMode ? 'Değişiklikler başarıyla kaydedildi!' : 'Yeni araç garajınıza eklendi!');
+          navigate('/');
+        } catch (err) {
+          console.error('Araç kaydetme hatası:', err);
+          toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
+        } finally {
+          setIsSaving(false);
+        }
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+    else navigate(-1);
+  };
+
+  // Helper to clear specific error when user types
+  const clearError = (field: string) => {
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrs = { ...prev };
+        delete newErrs[field];
+        return newErrs;
+      });
+    }
+  };
+
+  const renderStep1 = () => (
+    <div className="space-y-5 animate-fadeIn">
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-400 ml-1">MARKA</label>
+        <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.brand ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
+          <Car size={20} className={errors.brand ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
+          <input
+            type="text"
+            placeholder="Örn. BMW, Toyota"
+            value={formData.brand}
+            onChange={(e) => {
+              setFormData({ ...formData, brand: e.target.value });
+              clearError('brand');
+            }}
+            className="bg-transparent w-full outline-none text-white placeholder-slate-600 text-base"
+            autoFocus
+          />
+          {errors.brand && <AlertCircle size={18} className="text-red-500 ml-2 animate-pulse" />}
+        </div>
+        {errors.brand && <p className="text-red-500 text-xs ml-1 font-medium animate-fadeIn">{errors.brand}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-400 ml-1">MODEL</label>
+        <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.model ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
+          <Car size={20} className={errors.model ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
+          <input
+            type="text"
+            placeholder="Örn. 320i, Corolla"
+            value={formData.model}
+            onChange={(e) => {
+              setFormData({ ...formData, model: e.target.value });
+              clearError('model');
+            }}
+            className="bg-transparent w-full outline-none text-white placeholder-slate-600 text-base"
+          />
+          {errors.model && <AlertCircle size={18} className="text-red-500 ml-2 animate-pulse" />}
+        </div>
+        {errors.model && <p className="text-red-500 text-xs ml-1 font-medium animate-fadeIn">{errors.model}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-400 ml-1">YIL</label>
+        <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.year ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
+          <Calendar size={20} className={errors.year ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
+          <input
+            type="number"
+            placeholder="2023"
+            maxLength={4}
+            value={formData.year}
+            onChange={(e) => {
+              // Only allow numbers and max 4 chars
+              if (e.target.value.length <= 4) {
+                setFormData({ ...formData, year: e.target.value });
+                clearError('year');
+              }
+            }}
+            className="bg-transparent w-full outline-none text-white placeholder-slate-600 text-base"
+          />
+          {errors.year && <AlertCircle size={18} className="text-red-500 ml-2 animate-pulse" />}
+        </div>
+        {errors.year && <p className="text-red-500 text-xs ml-1 font-medium animate-fadeIn">{errors.year}</p>}
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="space-y-5 animate-fadeIn">
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-400 ml-1">PLAKA</label>
+        <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.plate ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
+          <Hash size={20} className={errors.plate ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
+          <input
+            type="text"
+            placeholder="34 ABC 123"
+            value={formData.plate}
+            onChange={(e) => {
+              setFormData({ ...formData, plate: e.target.value.toUpperCase() });
+              clearError('plate');
+            }}
+            className="bg-transparent w-full outline-none text-white placeholder-slate-600 uppercase text-base"
+            autoFocus
+          />
+          {errors.plate && <AlertCircle size={18} className="text-red-500 ml-2 animate-pulse" />}
+        </div>
+        {errors.plate && <p className="text-red-500 text-xs ml-1 font-medium animate-fadeIn">{errors.plate}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-400 ml-1">KİLOMETRE</label>
+        <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.mileage ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
+          <Gauge size={20} className={errors.mileage ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
+          <input
+            type="number"
+            placeholder="Örn. 120000"
+            min="0"
+            value={formData.mileage}
+            onChange={(e) => {
+              setFormData({ ...formData, mileage: e.target.value });
+              clearError('mileage');
+            }}
+            className="bg-transparent w-full outline-none text-white placeholder-slate-600 text-base"
+          />
+          <span className="text-slate-500 text-sm ml-2">km</span>
+          {errors.mileage && <AlertCircle size={18} className="text-red-500 ml-2 animate-pulse" />}
+        </div>
+        {errors.mileage && <p className="text-red-500 text-xs ml-1 font-medium animate-fadeIn">{errors.mileage}</p>}
+      </div>
+    </div>
+  );
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const cameraInputRef = React.useRef<HTMLInputElement>(null);
+
+  const compressImage = (dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width;
+        let h = img.height;
+        if (w > maxWidth) {
+          h = (h * maxWidth) / w;
+          w = maxWidth;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl); // sıkıştırma başarısızsa orijinali kullan
+      img.src = dataUrl;
+    });
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach((file: File) => {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const compressed = await compressImage(reader.result as string);
+          setFormData(prev => ({ ...prev, images: [...prev.images, compressed] }));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    // input'u sıfırla — aynı dosyayı tekrar seçebilmek için
+    e.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  const renderStep3 = () => (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-400 ml-1">ARAÇ FOTOĞRAFLARI</label>
+
+        {/* Hidden Inputs */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*"
+          multiple
+          onChange={handleImageUpload}
+        />
+        <input
+          type="file"
+          ref={cameraInputRef}
+          className="hidden"
+          accept="image/*"
+          capture="environment"
+          onChange={handleImageUpload}
+        />
+
+        {/* Image Gallery */}
+        {formData.images.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {formData.images.map((img, idx) => (
+              <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-700 group flex items-center justify-center bg-slate-800">
+                {img ? (
+                  <img src={img} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                ) : (
+                  <Car size={32} className="text-slate-600" />
+                )}
+                <button
+                  onClick={() => removeImage(idx)}
+                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                >
+                  <AlertCircle size={14} className="rotate-45" />
+                </button>
+                {idx === 0 && (
+                  <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-blue-600 text-[10px] font-bold text-white rounded uppercase tracking-wider">
+                    Kapak
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upload Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => cameraInputRef.current?.click()}
+            className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-700 rounded-2xl text-slate-400 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/5 transition active:scale-95"
+          >
+            <Camera size={28} className="mb-2" />
+            <span className="text-xs font-bold">Kamera</span>
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-700 rounded-2xl text-slate-400 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/5 transition active:scale-95"
+          >
+            <LayoutGrid size={28} className="mb-2" />
+            <span className="text-xs font-bold">Galeri</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-400 ml-1">DURUM</label>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {['Sorun Yok', 'Servis Gerekli', 'Acil'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFormData({ ...formData, status: status as any })}
+              className={`py-4 px-3 rounded-xl text-sm font-bold border transition active:scale-95 ${formData.status === status
+                  ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/50'
+                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+                }`}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="p-5 h-full flex flex-col">
+      {/* Header */}
+      <header className="flex items-center justify-between pt-2 mb-6">
+        <button onClick={handleBack} className="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 active:bg-slate-600 transition">
+          <ChevronLeft size={24} />
+        </button>
+        <div className="flex space-x-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i <= step ? 'w-8 bg-blue-500' : 'w-2 bg-slate-700'}`}></div>
+          ))}
+        </div>
+        <div className="w-10"></div> {/* Spacer for alignment */}
+      </header>
+
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold mb-2">
+          {isEditMode ? 'Aracı Düzenle' : (
+            <>
+              {step === 1 && "Temel Bilgiler"}
+              {step === 2 && "Detaylar"}
+              {step === 3 && "Görünüm & Durum"}
+            </>
+          )}
+        </h1>
+        <p className="text-slate-400 text-sm">
+          {step === 1 && "Aracınızın marka, model ve yılını girin."}
+          {step === 2 && "Plaka ve güncel kilometre bilgisini ekleyin."}
+          {step === 3 && "Bir fotoğraf ekleyin ve araç durumunu belirtin."}
+        </p>
+      </div>
+
+      <div className="flex-1">
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderStep3()}
+      </div>
+
+      <div className="mt-6">
+        <button
+          onClick={handleNext}
+          disabled={isSaving}
+          className={`w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-5 rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-blue-900/40 transition active:scale-95 text-lg ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+        >
+          {isSaving ? (
+            <span>Kaydediliyor...</span>
+          ) : (
+            <>
+              <span>{step === totalSteps ? (isEditMode ? 'Değişiklikleri Kaydet' : 'Tamamla') : 'Devam Et'}</span>
+              {step !== totalSteps && <ChevronRight size={20} />}
+              {step === totalSteps && (isEditMode ? <Save size={20} /> : <Check size={20} />)}
+            </>
+          )}
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+      `}</style>
+    </div>
+  );
+};

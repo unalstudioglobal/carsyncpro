@@ -1,0 +1,532 @@
+import express from "express";
+import admin from "firebase-admin";
+import fs from "fs";
+import path from "path";
+
+// ── Helpers ───────────────────────────────────────────────
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
+const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_BASE = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}`;
+
+/** Gemini REST isteği — API key sadece server'da */
+async function callGemini(body: object): Promise<any> {
+  const res = await fetch(`${GEMINI_BASE}:generateContent?key=${GEMINI_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const status = res.status;
+    console.error(`Gemini API hatası (${status}):`, JSON.stringify(err).substring(0, 500));
+    if (status === 429) throw Object.assign(new Error("quota"), { code: "QUOTA" });
+    if (status === 400) throw Object.assign(new Error("bad_request"), { code: "BAD_REQUEST" });
+    throw Object.assign(new Error("gemini_error"), { code: "GEMINI_ERROR", status });
+  }
+
+  return res.json();
+}
+
+/** Gemini yanıtından text çıkar */
+function extractText(data: any): string {
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
+// ── Server ────────────────────────────────────────────────
+async function startServer() {
+  const app = express();
+  const PORT = parseInt(process.env.PORT || "3000");
+
+  app.use(express.json({ limit: "10mb" }));   // base64 image'lar için
+
+  // ── Firebase Admin ──────────────────────────────────────
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+      let serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+
+      // Eğer JSON formatında değilse (örn: dosya yolu verilmişse veya "firebase-adminsdk..." gibi başlıyorsa)
+      if (!serviceAccount.startsWith("{")) {
+        // 1. Dosya yolu olarak dene
+        const filePath = path.resolve(process.cwd(), serviceAccount);
+        if (fs.existsSync(filePath)) {
+          console.log(`📂 Service Account dosyadan okunuyor: ${serviceAccount}`);
+          serviceAccount = fs.readFileSync(filePath, "utf-8");
+        } else {
+          console.warn(`⚠️ FIREBASE_SERVICE_ACCOUNT JSON değil ve dosya bulunamadı: ${serviceAccount}`);
+          // Yine de devam et, belki JSON.parse daha açıklayıcı hata verir veya base64'tür
+        }
+      }
+
+      const sa = JSON.parse(serviceAccount);
+      admin.initializeApp({
+        credential: admin.credential.cert(sa),
+        databaseURL: "https://car-sync-pro-default-rtdb.europe-west1.firebasedatabase.app",
+      });
+      console.log("✅ Firebase Admin başlatıldı");
+    } catch (e: any) {
+      console.error("❌ Firebase Admin başlatma hatası:", e.message);
+      console.error("💡 İPUCU: .env dosyasında FIREBASE_SERVICE_ACCOUNT değişkenine JSON dosyasının İÇERİĞİNİ yapıştırın (dosya yolunu değil).");
+    }
+  } else {
+    console.warn("⚠️  FIREBASE_SERVICE_ACCOUNT bulunamadı — Admin SDK devre dışı");
+  }
+
+  // ── Rate Limiting (in-memory, basit) ────────────────────
+  const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+  const RATE_LIMIT_WINDOW = 60_000; // 1 dakika
+  const RATE_LIMIT_MAX = 30;      // dakikada max 30 istek
+
+  const rateLimit = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const ip = req.ip || req.socket.remoteAddress || "unknown";
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+
+    if (!entry || now > entry.resetAt) {
+      rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+      next();
+      return;
+    }
+
+    if (entry.count >= RATE_LIMIT_MAX) {
+      res.status(429).json({ error: "Çok fazla istek. Lütfen biraz bekleyin." });
+      return;
+    }
+
+    entry.count++;
+    next();
+  };
+
+  // Eski rate limit girişlerini periyodik temizle
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, entry] of rateLimitMap) {
+      if (now > entry.resetAt) rateLimitMap.delete(ip);
+    }
+  }, 5 * 60_000);
+
+  // ── Auth Middleware (opsiyonel — Admin yoksa geç) ──────
+  const optionalAuth = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (admin.apps.length === 0) {
+      // Admin yok, auth kontrolü yapılamaz — geçir
+      next();
+      return;
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      // Token yoksa da geçir (demo mod desteği)
+      next();
+      return;
+    }
+
+    try {
+      const idToken = authHeader.split("Bearer ")[1];
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      (req as any).uid = decoded.uid;
+    } catch {
+      // Token geçersizse bile devam et (demo mod)
+    }
+    next();
+  };
+
+  // ── Input Validation ───────────────────────────────────
+  const validateInput = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const body = req.body;
+    // base64 image boyutu kontrolü (max ~5MB)
+    if (body.base64Image && body.base64Image.length > 7_000_000) {
+      res.status(413).json({ error: "Görüntü boyutu çok büyük (max ~5MB)." });
+      return;
+    }
+    // Metin alanları uzunluk kontrolü
+    for (const key of ["message", "vehicleModel", "vehicleInfo", "code"]) {
+      if (body[key] && typeof body[key] === "string" && body[key].length > 2000) {
+        res.status(400).json({ error: `${key} alanı çok uzun (max 2000 karakter).` });
+        return;
+      }
+    }
+    next();
+  };
+
+  // ── Guard ───────────────────────────────────────────────
+  const requireApiKey = (_req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (!GEMINI_API_KEY) {
+      res.status(503).json({ error: "GEMINI_API_KEY sunucuda tanımlı değil" });
+      return;
+    }
+    next();
+  };
+
+  // Tüm /api/gemini rotalarına rate limit, auth ve validation uygula
+  app.use("/api/gemini", rateLimit, optionalAuth, validateInput);
+
+  // ── Health ──────────────────────────────────────────────
+  app.get("/api/health", (_req, res) => {
+    res.json({
+      status: "ok",
+      gemini: !!GEMINI_API_KEY,
+      firebaseAdmin: admin.apps.length > 0,
+    });
+  });
+
+  // ── 1. Fatura / Fiş Analizi ─────────────────────────────
+  app.post("/api/gemini/analyze-invoice", requireApiKey, async (req, res) => {
+    const { base64Image, mimeType = "image/jpeg" } = req.body;
+
+    if (!base64Image) {
+      res.status(400).json({ error: "base64Image gerekli" });
+      return;
+    }
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mimeType, data: base64Image } },
+            {
+              text: `Bu araç servis faturasını veya fişini analiz et.
+Aşağıdaki bilgileri JSON formatında çıkar:
+{
+  "totalCost": (sayı, yoksa null),
+  "date": (dize YYYY-MM-DD, yoksa null),
+  "serviceType": (dize, kısa özet örn. "Yağ Değişimi"),
+  "mileage": (sayı, yoksa null),
+  "notes": (dize, parçaların/yapılan işin kısa özeti)
+}
+Sadece JSON döndür, başka hiçbir şey ekleme.` }
+          ]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json(JSON.parse(text || "{}"));
+    } catch (err: any) {
+      if (err.code === "QUOTA") {
+        res.status(429).json({ error: "Günlük YZ analiz kotası doldu. Lütfen yarın tekrar deneyin." });
+      } else {
+        console.error("analyze-invoice hatası:", err);
+        res.status(500).json({ error: "Görüntü analiz edilemedi. Lütfen daha net bir fotoğraf deneyin." });
+      }
+    }
+  });
+
+  // ── 2. Araç Sağlık İçgörüsü ────────────────────────────
+  app.post("/api/gemini/health-insight", requireApiKey, async (req, res) => {
+    const { vehicleModel, mileage, lastServiceDate } = req.body;
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [{
+            text: `Aracım: ${vehicleModel}, ${mileage} km, son servis: ${lastServiceDate}.
+Yaklaşan bakım ihtiyaçları hakkında 1 cümlelik, profesyonel, Türkçe bir ipucu ver.` }]
+        }]
+      });
+
+      res.json({ insight: extractText(data) });
+    } catch (err: any) {
+      if (err.code === "QUOTA") {
+        res.json({ insight: "YZ kotası doldu. Genel bakım takviminizi kontrol edin." });
+      } else {
+        res.json({ insight: "Şu anda içgörü oluşturulamıyor." });
+      }
+    }
+  });
+
+  // ── 3. Bakım Önerileri ─────────────────────────────────
+  app.post("/api/gemini/maintenance", requireApiKey, async (req, res) => {
+    const { vehicleInfo, mileage } = req.body;
+    const FALLBACK = ["Sıvı seviyelerini kontrol edin.", "Lastik diş derinliğini ölçün.", "Aydınlatma sistemini kontrol edin."];
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [{
+            text: `Araç: ${vehicleInfo}, Kilometre: ${mileage}.
+Bu araç için şu an (bu kilometrede) kontrol edilmesi gereken en önemli 3 bakım maddesini
+JSON dizisi olarak listele. Örnek: ["Buji kontrolü","Fren hidroliği","Polen filtresi"]
+Sadece JSON dizisi döndür.` }]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json({ recommendations: JSON.parse(text || "[]") });
+    } catch (err: any) {
+      res.json({ recommendations: FALLBACK });
+    }
+  });
+
+  // ── 4. OBD-II Arıza Kodu Açıklama ─────────────────────
+  app.post("/api/gemini/dtc", requireApiKey, async (req, res) => {
+    const { code, vehicleModel } = req.body;
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [{
+            text: `Aracım: ${vehicleModel}. OBD-II kodu: ${code}.
+Şu yapıda JSON döndür:
+{
+  "code": "${code}",
+  "meaning": "kısa teknik açıklama",
+  "severity": "Düşük|Orta|Yüksek|Kritik",
+  "causes": ["neden1", "neden2"],
+  "solutions": ["çözüm1", "çözüm2"]
+}
+Yanıt tamamen Türkçe olsun. Sadece JSON.` }]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json(JSON.parse(text || "{}"));
+    } catch (err: any) {
+      if (err.code === "QUOTA") {
+        res.status(429).json({
+          code, meaning: "YZ Servis Kotası Doldu", severity: "Bilinmiyor",
+          causes: ["Günlük işlem limiti aşıldı"],
+          solutions: ["Lütfen daha sonra tekrar deneyin."]
+        });
+      } else {
+        res.status(500).json({ error: "Arıza kodu analiz edilemedi." });
+      }
+    }
+  });
+
+  // ── 5. Araç Asistanı (Chat) ────────────────────────────
+  app.post("/api/gemini/chat", requireApiKey, async (req, res) => {
+    const { message, vehicleContext, history = [], audioData } = req.body;
+
+    const systemText = `Sen bir YZ asistanı DEĞİLSİN. Sen bizzat şu araçsın: ${vehicleContext.year} model ${vehicleContext.brand} ${vehicleContext.model}.
+Kilometren: ${vehicleContext.mileage} km | Sağlık: ${vehicleContext.healthScore}/100 | Durum: ${vehicleContext.status} | Son İşlem: ${vehicleContext.lastLogDate}
+Markana uygun karakter takın (BMW: sportif+agresif, Klasik: nostaljik, Ekonomik: tutumlu).
+Sahibinle 1. tekil şahıs olarak konuş. Cevaplar kısa ve eğlenceli. Emoji kullan. ASLA YZ olduğunu söyleme.`;
+
+    try {
+      // Geçmiş mesajları Gemini formatına çevir
+      const geminiHistory = history.map((h: any) => ({
+        role: h.role === "user" ? "user" : "model",
+        parts: h.parts,
+      }));
+
+      const parts: any[] = [];
+      if (audioData) {
+        parts.push({ inline_data: { mime_type: "audio/webm", data: audioData } });
+      }
+      parts.push({ text: message || "Bu sesli mesaja cevap ver." });
+
+      const data = await callGemini({
+        system_instruction: { parts: [{ text: systemText }] },
+        contents: [
+          ...geminiHistory,
+          { role: "user", parts }
+        ],
+        generationConfig: { temperature: 0.8 },
+      });
+
+      res.json({ reply: extractText(data) });
+    } catch (err: any) {
+      console.error("chat hatası:", err);
+      res.json({ reply: "Motor boğuldu... Tekrar dener misin? 😅" });
+    }
+  });
+
+  // ── 6. Hasar Tespiti ───────────────────────────────────
+  app.post("/api/gemini/damage-detection", requireApiKey, async (req, res) => {
+    const { base64Image, mimeType = "image/jpeg" } = req.body;
+
+    if (!base64Image) {
+      res.status(400).json({ error: "base64Image gerekli" });
+      return;
+    }
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mimeType, data: base64Image } },
+            {
+              text: `Bu araç fotoğrafını analiz et ve hasarları tespit et.
+Şu yapıda JSON döndür:
+{
+  "hasDamage": boolean,
+  "severity": "Yok|Hafif|Orta|Ciddi",
+  "damages": [{"area": "bölge", "description": "açıklama", "severity": "Hafif|Orta|Ciddi"}],
+  "estimatedCost": "tahmini maliyet aralığı (TL)",
+  "recommendation": "kısa öneri"
+}
+Sadece JSON. Türkçe.` }
+          ]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json(JSON.parse(text || "{}"));
+    } catch (err: any) {
+      if (err.code === "QUOTA") {
+        res.status(429).json({ error: "YZ kotası doldu." });
+      } else {
+        res.status(500).json({ error: "Hasar tespiti yapılamadı." });
+      }
+    }
+  });
+
+  // ── Push Notification Endpoints ────────────────────────
+
+  /**
+   * POST /api/notifications/send
+   * Firebase Admin ile FCM push gönderir.
+   * Body: { payload: PushPayload, tokens?: string[], topic?: string }
+   */
+  app.post("/api/notifications/send", async (req, res) => {
+    if (admin.apps.length === 0) {
+      res.status(503).json({ error: "Firebase Admin başlatılmadı. FIREBASE_SERVICE_ACCOUNT eksik." });
+      return;
+    }
+
+    const { payload, tokens, topic } = req.body;
+
+    if (!payload?.title || !payload?.body) {
+      res.status(400).json({ error: "payload.title ve payload.body zorunlu" });
+      return;
+    }
+
+    const message = {
+      notification: {
+        title: payload.title,
+        body: payload.body,
+        imageUrl: payload.icon,
+      },
+      data: {
+        actionRoute: payload.actionRoute || "/",
+        actionLabel: payload.actionLabel || "Görüntüle",
+        vehicleId: payload.vehicleId || "",
+        tag: payload.tag || "carsync",
+        type: payload.type || "info",
+      },
+      webpush: {
+        notification: {
+          icon: payload.icon || "/icon-192.png",
+          badge: "/badge-72.png",
+          tag: payload.tag || "carsync",
+          renotify: false,
+        },
+        fcmOptions: {
+          link: `/#${payload.actionRoute || "/"}`,
+        },
+      },
+    };
+
+    try {
+      let result: any;
+
+      if (tokens && tokens.length > 0) {
+        // Birden fazla token'a gönder
+        if (tokens.length === 1) {
+          result = await admin.messaging().send({ ...message, token: tokens[0] });
+        } else {
+          result = await admin.messaging().sendEachForMulticast({
+            ...message,
+            tokens,
+          });
+        }
+      } else if (topic) {
+        // Topic'e gönder
+        result = await admin.messaging().send({ ...message, topic });
+      } else {
+        res.status(400).json({ error: "tokens veya topic belirtilmeli" });
+        return;
+      }
+
+      res.json({ success: true, result });
+    } catch (err: any) {
+      console.error("FCM push hatası:", err);
+      res.status(500).json({ error: "Push gönderilemedi", detail: err.message });
+    }
+  });
+
+  /**
+   * GET /api/notifications/my-tokens
+   * Authenticated user'ın FCM tokenlarını döndürür.
+   * (Gerçek auth middleware için Firebase ID token doğrulaması eklenmeli)
+   */
+  app.get("/api/notifications/my-tokens", async (req, res) => {
+    if (admin.apps.length === 0) {
+      res.json({ tokens: [] });
+      return;
+    }
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).json({ error: "Authorization header eksik" });
+      return;
+    }
+
+    try {
+      const idToken = authHeader.split("Bearer ")[1];
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      const uid = decoded.uid;
+
+      const tokensSnap = await admin.firestore()
+        .collection("users")
+        .doc(uid)
+        .collection("fcmTokens")
+        .get();
+
+      const tokens = tokensSnap.docs.map(d => d.data().token as string).filter(Boolean);
+      res.json({ tokens });
+    } catch (err: any) {
+      console.error("Token fetch hatası:", err);
+      res.status(401).json({ error: "Token doğrulanamadı" });
+    }
+  });
+
+  /**
+   * POST /api/notifications/subscribe-topic
+   * Kullanıcıyı kişisel topic'ine abone eder (uid bazlı).
+   */
+  app.post("/api/notifications/subscribe-topic", async (req, res) => {
+    if (admin.apps.length === 0) {
+      res.status(503).json({ error: "Firebase Admin yok" });
+      return;
+    }
+
+    const { token, uid } = req.body;
+    if (!token || !uid) {
+      res.status(400).json({ error: "token ve uid gerekli" });
+      return;
+    }
+
+    try {
+      await admin.messaging().subscribeToTopic([token], `user-${uid}`);
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Topic subscribe hatası:", err);
+      res.status(500).json({ error: "Topic subscription başarısız" });
+    }
+  });
+
+  // ── Vite / Static ──────────────────────────────────────
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static("dist"));
+    // SPA fallback
+    app.get("*", (_req, res) => res.sendFile("index.html", { root: "dist" }));
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server: http://localhost:${PORT}`);
+    console.log(`🔑 Gemini API: ${GEMINI_API_KEY ? "✅ Hazır" : "❌ GEMINI_API_KEY eksik!"}`);
+  });
+}
+
+startServer();

@@ -1,0 +1,8 @@
+{
+  "name": "CarSync Pro V2",
+  "description": "Profesyonel araç yönetimi, bakım takibi ve analiz uygulaması.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
