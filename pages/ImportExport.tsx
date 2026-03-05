@@ -159,15 +159,14 @@ export const TransferHistory: React.FC = () => {
                 </div>
             </div>
 
-            {/* Actions */}
             <div className="grid grid-cols-2 gap-4 mt-6">
                 <button
                     onClick={() => { navigator.clipboard.writeText(transferCode); toast.success(t('importExport.code_copied')); }}
-                    className="bg-slate-800 hover:bg-slate-700 border border-slate-700 py-4 rounded-xl font-semibold flex items-center justify-center space-x-2 transition active:scale-95 text-sm"
+                    className="btn-premium-3d !bg-slate-800 !shadow-slate-900/40 text-sm py-4"
                 >
                     <Copy size={18} /> <span>{t('importExport.copy_code')}</span>
                 </button>
-                <button className="bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-semibold flex items-center justify-center space-x-2 text-white shadow-lg shadow-blue-900/40 transition active:scale-95 text-sm">
+                <button className="btn-premium-3d bg-blue-600 !shadow-blue-900/40 text-sm py-4">
                     <Share2 size={18} /> <span>{t('importExport.share')}</span>
                 </button>
             </div>
@@ -269,7 +268,7 @@ export const ScanImport: React.FC = () => {
                     </div>
                     <button
                         onClick={() => setStatus('scanning')}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center space-x-2 active:scale-95 transition shadow-lg"
+                        className="btn-premium-3d w-full py-4 !bg-blue-600 !shadow-blue-900/40"
                     >
                         <Camera size={20} />
                         <span>{t('importExport.start_cam')}</span>
@@ -321,7 +320,7 @@ export const ScanImport: React.FC = () => {
                     </div>
                     <button
                         onClick={() => { setStatus('idle'); setShowManual(true); }}
-                        className="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl active:scale-95 transition"
+                        className="btn-premium-3d w-full py-4 !bg-blue-600 !shadow-blue-900/40"
                     >
                         {t('importExport.manual_btn')}
                     </button>
@@ -343,7 +342,7 @@ export const ScanImport: React.FC = () => {
                     <button
                         onClick={() => handleImport(scannedCode)}
                         disabled={importing}
-                        className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center space-x-2 active:scale-95 transition shadow-lg disabled:opacity-60"
+                        className="btn-premium-3d w-full py-4 !bg-green-600 !shadow-green-900/40 disabled:opacity-60"
                     >
                         {importing
                             ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>{t('importExport.importing')}</span></>
@@ -382,11 +381,11 @@ export const ScanImport: React.FC = () => {
                         <button
                             onClick={() => handleImport(manualCode)}
                             disabled={importing || manualCode.length < 9}
-                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white font-bold py-4 rounded-xl flex items-center justify-center space-x-2 transition active:scale-95 shadow-lg"
+                            className="btn-premium-3d w-full py-4 !bg-blue-600 !shadow-blue-900/40 disabled:opacity-40"
                         >
                             {importing
                                 ? <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /><span>{t('importExport.processing')}</span></>
-                                : <><ChevronRight size={20} /><span>Onayla ve İçe Aktar</span></>
+                                : <><ChevronRight size={20} /><span>{t('importExport.confirm_import_btn')}</span></>
                             }
                         </button>
                     </div>

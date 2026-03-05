@@ -264,7 +264,7 @@ export const Analytics: React.FC = () => {
 
     const handleDownload = () => {
         if (!isPremium) {
-            toast.warning('PDF raporlar Premium özelliği. Premium\'a geçmek için tıklayın.', { duration: 4000 });
+            toast.warning(t('analytics.pdf_premium_toast'), { duration: 4000 });
             navigate('/premium');
             return;
         }
@@ -323,7 +323,7 @@ export const Analytics: React.FC = () => {
 
     const handleSaleReport = () => {
         if (!isPremium) {
-            toast.warning('Satış raporu Premium özelliği.', { duration: 4000 });
+            toast.warning(t('analytics.sale_report_premium_toast'), { duration: 4000 });
             navigate('/premium');
             return;
         }
@@ -338,21 +338,21 @@ export const Analytics: React.FC = () => {
 
         doc.setFontSize(24);
         doc.setTextColor(255, 255, 255);
-        doc.text("ARAÇ SATIŞ RAPORU", 105, 20, { align: 'center' });
+        doc.text(t('analytics.sale_report').toUpperCase(), 105, 20, { align: 'center' });
 
         doc.setFontSize(10);
         doc.setTextColor(148, 163, 184); // Slate 400
-        doc.text("CarSync Pro Onaylı Ekspertiz Özeti", 105, 28, { align: 'center' });
+        doc.text(t('analytics.expert_summary'), 105, 28, { align: 'center' });
 
         // Vehicle Info
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(14);
-        doc.text("Araç Bilgileri", 14, 50);
+        doc.text(t('analytics.vehicle_info'), 14, 50);
 
         doc.setFontSize(10);
         doc.setTextColor(80, 80, 80);
         doc.text(`Marka/Model: ${vehicle.brand} ${vehicle.model}`, 14, 60);
-        doc.text(`Yıl: ${vehicle.year}`, 14, 66);
+        doc.text(`${t('analytics.year')}: ${vehicle.year}`, 14, 66);
         doc.text(`Plaka: ${vehicle.plate}`, 14, 72);
         doc.text(`Kilometre: ${vehicle.mileage.toLocaleString()} km`, 14, 78);
 
@@ -363,21 +363,21 @@ export const Analytics: React.FC = () => {
         doc.setFontSize(28);
         doc.text(`${vehicle.healthScore}`, 165, 68, { align: 'center' });
         doc.setFontSize(8);
-        doc.text("SAĞLIK PUANI", 165, 75, { align: 'center' });
+        doc.text(t('analytics.health_title'), 165, 75, { align: 'center' });
 
         // Service History
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(14);
-        doc.text("Servis Geçmişi Özeti", 14, 100);
+        doc.text(t('analytics.history_summary'), 14, 100);
 
         const vehicleLogs = logs.filter(l => l.vehicleId === vehicle.id).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         const totalSpent = vehicleLogs.reduce((acc, curr) => acc + curr.cost, 0);
         const lastService = vehicleLogs[0];
 
         doc.setFontSize(10);
-        doc.text(`Toplam Servis Harcaması: ${totalSpent.toLocaleString()} TL`, 14, 110);
-        doc.text(`Son İşlem: ${lastService ? `${lastService.type} (${lastService.date})` : 'Kayıt Yok'}`, 14, 116);
-        doc.text(`Toplam Kayıt Sayısı: ${vehicleLogs.length}`, 14, 122);
+        doc.text(`${t('analytics.total_spent')}: ${totalSpent.toLocaleString()} TL`, 14, 110);
+        doc.text(`${t('analytics.last_op')}: ${lastService ? `${lastService.type} (${lastService.date})` : t('analytics.no_record')}`, 14, 116);
+        doc.text(`${t('analytics.total_records')}: ${vehicleLogs.length}`, 14, 122);
 
         // Recent Services Table
         const tableRows = vehicleLogs.slice(0, 10).map(log => [
@@ -389,7 +389,7 @@ export const Analytics: React.FC = () => {
 
         autoTable(doc, {
             startY: 135,
-            head: [['Tarih', 'İşlem', 'Kilometre', 'Tutar']],
+            head: [[t('analytics.date_col'), t('analytics.op_col'), t('analytics.km_col'), t('analytics.cost_col')]],
             body: tableRows,
             theme: 'striped',
             headStyles: { fillColor: [59, 130, 246] },
@@ -399,15 +399,15 @@ export const Analytics: React.FC = () => {
         const pageHeight = doc.internal.pageSize.height;
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Rapor Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 14, pageHeight - 10);
-        doc.text("Bu rapor CarSync Pro uygulaması ile oluşturulmuştur.", 196, pageHeight - 10, { align: 'right' });
+        doc.text(`${t('analytics.report_date')}: ${new Date().toLocaleDateString('tr-TR')}`, 14, pageHeight - 10);
+        doc.text(t('analytics.report_footer'), 196, pageHeight - 10, { align: 'right' });
 
         doc.save(`satis_raporu_${vehicle.plate}.pdf`);
     };
 
     const toggleComparison = () => {
         if (!isPremium) {
-            toast.warning('Araç karşılaştırma Premium özelliği.', { duration: 4000 });
+            toast.warning(t('analytics.comparison_premium_toast'), { duration: 4000 });
             navigate('/premium');
             return;
         }
@@ -421,10 +421,11 @@ export const Analytics: React.FC = () => {
             if (type === 'logs') await exportLogsCsv();
             if (type === 'monthly') await exportMonthlySummaryCsv();
             if (type === 'backup') await exportFullBackupJson();
-            toast.success('Dışa aktarma tamamlandı!');
-        } catch (err) {
-            toast.error('Dışa aktarma başarısız. Tekrar deneyin.');
-        } finally {
+            toast.success(t('analytics.export_success'));
+        } catch (error) {
+            toast.error(t('analytics.export_error'));
+        }
+        finally {
             setExporting(false);
         }
     };
@@ -505,7 +506,7 @@ export const Analytics: React.FC = () => {
             {/* Comparison Chart */}
             <div className="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl">
                 <h3 className="text-sm font-bold mb-4 flex items-center">
-                    <Fuel size={18} className="mr-2 text-blue-500" /> Yakıt Tüketimi (L/100km)
+                    <Fuel size={18} className="mr-2 text-blue-500" /> {t('analytics.fuel_consumption_label')}
                 </h3>
                 <div className="h-48 w-full min-w-0">
                     <ResponsiveContainer width="100%" height="100%">
@@ -821,7 +822,7 @@ export const Analytics: React.FC = () => {
                                 </ResponsiveContainer>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-slate-500 text-xs">
-                                    Yeterli yakıt verisi yok.
+                                    {t('analytics.no_fuel_data')}
                                 </div>
                             )}
                         </div>
@@ -829,7 +830,7 @@ export const Analytics: React.FC = () => {
 
                     {/* Breakdown Chart */}
                     <div className="pt-2 animate-fadeIn">
-                        <h3 className="text-lg font-bold mb-4">Detaylı Dağılım</h3>
+                        <h3 className="text-lg font-bold mb-4">{t('analytics.detailed_distribution')}</h3>
                         <div className="bg-slate-800 rounded-xl p-5 border border-slate-700 relative">
                             <div className="h-64 w-full min-w-0">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -842,10 +843,10 @@ export const Analytics: React.FC = () => {
                                             cursor={{ fill: '#334155', opacity: 0.2 }}
                                         />
                                         <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '15px' }} iconType='circle' />
-                                        <Bar dataKey="fuel" stackId="a" fill="#3b82f6" name="Yakıt" radius={[0, 0, 0, 0]} />
-                                        <Bar dataKey="maintenance" stackId="a" fill="#f59e0b" name="Bakım" radius={[0, 0, 0, 0]} />
-                                        <Bar dataKey="insurance" stackId="a" fill="#8b5cf6" name="Sigorta" radius={[0, 0, 0, 0]} />
-                                        <Bar dataKey="other" stackId="a" fill="#64748b" name="Diğer" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="fuel" stackId="a" fill="#3b82f6" name={t('analytics.yakit')} radius={[0, 0, 0, 0]} />
+                                        <Bar dataKey="maintenance" stackId="a" fill="#f59e0b" name={t('analytics.bakim')} radius={[0, 0, 0, 0]} />
+                                        <Bar dataKey="insurance" stackId="a" fill="#8b5cf6" name={t('analytics.insurance')} radius={[0, 0, 0, 0]} />
+                                        <Bar dataKey="other" stackId="a" fill="#64748b" name={t('analytics.diger')} radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -859,7 +860,7 @@ export const Analytics: React.FC = () => {
                                 </div>
                                 <div>
                                     <div className="text-xs text-slate-400 mb-1 flex items-center">
-                                        <span className="w-2 h-2 rounded-full bg-slate-500 mr-2"></span> Ort. Aylık
+                                        <span className="w-2 h-2 rounded-full bg-slate-500 mr-2"></span> {t('analytics.average_monthly_cost')}
                                     </div>
                                     <div className="font-bold text-lg text-slate-300">₺{averageMonthlyCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
                                 </div>
@@ -874,15 +875,15 @@ export const Analytics: React.FC = () => {
                             <div className="bg-slate-800 p-1 rounded-lg flex space-x-1">
                                 <button
                                     onClick={() => setReportPeriod('monthly')}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${reportPeriod === 'monthly' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${reportPeriod === 'monthly' ? 'bg-slate-600 text-white shadow-sm scale-105' : 'text-slate-400 hover:text-slate-200'}`}
                                 >
-                                    Aylık
+                                    {t('analytics.monthly')}
                                 </button>
                                 <button
                                     onClick={() => setReportPeriod('yearly')}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${reportPeriod === 'yearly' ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${reportPeriod === 'yearly' ? 'bg-slate-600 text-white shadow-sm scale-105' : 'text-slate-400 hover:text-slate-200'}`}
                                 >
-                                    Yıllık
+                                    {t('analytics.yearly')}
                                 </button>
                             </div>
                         </div>
@@ -894,7 +895,7 @@ export const Analytics: React.FC = () => {
                             <div className="p-6">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">DÖNEM ÖZETİ</div>
+                                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t('analytics.report_summary')}</div>
                                         <h2 className="text-xl font-bold text-white">{reportData.title}</h2>
                                         <p className="text-slate-500 text-sm mt-1">{reportData.distance.toLocaleString()} km yol katedildi</p>
                                     </div>
@@ -909,7 +910,7 @@ export const Analytics: React.FC = () => {
                                         <div className="text-2xl font-bold text-white">₺{reportData.total.toLocaleString()}</div>
                                     </div>
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Km Başına Maliyet</div>
+                                        <div className="text-sm text-slate-400 mb-1">{t('analytics.cost_per_km')}</div>
                                         <div className="text-2xl font-bold text-white">₺{reportData.avgPerKm.toLocaleString()}</div>
                                     </div>
                                 </div>
@@ -933,15 +934,15 @@ export const Analytics: React.FC = () => {
 
                                 <button
                                     onClick={handleDownload}
-                                    className={`w-full font-medium py-4 rounded-xl flex items-center justify-center space-x-2 transition-all active:scale-95 group relative overflow-hidden ${!isPremium
-                                        ? 'bg-slate-800 border border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-500 hover:shadow-lg hover:shadow-amber-900/10'
-                                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/30'
+                                    className={`btn-premium-3d w-full py-4 !shadow-blue-900/30 group relative overflow-hidden ${!isPremium
+                                        ? '!bg-slate-800 border border-slate-700 !text-slate-400 hover:!border-amber-500/50 hover:!text-amber-500 !shadow-amber-900/10'
+                                        : '!bg-blue-600 !text-white'
                                         }`}
                                 >
                                     {!isPremium && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 animate-shimmer"></div>}
 
                                     {!isPremium ? <Lock size={18} className="text-amber-500 transition-transform group-hover:scale-110" /> : <Download size={18} />}
-                                    <span className="relative z-10">Raporu PDF Olarak İndir</span>
+                                    <span className="relative z-10">{t('analytics.download_pdf')}</span>
                                     {!isPremium && (
                                         <span className="relative z-10 text-[10px] font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white px-2 py-0.5 rounded ml-2 shadow-sm border border-amber-400/20">
                                             PRO
@@ -963,32 +964,32 @@ export const Analytics: React.FC = () => {
                                     <FileCheck size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-white">Satışa Hazır Raporu</h3>
-                                    <p className="text-slate-400 text-xs">Alıcılar için güven veren detaylı araç geçmişi</p>
+                                    <h3 className="text-lg font-bold text-white">{t('analytics.sale_report_title')}</h3>
+                                    <p className="text-slate-400 text-xs">{t('analytics.sale_report_desc')}</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                                    <div className="text-xs text-slate-500 mb-1">İçerik</div>
+                                    <div className="text-xs text-slate-500 mb-1">{t('analytics.content')}</div>
                                     <div className="text-sm font-medium text-slate-300">Servis Geçmişi & Bakımlar</div>
                                 </div>
                                 <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                                    <div className="text-xs text-slate-500 mb-1">Analiz</div>
+                                    <div className="text-xs text-slate-500 mb-1">{t('analytics.analysis')}</div>
                                     <div className="text-sm font-medium text-slate-300">Sağlık Puanı & Durum</div>
                                 </div>
                                 <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                                    <div className="text-xs text-slate-500 mb-1">Format</div>
+                                    <div className="text-xs text-slate-500 mb-1">{t('analytics.format')}</div>
                                     <div className="text-sm font-medium text-slate-300">Profesyonel PDF</div>
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleSaleReport}
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-900/20 transition-all active:scale-95 flex items-center justify-center space-x-2"
+                                className="btn-premium-3d w-full !bg-emerald-600 !shadow-emerald-900/40 text-white"
                             >
                                 <FileText size={18} />
-                                <span>Raporu Oluştur ve İndir</span>
+                                <span>{t('analytics.create_sale_report')}</span>
                                 {!isPremium && <Lock size={14} className="ml-2 text-emerald-200" />}
                             </button>
                         </div>

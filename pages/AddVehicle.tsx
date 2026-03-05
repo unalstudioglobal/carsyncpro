@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Car, Calendar, Hash, Gauge, Camera, Check, ChevronRight, AlertCircle, Save, LayoutGrid } from 'lucide-react';
 import { Vehicle } from '../types';
 import { addVehicle, updateVehicle } from '../services/firestoreService';
@@ -11,7 +12,9 @@ export const AddVehicle: React.FC = () => {
 
   // Check if we are in edit mode
   const editVehicle = location.state?.vehicle as Vehicle | undefined;
-  const isEditMode = !!editVehicle;
+  const { id } = useParams();
+  const { t } = useTranslation();
+  const isEditMode = !!id;
 
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -389,11 +392,11 @@ export const AddVehicle: React.FC = () => {
               key={status}
               onClick={() => setFormData({ ...formData, status: status as any })}
               className={`py-4 px-3 rounded-xl text-sm font-bold border transition active:scale-95 ${formData.status === status
-                  ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/50'
-                  : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/50'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
                 }`}
             >
-              {status}
+              {status === 'Sorun Yok' ? t('vehicle_status.no_issue') : status === 'Servis Gerekli' ? t('vehicle_status.service_required') : t('vehicle_status.urgent')}
             </button>
           ))}
         </div>
@@ -418,18 +421,18 @@ export const AddVehicle: React.FC = () => {
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-2">
-          {isEditMode ? 'Aracı Düzenle' : (
+          {isEditMode ? t('add_vehicle.edit_title') : (
             <>
-              {step === 1 && "Temel Bilgiler"}
-              {step === 2 && "Detaylar"}
-              {step === 3 && "Görünüm & Durum"}
+              {step === 1 && t('add_vehicle.step1_title')}
+              {step === 2 && t('add_vehicle.step2_title')}
+              {step === 3 && t('add_vehicle.step3_title')}
             </>
           )}
         </h1>
         <p className="text-slate-400 text-sm">
-          {step === 1 && "Aracınızın marka, model ve yılını girin."}
-          {step === 2 && "Plaka ve güncel kilometre bilgisini ekleyin."}
-          {step === 3 && "Bir fotoğraf ekleyin ve araç durumunu belirtin."}
+          {step === 1 && t('add_vehicle.step1_desc')}
+          {step === 2 && t('add_vehicle.step2_desc')}
+          {step === 3 && t('add_vehicle.step3_desc')}
         </p>
       </div>
 
@@ -443,13 +446,13 @@ export const AddVehicle: React.FC = () => {
         <button
           onClick={handleNext}
           disabled={isSaving}
-          className={`w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-5 rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-blue-900/40 transition active:scale-95 text-lg ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className={`btn-premium-3d w-full py-5 text-lg ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           {isSaving ? (
-            <span>Kaydediliyor...</span>
+            <span>{t('common.saving')}</span>
           ) : (
             <>
-              <span>{step === totalSteps ? (isEditMode ? 'Değişiklikleri Kaydet' : 'Tamamla') : 'Devam Et'}</span>
+              <span>{step === totalSteps ? (isEditMode ? t('common.save_changes') : t('common.complete')) : t('common.continue')}</span>
               {step !== totalSteps && <ChevronRight size={20} />}
               {step === totalSteps && (isEditMode ? <Save size={20} /> : <Check size={20} />)}
             </>

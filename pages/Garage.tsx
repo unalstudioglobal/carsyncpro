@@ -622,11 +622,11 @@ export const Garage: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => { navigator.clipboard.writeText(transferModal.code); toast.success(t('garage.copied')); }}
-                    className="bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-medium flex items-center justify-center space-x-2 transition active:scale-95 text-xs text-white"
+                    className="btn-premium-3d !p-3 !bg-slate-700 !shadow-slate-900/40 text-xs"
                   >
                     <Copy size={16} /> <span>{t('garage.copy_c').split(' ')[0]}</span>
                   </button>
-                  <button className="bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-medium flex items-center justify-center space-x-2 text-white shadow-lg shadow-blue-900/40 transition active:scale-95 text-xs">
+                  <button className="btn-premium-3d !p-3 !bg-blue-600 !shadow-blue-900/40 text-xs">
                     <Share2 size={16} /> <span>{t('garage.share_l').split(' ')[0]}</span>
                   </button>
                 </div>
@@ -650,13 +650,13 @@ export const Garage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setArchiveConfirmationId(null)}
-                  className="py-3.5 rounded-xl bg-slate-700 text-white font-medium hover:bg-slate-600 transition active:scale-95"
+                  className="btn-premium-3d !p-3.5 !bg-slate-700 !shadow-slate-900/40"
                 >
                   {t('garage.cancel')}
                 </button>
                 <button
                   onClick={handleArchiveConfirm}
-                  className="py-3.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-500 transition active:scale-95 shadow-lg shadow-blue-900/30"
+                  className="btn-premium-3d !p-3.5 !bg-red-600 !shadow-red-900/40"
                 >
                   {t('garage.archive')}
                 </button>

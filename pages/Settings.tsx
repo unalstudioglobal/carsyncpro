@@ -503,8 +503,8 @@ export const Settings: React.FC = () => {
                                 </div>
                                 <button
                                     onClick={() => handleRestoreVehicle(vehicle.id)}
-                                    className="p-3 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500/20 transition-all active:scale-95 flex flex-col items-center justify-center"
-                                    title="Geri Yükle"
+                                    className="btn-premium-3d !bg-blue-600/10 !shadow-blue-900/20 text-blue-500 py-3 px-4 min-w-[80px]"
+                                    title={t('settings.lbl_restore')}
                                 >
                                     <RefreshCcw size={20} />
                                     <span className="text-[10px] font-bold mt-1">{t('settings.lbl_restore')}</span>
@@ -570,10 +570,10 @@ export const Settings: React.FC = () => {
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => toast.info("Ödeme sağlayıcı paneli açılıyor...")}
+                                    onClick={() => toast.info(t('settings.payment_redirect'))}
                                     className="text-blue-500 text-xs font-bold px-3 py-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition"
                                 >
-                                    Değiştir
+                                    {t('common.change')}
                                 </button>
                             </div>
 
@@ -596,9 +596,9 @@ export const Settings: React.FC = () => {
                             <div className="pt-6">
                                 <button
                                     onClick={handleCancelSubscription}
-                                    className="w-full py-4 text-red-500 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition border border-transparent hover:border-red-200 dark:hover:border-red-900/30"
+                                    className="w-full py-4 text-red-500 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition border border-transparent hover:border-red-200 dark:hover:border-red-900/30 active:scale-95"
                                 >
-                                    Üyeliği İptal Et
+                                    {t('settings.sub_cancel_btn')}
                                 </button>
                                 <p className="text-[10px] text-slate-400 text-center mt-2 px-6">
                                     {t('settings.prem_cancel_desc')}
@@ -858,7 +858,7 @@ export const Settings: React.FC = () => {
                         <button
                             onClick={handleUpdatePassword}
                             disabled={isUpdatingPassword || !passwordForm.currentPassword || !passwordForm.newPassword}
-                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-3 rounded-xl transition active:scale-95 flex items-center justify-center space-x-2"
+                            className="btn-premium-3d w-full py-4 !bg-blue-600 !shadow-blue-900/40 disabled:opacity-50"
                         >
                             {isUpdatingPassword ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div> : <span>{t('settings.sec_update')}</span>}
                         </button>
@@ -905,7 +905,13 @@ export const Settings: React.FC = () => {
 
                 <div className="space-y-3 pt-6 border-t border-slate-700/50 mt-6">
                     <h2 className="text-xs font-bold text-red-500 uppercase tracking-wider ml-1">{t('settings.danger')}</h2>
-                    <button onClick={handleDataWipeRequest} className={`w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 p-5 rounded-xl border border-red-500/30 flex items-center justify-between group active:scale-95 transition`}><div className="flex items-center space-x-3"><Trash2 size={20} /><span className="font-medium">{t('settings.wipe')}</span></div><ChevronRight size={20} className="text-red-500/50" /></button>
+                    <button onClick={handleDataWipeRequest} className="btn-premium-3d w-full !bg-red-500/10 !shadow-none border border-red-500/30 !text-red-500 py-5 px-6">
+                        <div className="flex items-center space-x-3">
+                            <Trash2 size={20} />
+                            <span className="font-bold">{t('settings.wipe')}</span>
+                        </div>
+                        <ChevronRight size={20} className="text-red-500/50" />
+                    </button>
                 </div>
             </div>
         );
@@ -980,9 +986,9 @@ export const Settings: React.FC = () => {
 
                         <button
                             onClick={() => { setIsEditing(true); setTempUser(user); }}
-                            className="text-blue-500 dark:text-blue-400 text-sm font-medium hover:text-blue-600 dark:hover:text-blue-300 py-3 px-6 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-500/10 transition w-full"
+                            className="btn-premium-3d w-full py-4 !bg-blue-600/10 !shadow-blue-900/10 text-blue-500"
                         >
-                            Profili Düzenle
+                            {t('settings.edit_profile')}
                         </button>
                     </div>
                 ) : (
@@ -1239,7 +1245,7 @@ export const Settings: React.FC = () => {
                                 onClick={() => setShowWipeModal(false)}
                                 className="py-3.5 rounded-xl bg-slate-700 text-white font-medium hover:bg-slate-600 transition active:scale-95"
                             >
-                                İptal
+                                {t('common.cancel')}
                             </button>
                             <button
                                 onClick={confirmDataWipe}

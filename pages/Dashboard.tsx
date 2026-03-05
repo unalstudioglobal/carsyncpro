@@ -16,7 +16,7 @@ import { triggerConfetti } from '../services/confetti';
 interface DtcResult {
     code: string;
     meaning: string;
-    severity: 'Düşük' | 'Orta' | 'Yüksek' | 'Kritik';
+    severity: 'low' | 'medium' | 'high' | 'critical';
     causes: string[];
     solutions: string[];
 }
@@ -97,7 +97,7 @@ export const Dashboard: React.FC = () => {
         try {
             await updateVehicle(vehicle.id, { images: newImages });
         } catch (error) {
-            console.error("Resim yükleme hatası:", error);
+            console.error(t('dashboard.image_upload_error'), error);
             toast.error(t('dashboard.image_upload_error'));
         }
     };
@@ -406,7 +406,7 @@ export const Dashboard: React.FC = () => {
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <span className="text-xl font-black text-white animate-count">{animatedHealthScore}</span>
-                                <span className="text-[9px] text-white/50 font-bold uppercase tracking-wider -mt-0.5">sağlık</span>
+                                <span className="text-[9px] text-white/50 font-bold uppercase tracking-wider -mt-0.5">{t('common.health')}</span>
                             </div>
                         </div>
                     </div>
@@ -415,7 +415,8 @@ export const Dashboard: React.FC = () => {
                     <div className="flex gap-2">
                         <button
                             onClick={() => navigate('/add-record', { state: { serviceType: 'Yakıt Alımı', date: new Date().toISOString().split('T')[0] } })}
-                            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-blue-600/90 hover:bg-blue-500 backdrop-blur-sm border border-blue-400/30 text-white font-bold text-sm active:scale-95 transition shadow-lg shadow-blue-900/40"
+                            className="flex-1 btn-premium-3d !shadow-blue-900/40"
+                            style={{ padding: '12px 0' }}
                         >
                             <Fuel size={16} />{t('dashboard.add_fuel')}
                         </button>
@@ -427,7 +428,7 @@ export const Dashboard: React.FC = () => {
                         </button>
                         <button
                             onClick={() => navigate(`/chat/${vehicle.id}`)}
-                            className="w-14 flex items-center justify-center py-3 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 hover:opacity-90 border border-violet-400/30 active:scale-95 transition shadow-lg"
+                            className="w-14 btn-premium-3d bg-gradient-to-br from-violet-600 to-indigo-600 !shadow-indigo-900/40"
                         >
                             <MessageCircle size={18} className="text-white" fill="white" fillOpacity={0.15} />
                         </button>
@@ -638,7 +639,7 @@ export const Dashboard: React.FC = () => {
                                             </div>
                                             <div>
                                                 <div className="font-bold text-sm text-white capitalize">{t(`dashboard.widget_${widget.id}`)}</div>
-                                                <div className="text-[10px] text-slate-500 uppercase tracking-tight">{widget.enabled ? 'GÖRÜNÜR' : 'GİZLİ'}</div>
+                                                <div className="text-[10px] text-slate-500 uppercase tracking-tight">{widget.enabled ? t('common.visible') : t('common.hidden')}</div>
                                             </div>
                                         </div>
 
@@ -670,7 +671,7 @@ export const Dashboard: React.FC = () => {
                         <div className="bg-slate-800 rounded-3xl border border-slate-700 w-full max-w-sm shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
                             <div className="p-6 space-y-5">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-xl font-bold text-white">Bakım Randevusu</h3>
+                                    <h3 className="text-xl font-bold text-white">{t('dashboard.maintenance_appt')}</h3>
                                     <button onClick={() => setShowAppointmentModal(false)} className="p-2 bg-slate-700/50 rounded-full hover:bg-slate-700 text-slate-400 transition">
                                         <XCircle size={20} />
                                     </button>
@@ -684,17 +685,17 @@ export const Dashboard: React.FC = () => {
                                             onChange={(e) => setAppointmentForm({ ...appointmentForm, serviceType: e.target.value })}
                                             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition"
                                         >
-                                            <option value="Periyodik Bakım">Periyodik Bakım</option>
-                                            <option value="Yağ Değişimi">Yağ Değişimi</option>
-                                            <option value="Lastik Değişimi">Lastik Değişimi</option>
-                                            <option value="Fren Balatası">Fren Balatası</option>
-                                            <option value="Akü Kontrolü">Akü Kontrolü</option>
-                                            <option value="Genel Kontrol">Genel Kontrol</option>
+                                            <option value="Periyodik Bakım">{t('analytics.periodic_maintenance')}</option>
+                                            <option value="Yağ Değişimi">{t('analytics.oil_change')}</option>
+                                            <option value="Lastik Değişimi">{t('analytics.tire_change')}</option>
+                                            <option value="Fren Balatası">{t('analytics.brake_service')}</option>
+                                            <option value="Akü Kontrolü">{t('analytics.battery_check')}</option>
+                                            <option value="Genel Kontrol">{t('analytics.general_check')}</option>
                                         </select>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-400 ml-1">TARİH</label>
+                                        <label className="text-xs font-bold text-slate-400 ml-1">{t('common.date')}</label>
                                         <input
                                             type="date"
                                             value={appointmentForm.date}
@@ -705,12 +706,12 @@ export const Dashboard: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-400 ml-1">NOTLAR (OPSİYONEL)</label>
+                                        <label className="text-xs font-bold text-slate-400 ml-1">{t('common.notes_optional')}</label>
                                         <textarea
                                             value={appointmentForm.notes}
                                             onChange={(e) => setAppointmentForm({ ...appointmentForm, notes: e.target.value })}
                                             className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition h-24 resize-none"
-                                            placeholder="Eklemek istediğiniz notlar..."
+                                            placeholder={t('common.enter_notes')}
                                         />
                                     </div>
                                 </div>
@@ -718,9 +719,9 @@ export const Dashboard: React.FC = () => {
                                 <button
                                     onClick={handleAddAppointment}
                                     disabled={!appointmentForm.date}
-                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-900/40 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full btn-premium-3d py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Randevu Oluştur
+                                    {t('common.create_appt')}
                                 </button>
                             </div>
                         </div>
