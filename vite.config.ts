@@ -31,6 +31,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,   // Production'da source map yayınlama
+    chunkSizeWarningLimit: 1000, // Vercel chunk uyarı sınırını artırdık
     rollupOptions: {
       output: {
         manualChunks: {
