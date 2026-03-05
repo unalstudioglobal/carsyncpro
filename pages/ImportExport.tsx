@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Copy, Share2, Info, Camera, Zap, Image as ImageIcon, ChevronRight, RefreshCw, FileText, Fuel, ShieldCheck, Car } from 'lucide-react';
-import { QrScanner } from '@yudiel/react-qr-scanner';
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { fetchVehicles } from '../services/firestoreService';
 import { Vehicle } from '../types';
 import { toast } from '../services/toast';
@@ -286,29 +286,28 @@ export const ScanImport: React.FC = () => {
             {/* Scanner */}
             {status === 'scanning' && !showManual && (
                 <div className="absolute inset-0">
-                    <QrScanner
-                        onDecode={handleScan}
+                    <Scanner
+                        onScan={(results) => { if (results[0]) handleScan(results[0].rawValue); }}
                         onError={handleError}
-                        containerStyle={{ width: '100%', height: '100%' }}
-                        videoStyle={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        viewFinder={() => (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <p className="text-white font-bold text-lg mb-8 drop-shadow-lg">{t('importExport.scan_hint')}</p>
-                                <div className="relative w-64 h-64">
-                                    <div className="absolute inset-0 shadow-[0_0_0_9999px_rgba(0,0,0,0.65)] rounded-3xl" />
-                                    <div className="absolute inset-0 border-2 border-blue-400/60 rounded-3xl" />
-                                    {['top-0 left-0 border-t-4 border-l-4 rounded-tl-2xl', 'top-0 right-0 border-t-4 border-r-4 rounded-tr-2xl',
-                                        'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-2xl', 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-2xl'
-                                    ].map((cls, i) => (
-                                        <div key={i} className={`absolute w-8 h-8 border-blue-400 ${cls}`} />
-                                    ))}
-                                    <div className="absolute left-2 right-2 h-0.5 bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,0.9)] animate-[scan_2s_ease-in-out_infinite] rounded-full" />
-                                </div>
-                            </div>
-                        )}
+                        styles={{ container: { width: '100%', height: '100%' }, video: { width: '100%', height: '100%', objectFit: 'cover' } }}
+                        components={{ finder: false }}
                     />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <p className="text-white font-bold text-lg mb-8 drop-shadow-lg">{t('importExport.scan_hint')}</p>
+                        <div className="relative w-64 h-64">
+                            <div className="absolute inset-0 shadow-[0_0_0_9999px_rgba(0,0,0,0.65)] rounded-3xl" />
+                            <div className="absolute inset-0 border-2 border-blue-400/60 rounded-3xl" />
+                            {['top-0 left-0 border-t-4 border-l-4 rounded-tl-2xl', 'top-0 right-0 border-t-4 border-r-4 rounded-tr-2xl',
+                                'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-2xl', 'bottom-0 right-0 border-b-4 border-r-4 rounded-br-2xl'
+                            ].map((cls, i) => (
+                                <div key={i} className={`absolute w-8 h-8 border-blue-400 ${cls}`} />
+                            ))}
+                            <div className="absolute left-2 right-2 h-0.5 bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,0.9)] animate-[scan_2s_ease-in-out_infinite] rounded-full" />
+                        </div>
+                    </div>
                 </div>
             )}
+
 
             {/* Error */}
             {status === 'error' && (
