@@ -43,7 +43,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { path: '/analytics', icon: BarChart2, label: t('nav.analytics') },
     { path: '/logs', icon: FileText, label: t('nav.logs') },
     { path: '/documents', icon: FileStack, label: t('nav.documents') },
-    { path: '/theme', icon: Zap, label: t('nav.theme') },
   ];
 
   const isActive = (p: string) => p === '/' ? location.pathname === '/' : location.pathname.startsWith(p);
@@ -378,6 +377,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* ── Section: Tema ── */}
             <div style={{ marginTop: 24, paddingBottom: 20, animation: 'fadeSlideUp 0.4s 0.28s ease both', opacity: 0, animationFillMode: 'forwards' }}>
               <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => go('/theme')}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.028)',
+                    border: '1px solid rgba(255,255,255,0.065)',
+                    borderRadius: 18, padding: '16px 14px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    cursor: 'pointer', transition: 'all 0.22s',
+                  }}
+                >
+                  <Zap size={18} color="#06b6d4" />
+                  <span style={{ color: '#E8E6E0', fontSize: 13, fontWeight: 600 }}>{t('nav.theme')}</span>
+                </button>
                 <button
                   onClick={toggleDarkMode}
                   style={{
