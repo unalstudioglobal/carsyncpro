@@ -313,7 +313,7 @@ export const Garage: React.FC = () => {
             <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 24, height: 1, background: 'var(--gold)', opacity: 0.5 }} />
               <span style={{ color: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
-                {vehicles.length} araç
+                {vehicles.length} {t('nav.vehicle_management').toLowerCase().split(' ')[1]}
               </span>
             </div>
           </div>
@@ -429,7 +429,7 @@ export const Garage: React.FC = () => {
                   {/* Floating badge */}
                   <div className="absolute top-4 left-4 bg-gold/20 backdrop-blur-md border border-gold/30 rounded-full px-3 py-1 flex items-center gap-2">
                     <Crown size={12} className="text-gold" />
-                    <span className="text-[10px] font-bold text-gold uppercase tracking-tighter">ANA ARAÇ</span>
+                    <span className="text-[10px] font-bold text-gold uppercase tracking-tighter">{t('garage.main_vehicle')}</span>
                   </div>
 
                   <div className="absolute bottom-4 left-4">
@@ -472,8 +472,8 @@ export const Garage: React.FC = () => {
             {filteredVehicles.length > 1 && (
               <div className="flex flex-col gap-3">
                 <div className="flex justify-between items-center px-1">
-                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Diğer Araçlar</h3>
-                  <span className="text-[10px] text-slate-500 font-mono">{filteredVehicles.length - 1} Araç</span>
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t('garage.other_vehicles')}</h3>
+                  <span className="text-[10px] text-slate-500 font-mono">{filteredVehicles.length - 1} {t('nav.vehicle_management').toLowerCase().split(' ')[1]}</span>
                 </div>
 
                 <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 pt-1 px-1">
@@ -512,7 +512,7 @@ export const Garage: React.FC = () => {
                     className="min-w-[140px] rounded-3xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center gap-2 text-slate-600 hover:text-gold hover:border-gold/30 transition-all cursor-pointer"
                   >
                     <Plus size={32} />
-                    <span className="text-[10px] font-bold uppercase">Araç Ekle</span>
+                    <span className="text-[10px] font-bold uppercase">{t('garage.add_new_vehicle')}</span>
                   </div>
                 </div>
               </div>
@@ -548,21 +548,13 @@ export const Garage: React.FC = () => {
         {/* ── Add Vehicle CTA ─── */}
         <button
           onClick={handleAddVehicle}
-          style={{
-            width: '100%', padding: '22px', borderRadius: 24,
-            border: '1px dashed rgba(201,168,76,0.25)',
-            background: 'rgba(201,168,76,0.03)',
-            cursor: 'pointer', transition: 'all 0.2s',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-            position: 'relative', overflow: 'hidden',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)'; e.currentTarget.style.background = 'rgba(201,168,76,0.07)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.25)'; e.currentTarget.style.background = 'rgba(201,168,76,0.03)'; }}
+          className="btn-premium-3d w-full"
+          style={{ padding: '22px' }}
         >
-          <div style={{ width: 36, height: 36, borderRadius: 12, background: 'var(--gold-dim)', border: '1px solid var(--border-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Plus size={18} color="var(--gold)" />
+          <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)' }}>
+            <Plus size={18} color="white" />
           </div>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, letterSpacing: 1, color: 'var(--gold)', opacity: 0.8 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: 1.5, textTransform: 'uppercase' }}>
             {t('garage.add_new_vehicle')}
           </span>
           {!isPremium && vehicles.length >= FREE_VEHICLE_LIMIT && (
@@ -593,8 +585,8 @@ export const Garage: React.FC = () => {
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-xl font-bold text-white">Geçmişi Aktar</h3>
-                    <p className="text-slate-400 text-xs mt-1">Bu kodu yeni araç sahibine gösterin.</p>
+                    <h3 className="text-xl font-bold text-white">{t('garage.transfer_history')}</h3>
+                    <p className="text-slate-400 text-xs mt-1">{t('garage.transfer_desc')}</p>
                   </div>
                   <button onClick={() => setTransferModal(null)} className="p-2 bg-slate-700/50 rounded-full hover:bg-slate-700 text-slate-400 transition">
                     <X size={18} />
@@ -629,13 +621,13 @@ export const Garage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => { navigator.clipboard.writeText(transferModal.code); toast.success('Kod kopyalandı!'); }}
+                    onClick={() => { navigator.clipboard.writeText(transferModal.code); toast.success(t('garage.copied')); }}
                     className="bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-medium flex items-center justify-center space-x-2 transition active:scale-95 text-xs text-white"
                   >
-                    <Copy size={16} /> <span>Kopyala</span>
+                    <Copy size={16} /> <span>{t('garage.copy_c').split(' ')[0]}</span>
                   </button>
                   <button className="bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-medium flex items-center justify-center space-x-2 text-white shadow-lg shadow-blue-900/40 transition active:scale-95 text-xs">
-                    <Share2 size={16} /> <span>Paylaş</span>
+                    <Share2 size={16} /> <span>{t('garage.share_l').split(' ')[0]}</span>
                   </button>
                 </div>
               </div>
@@ -651,22 +643,22 @@ export const Garage: React.FC = () => {
               <div className="w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center mb-5 mx-auto text-amber-500 border border-amber-500/20">
                 <Archive size={28} />
               </div>
-              <h3 className="text-xl font-bold text-center mb-2">Aracı Arşivle?</h3>
+              <h3 className="text-xl font-bold text-center mb-2">{t('garage.archive_confirm_title')}</h3>
               <p className="text-slate-400 text-center text-sm mb-8 leading-relaxed px-2">
-                <span className="font-bold text-white">{vehicleToArchive.model}</span> aracını ana listenizden kaldırmak üzeresiniz. Geçmiş kayıtlara "Ayarlar" menüsünden erişmeye devam edebilirsiniz.
+                {t('garage.archive_confirm_desc', { model: vehicleToArchive.model })}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setArchiveConfirmationId(null)}
                   className="py-3.5 rounded-xl bg-slate-700 text-white font-medium hover:bg-slate-600 transition active:scale-95"
                 >
-                  İptal
+                  {t('garage.cancel')}
                 </button>
                 <button
                   onClick={handleArchiveConfirm}
                   className="py-3.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-500 transition active:scale-95 shadow-lg shadow-blue-900/30"
                 >
-                  Arşivle
+                  {t('garage.archive')}
                 </button>
               </div>
             </div>
