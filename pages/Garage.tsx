@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { usePremium } from '../context/PremiumContext';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, Settings, MoreVertical, Edit2, Archive, Tag, Wallet, CheckCircle, AlertTriangle, AlertCircle, Search, X, Filter, Car, LayoutGrid, PlusCircle, ChevronRight, QrCode, Copy, RefreshCw, Share2, Calendar, Crown, Trash2, Plus, LayoutDashboard, Scan } from 'lucide-react';
+import { Bell, Settings, MoreVertical, Edit2, Archive, Tag, Wallet, CheckCircle, AlertTriangle, AlertCircle, Search, X, Filter, Car, LayoutGrid, PlusCircle, ChevronRight, QrCode, Copy, RefreshCw, Share2, Calendar, Crown, Trash2, Plus, LayoutDashboard, Scan, Activity } from 'lucide-react';
 import { OnboardingGuide } from '../components/OnboardingGuide';
+import { EmptyState } from '../components/EmptyState';
 import { Vehicle } from '../types';
 import { AdBanner } from '../components/AdBanner';
 import { toast } from '../services/toast';
@@ -404,272 +405,145 @@ export const Garage: React.FC = () => {
           </div>
         ))}
 
-        {/* Vehicles */}
-        {!vehiclesLoading && filteredVehicles.length > 0 && filteredVehicles.map((vehicle, idx) => {
-          const totalCost = calculateTotalCost(vehicle.id);
-          const sm = getStatusMeta(vehicle.status);
-          const isUrgent = vehicle.status === 'Acil';
-          const isWarning = vehicle.status === 'Servis Gerekli';
-          const isSold = vehicle.status === 'Satıldı';
+        {/* Vehicles Layout: Hero + Horizontal Others */}
+        {!vehiclesLoading && filteredVehicles.length > 0 && (
+          <div className="flex flex-col gap-6">
+            {/* 1. HERO VEHICLE (First one or explicitly main) */}
+            <div className="perspective-1000 group">
+              <div
+                onClick={() => navigate(`/dashboard/${filteredVehicles[0].id}`)}
+                className={`card-premium shimmer-card animate-fadeUp relative transition-all duration-500 card-inner cursor-pointer hover:shadow-2xl hover:shadow-gold/10`}
+                style={{ animationDelay: '0.05s', minHeight: 380 }}
+              >
+                {/* Hero Specific Content (Larger image, more details) */}
+                <div style={{ height: 260, position: 'relative', overflow: 'hidden', borderRadius: '24px 24px 0 0' }}>
+                  {filteredVehicles[0].image ? (
+                    <img src={filteredVehicles[0].image} alt={filteredVehicles[0].model} style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="group-hover:scale-105 transition-transform duration-700" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                      <Car size={64} color="var(--bg-surface)" strokeWidth={1} />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
 
-          return (
-            <div
-              key={vehicle.id}
-              className={`card-premium shimmer-card animate-fadeUp ${sm.cardClass}`}
-              style={{ animationDelay: `${idx * 0.07}s` }}
-            >
-              {/* Context Menu */}
-              {activeMenuId === vehicle.id && (
-                <div
-                  className="animate-fadeIn"
-                  style={{ position: 'absolute', inset: 0, background: 'rgba(5,5,8,0.88)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', borderRadius: 24 }}
-                  onClick={() => setActiveMenuId(null)}
-                >
-                  <div style={{ background: 'var(--bg-raised)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 20, overflow: 'hidden', width: 260 }} onClick={e => e.stopPropagation()}>
-                    {[
-                      { label: t('garage.edit_details'), icon: Edit2, action: () => handleEditVehicle(vehicle), color: '#6366f1' },
-                      { label: t('garage.transfer_history'), icon: QrCode, action: () => handleOpenTransfer(vehicle), color: '#a855f7' },
-                      { label: t('garage.mark_sold'), icon: Tag, action: () => handleSellVehicle(vehicle.id), color: '#f59e0b' },
-                    ].map(({ label, icon: Icon, action, color }) => (
-                      <button
-                        key={label}
-                        onClick={action}
-                        style={{ width: '100%', textAlign: 'left', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-body)' }}
-                      >
-                        <span style={{ display: 'flex', flexGrow: 1 }}>{label}</span>
-                        <Icon size={16} color={color} />
-                      </button>
-                    ))}
-                    <button onClick={() => setActiveMenuId(null)} style={{ width: '100%', padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-body)' }}>{t('garage.close')}</button>
+                  {/* Floating badge */}
+                  <div className="absolute top-4 left-4 bg-gold/20 backdrop-blur-md border border-gold/30 rounded-full px-3 py-1 flex items-center gap-2">
+                    <Crown size={12} className="text-gold" />
+                    <span className="text-[10px] font-bold text-gold uppercase tracking-tighter">ANA ARAÇ</span>
+                  </div>
+
+                  <div className="absolute bottom-4 left-4">
+                    <div className="tr-plate">{filteredVehicles[0].plate}</div>
                   </div>
                 </div>
-              )
-              }
 
-              {/* ── Image ── */}
-              < div style={{ height: 200, position: 'relative', overflow: 'hidden', borderRadius: '24px 24px 0 0' }}>
-                {vehicle.image ? (
-                  <img src={vehicle.image} alt={vehicle.model} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isSold ? 'grayscale(1) brightness(0.5)' : 'none', transition: 'transform 0.6s ease', transform: 'scale(1.02)' }} />
-                ) : (
-                  <div style={{ width: '100%', height: '100%', background: 'var(--bg-raised)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Car size={52} color="var(--bg-surface)" strokeWidth={1} />
-                  </div>
-                )}
-
-                {/* Gradient overlay */}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(5,5,8,0) 40%, rgba(5,5,8,0.7) 80%, rgba(5,5,8,0.95) 100%)' }} />
-
-                {/* SATILDI stamp */}
-                {isSold && (
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, letterSpacing: 4, color: 'white', border: '2px solid rgba(255,255,255,0.4)', padding: '6px 18px', borderRadius: 6, transform: 'rotate(-12deg)', background: 'rgba(5,5,8,0.7)', backdropFilter: 'blur(4px)' }}>
-                      {t('garage.sold_stamp')}
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 className="text-3xl font-display font-black text-white leading-none mb-1">
+                        {filteredVehicles[0].brand.toUpperCase()}
+                      </h2>
+                      <p className="text-gold font-bold text-lg">{filteredVehicles[0].model}</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Activity size={14} className="text-green-400" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SAĞLIK SKORU</span>
+                      </div>
+                      <span className="text-3xl font-mono font-black text-white">{filteredVehicles[0].healthScore}</span>
                     </div>
                   </div>
-                )}
 
-                {/* Top overlay row */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  {/* Status badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(5,5,8,0.7)', border: `1px solid ${sm.labelColor}30`, borderRadius: 100, padding: '5px 10px 5px 8px', backdropFilter: 'blur(12px)' }}>
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: sm.dot, boxShadow: `0 0 6px ${sm.dot}`, animation: isUrgent ? 'goldPulse 1s ease-in-out infinite' : 'none' }} />
-                    <span style={{ color: sm.labelColor, fontSize: 10, fontWeight: 800, letterSpacing: 0.8 }}>{sm.label}</span>
-                  </div>
-
-                  {/* Menu btn */}
-                  <button
-                    onClick={e => { e.stopPropagation(); setActiveMenuId(vehicle.id); }}
-                    style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(5,5,8,0.6)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(12px)', color: 'white' }}
-                  >
-                    <MoreVertical size={15} />
-                  </button>
-                </div>
-
-                {/* Bottom plate overlay */}
-                <div style={{ position: 'absolute', bottom: 14, left: 14 }}>
-                  <div className="tr-plate">
-                    <div className="tr-plate-flag">
-                      <span>★</span>
-                      <span>TR</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">Kilometre</p>
+                      <p className="text-lg font-mono font-bold text-white">{filteredVehicles[0].mileage.toLocaleString()} km</p>
                     </div>
-                    {vehicle.plate}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">Bakım Durumu</p>
+                      <p className="text-lg font-bold text-green-400">SORUN YOK</p>
+                    </div>
                   </div>
-                </div>
-
-                {/* Health arc (top right on image) */}
-                <div style={{ position: 'absolute', bottom: 10, right: 14 }}>
-                  <svg width="44" height="44" viewBox="0 0 44 44">
-                    <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
-                    <circle
-                      cx="22" cy="22" r="18"
-                      fill="none"
-                      stroke={vehicle.healthScore >= 80 ? 'var(--green)' : vehicle.healthScore >= 50 ? 'var(--amber)' : 'var(--red)'}
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray={`${(vehicle.healthScore / 100) * 113} 113`}
-                      transform="rotate(-90 22 22)"
-                      style={{ transition: 'stroke-dasharray 0.8s ease' }}
-                    />
-                    <text x="22" y="26" textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: 'white', fontFamily: 'var(--font-mono)' }}>
-                      {vehicle.healthScore}
-                    </text>
-                  </svg>
                 </div>
               </div>
+            </div>
 
-              {/* ── Content ── */}
-              <div style={{ padding: '16px 18px 18px', position: 'relative' }}>
-                {/* Name row */}
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, letterSpacing: 0.5, color: isSold ? 'var(--text-muted)' : 'var(--text-primary)', margin: 0, lineHeight: 1 }}>
-                      {vehicle.brand.toUpperCase()}
-                    </h2>
-                    <span style={{ color: 'var(--gold)', fontSize: 15, fontWeight: 700 }}>{vehicle.model}</span>
-                    <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, padding: '2px 6px' }}>
-                      {vehicle.year}
-                    </span>
-                  </div>
-                  {vehicle.lastLogDate && (
-                    <p style={{ color: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
-                      {t('garage.last_log')}: {vehicle.lastLogDate}
-                    </p>
-                  )}
+            {/* 2. OTHERS (Horizontal Scroll) */}
+            {filteredVehicles.length > 1 && (
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center px-1">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Diğer Araçlar</h3>
+                  <span className="text-[10px] text-slate-500 font-mono">{filteredVehicles.length - 1} Araç</span>
                 </div>
 
-                {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                  {[
-                    { label: t('garage.mileage'), value: `${vehicle.mileage.toLocaleString('tr-TR')} km`, color: 'var(--text-primary)' },
-                    { label: t('garage.cost'), value: `₺${totalCost.toLocaleString('tr-TR')}`, color: '#00E878' },
-                  ].map(({ label, value, color }) => (
-                    <div key={label} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 14, padding: '12px 14px' }}>
-                      <p style={{ color: 'var(--text-muted)', fontSize: 8.5, fontWeight: 700, letterSpacing: 1.2, fontFamily: 'var(--font-mono)', marginBottom: 6, textTransform: 'uppercase' }}>
-                        {label}
-                      </p>
-                      <p style={{ color, fontSize: 15, fontWeight: 800, fontFamily: 'var(--font-mono)', letterSpacing: -0.5 }}>
-                        {value}
-                      </p>
+                <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 pt-1 px-1">
+                  {filteredVehicles.slice(1).map((vehicle, idx) => (
+                    <div
+                      key={vehicle.id}
+                      onClick={() => navigate(`/dashboard/${vehicle.id}`)}
+                      className="min-w-[280px] bg-slate-800 rounded-3xl border border-white/5 overflow-hidden animate-fadeRight active:scale-95 transition-all cursor-pointer group hover:border-gold/30 shadow-lg"
+                      style={{ animationDelay: `${idx * 0.1}s` }}
+                    >
+                      <div className="h-32 relative">
+                        {vehicle.image ? (
+                          <img src={vehicle.image} alt={vehicle.model} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        ) : (
+                          <div className="w-full h-full bg-slate-900 flex items-center justify-center"><Car size={32} className="text-slate-700" /></div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
+                        <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                          <span className="text-xs font-black text-white uppercase">{vehicle.brand}</span>
+                          <span className="text-xs font-bold text-gold">{vehicle.model}</span>
+                        </div>
+                      </div>
+                      <div className="p-4 flex justify-between items-center bg-slate-800/50 backdrop-blur-sm">
+                        <div className="text-[10px] font-mono font-bold text-slate-400">{vehicle.plate}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                          <span className="text-[11px] font-bold text-white">%{vehicle.healthScore}</span>
+                        </div>
+                      </div>
                     </div>
                   ))}
-                </div>
 
-                {/* Damage Detection Summary */}
-                {vehicle.damageReport && (
+                  {/* Add Shortcut in scroller */}
                   <div
-                    onClick={() => navigate(`/damage-detection?vehicleId=${vehicle.id}`)}
-                    style={{
-                      background: vehicle.damageReport.severity === 'Critical' ? 'rgba(255, 59, 59, 0.1)' : 'rgba(255,255,255,0.025)',
-                      border: `1px solid ${vehicle.damageReport.severity === 'Critical' ? 'rgba(255, 59, 59, 0.3)' : 'rgba(255,255,255,0.05)'}`,
-                      borderRadius: 14,
-                      padding: '12px 14px',
-                      marginBottom: 14,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      transition: 'all 0.2s'
-                    }}
-                    className="hover:bg-white/5"
+                    onClick={handleAddVehicle}
+                    className="min-w-[140px] rounded-3xl border-2 border-dashed border-white/5 flex flex-col items-center justify-center gap-2 text-slate-600 hover:text-gold hover:border-gold/30 transition-all cursor-pointer"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ position: 'relative', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="32" height="32" viewBox="0 0 32 32" style={{ position: 'absolute', inset: 0 }}>
-                          <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="2" />
-                          <circle
-                            cx="16" cy="16" r="14"
-                            fill="none"
-                            stroke={vehicle.damageReport.severity === 'Critical' ? 'var(--red)' : vehicle.damageReport.severity === 'Moderate' ? 'var(--amber)' : 'var(--green)'}
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeDasharray="87.96"
-                            strokeDashoffset={vehicle.damageReport.severity === 'Critical' ? '20' : vehicle.damageReport.severity === 'Moderate' ? '40' : '60'}
-                            transform="rotate(-90 16 16)"
-                          />
-                        </svg>
-                        <Scan size={14} color={vehicle.damageReport.severity === 'Critical' ? 'var(--red)' : vehicle.damageReport.severity === 'Moderate' ? 'var(--amber)' : 'var(--green)'} />
-                      </div>
-                      <div>
-                        <p style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-body)' }}>
-                          AI Hasar Tespiti
-                        </p>
-                        <p style={{ color: vehicle.damageReport.severity === 'Critical' ? 'var(--red)' : 'var(--text-muted)', fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-body)' }}>
-                          {vehicle.damageReport.severity === 'Critical' ? 'Kritik Hasar' : vehicle.damageReport.severity === 'Moderate' ? 'Orta Seviye' : 'Hafif Hasar'}
-                        </p>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ color: 'var(--text-muted)', fontSize: 9, fontWeight: 700, letterSpacing: 0.5, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
-                        {t('garage.estimated')}
-                      </p>
-                      <p style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
-                        ₺{vehicle.damageReport.cost.toLocaleString('tr-TR')}
-                      </p>
-                    </div>
+                    <Plus size={32} />
+                    <span className="text-[10px] font-bold uppercase">Araç Ekle</span>
                   </div>
-                )}
-
-                {/* Action buttons */}
-                {!isSold ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                    {[
-                      { label: t('garage.details'), icon: LayoutDashboard, action: () => navigate(`/dashboard/${vehicle.id}`), accent: '#6366f1' },
-                      { label: t('garage.add_record'), icon: Plus, action: () => navigate('/add-record', { state: { vehicleId: vehicle.id } }), accent: '#00E878' },
-                      { label: t('garage.delete'), icon: Trash2, action: () => setArchiveConfirmationId(vehicle.id), accent: '#FF3B3B' },
-                    ].map(({ label, icon: Icon, action, accent }) => (
-                      <button
-                        key={label}
-                        onClick={action}
-                        style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                          padding: '11px 8px', borderRadius: 14,
-                          background: `${accent}0D`,
-                          border: `1px solid ${accent}20`,
-                          cursor: 'pointer', transition: 'all 0.2s',
-                          fontFamily: 'var(--font-body)',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = `${accent}18`; e.currentTarget.style.borderColor = `${accent}40`; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = `${accent}0D`; e.currentTarget.style.borderColor = `${accent}20`; }}
-                      >
-                        <Icon size={16} color={accent} />
-                        <span style={{ color: accent, fontSize: 10, fontWeight: 700 }}>{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => navigate(`/dashboard/${vehicle.id}`)}
-                    style={{ width: '100%', padding: '13px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                  >
-                    {t('garage.view_sold_vehicle')} <ChevronRight size={14} />
-                  </button>
-                )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            )}
+          </div>
+        )}
 
         {/* Empty state */}
-        {
-          !vehiclesLoading && filteredVehicles.length === 0 && (
-            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-              <div style={{ width: 80, height: 80, borderRadius: 24, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <Car size={36} color="var(--bg-surface)" strokeWidth={1} />
-              </div>
-              <h3 style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-display)', fontSize: 22, letterSpacing: 1, marginBottom: 8 }}>
-                {searchQuery ? t('garage.no_vehicle_found') : t('garage.garage_empty')}
-              </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: 13, maxWidth: 220, margin: '0 auto 24px', lineHeight: 1.6 }}>
-                {searchQuery ? t('garage.search_no_match') : t('garage.no_vehicle_yet')}
-              </p>
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} style={{ color: 'var(--gold)', fontSize: 13, fontWeight: 700, background: 'var(--gold-dim)', border: '1px solid var(--border-gold)', borderRadius: 12, padding: '10px 20px', cursor: 'pointer' }}>
-                  {t('garage.clear_search')}
-                </button>
-              )}
-            </div>
-          )
-        }
+        {!vehiclesLoading && filteredVehicles.length === 0 && (
+          <div className="py-8 animate-fadeIn">
+            {searchQuery ? (
+              <EmptyState
+                icon={Search}
+                title={t('garage.no_vehicle_found')}
+                description={t('garage.search_no_match')}
+                actionLabel={t('garage.clear_search')}
+                onAction={() => setSearchQuery('')}
+                accentColor="#94a3b8"
+              />
+            ) : (
+              <EmptyState
+                icon={Car}
+                title={t('garage.garage_empty')}
+                description={t('garage.no_vehicle_yet')}
+                actionLabel={t('garage.add_new_vehicle')}
+                onAction={handleAddVehicle}
+                accentColor="#c9a84c"
+              />
+            )}
+          </div>
+        )}
 
         {/* ── Add Vehicle CTA ─── */}
         <button

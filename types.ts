@@ -86,3 +86,9 @@ export interface TireSet {
   installationDate?: string;
   storageLocation?: string; // e.g., "Basement", "Tire Hotel X"
 }
+
+export interface WidgetConfig {
+  id: string;
+  enabled: boolean;
+  order: number;
+}

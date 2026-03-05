@@ -517,8 +517,8 @@ export const Analytics: React.FC = () => {
                                 cursor={{ fill: '#334155', opacity: 0.2 }}
                             />
                             <Legend iconType="circle" wrapperStyle={{ paddingTop: '10px' }} />
-                            <Bar name={v1.model} dataKey="v1" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                            <Bar name={v2.model} dataKey="v2" fill="#10b981" radius={[4, 4, 0, 0]} />
+                            <Bar name={v1.model} dataKey="v1" fill="#3b82f6" radius={[4, 4, 0, 0]} animationDuration={1500} animationBegin={0} />
+                            <Bar name={v2.model} dataKey="v2" fill="#10b981" radius={[4, 4, 0, 0]} animationDuration={1500} animationBegin={300} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
@@ -733,10 +733,10 @@ export const Analytics: React.FC = () => {
                                         cursor={{ stroke: '#94a3b8', strokeWidth: 1, strokeDasharray: '4 4' }}
                                     />
 
-                                    <Area type="monotone" name={t('analytics.other')} dataKey="other" stackId="1" stroke="#64748b" fill="url(#colorOther)" strokeWidth={2} />
-                                    <Area type="monotone" name={t('analytics.insurance')} dataKey="insurance" stackId="1" stroke="#8b5cf6" fill="url(#colorIns)" strokeWidth={2} />
-                                    <Area type="monotone" name={t('analytics.maintenance')} dataKey="maintenance" stackId="1" stroke="#f59e0b" fill="url(#colorMaint)" strokeWidth={2} />
-                                    <Area type="monotone" name={t('analytics.fuel')} dataKey="fuel" stackId="1" stroke="#3b82f6" fill="url(#colorFuel)" strokeWidth={2} />
+                                    <Area type="monotone" name={t('analytics.other')} dataKey="other" stackId="1" stroke="#64748b" fill="url(#colorOther)" strokeWidth={2} animationDuration={1800} animationBegin={300} animationEasing="ease-in-out" />
+                                    <Area type="monotone" name={t('analytics.insurance')} dataKey="insurance" stackId="1" stroke="#8b5cf6" fill="url(#colorIns)" strokeWidth={2} animationDuration={1600} animationBegin={200} animationEasing="ease-in-out" />
+                                    <Area type="monotone" name={t('analytics.maintenance')} dataKey="maintenance" stackId="1" stroke="#f59e0b" fill="url(#colorMaint)" strokeWidth={2} animationDuration={1400} animationBegin={100} animationEasing="ease-in-out" />
+                                    <Area type="monotone" name={t('analytics.fuel')} dataKey="fuel" stackId="1" stroke="#3b82f6" fill="url(#colorFuel)" strokeWidth={2} animationDuration={1200} animationBegin={0} animationEasing="ease-in-out" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>

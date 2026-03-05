@@ -1,27 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  FileText, Search, X, Fuel, Wrench, Droplet, Disc, Battery, 
-  ClipboardCheck, Sparkles, RotateCw, ChevronRight, Trash2, 
+import {
+  FileText, Search, X, Fuel, Wrench, Droplet, Disc, Battery,
+  ClipboardCheck, Sparkles, RotateCw, ChevronRight, Trash2,
   Plus, Filter, Car, TrendingDown, Wallet, Calendar
 } from 'lucide-react';
 import { fetchVehicles, fetchLogs, deleteLog } from '../services/firestoreService';
 import { Vehicle, ServiceLog } from '../types';
 import { toast } from '../services/toast';
+import { EmptyState } from '../components/EmptyState';
+import { SwipeableItem } from '../components/SwipeableItem';
 
 // ─── İkon & Renk Yardımcıları ───────────────────────────────────────────────
 
 const SERVICE_META: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  'Yakıt Alımı':      { icon: Fuel,          color: 'text-green-400',  bg: 'bg-green-500/15'  },
-  'Yağ Değişimi':     { icon: Droplet,        color: 'text-amber-400',  bg: 'bg-amber-500/15'  },
-  'Periyodik Bakım':  { icon: Wrench,         color: 'text-blue-400',   bg: 'bg-blue-500/15'   },
-  'Lastik Değişimi':  { icon: Disc,           color: 'text-purple-400', bg: 'bg-purple-500/15' },
-  'Lastik Rotasyonu': { icon: RotateCw,       color: 'text-indigo-400', bg: 'bg-indigo-500/15' },
-  'Fren Servisi':     { icon: Wrench,         color: 'text-red-400',    bg: 'bg-red-500/15'    },
-  'Akü Değişimi':     { icon: Battery,        color: 'text-yellow-400', bg: 'bg-yellow-500/15' },
-  'Muayene':          { icon: ClipboardCheck, color: 'text-teal-400',   bg: 'bg-teal-500/15'   },
-  'Yıkama & Detay':   { icon: Sparkles,       color: 'text-cyan-400',   bg: 'bg-cyan-500/15'   },
+  'Yakıt Alımı': { icon: Fuel, color: 'text-green-400', bg: 'bg-green-500/15' },
+  'Yağ Değişimi': { icon: Droplet, color: 'text-amber-400', bg: 'bg-amber-500/15' },
+  'Periyodik Bakım': { icon: Wrench, color: 'text-blue-400', bg: 'bg-blue-500/15' },
+  'Lastik Değişimi': { icon: Disc, color: 'text-purple-400', bg: 'bg-purple-500/15' },
+  'Lastik Rotasyonu': { icon: RotateCw, color: 'text-indigo-400', bg: 'bg-indigo-500/15' },
+  'Fren Servisi': { icon: Wrench, color: 'text-red-400', bg: 'bg-red-500/15' },
+  'Akü Değişimi': { icon: Battery, color: 'text-yellow-400', bg: 'bg-yellow-500/15' },
+  'Muayene': { icon: ClipboardCheck, color: 'text-teal-400', bg: 'bg-teal-500/15' },
+  'Yıkama & Detay': { icon: Sparkles, color: 'text-cyan-400', bg: 'bg-cyan-500/15' },
 };
 
 const getMeta = (type: string) =>
@@ -59,12 +61,12 @@ export const Logs: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const [vehicles, setVehicles]   = useState<Vehicle[]>([]);
-  const [logs, setLogs]           = useState<ServiceLog[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [logs, setLogs] = useState<ServiceLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('all');
-  const [selectedType, setSelectedType]           = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Veriyi Firestore'dan çek
@@ -113,7 +115,7 @@ export const Logs: React.FC = () => {
   // Özet istatistikler (filtrelenmiş veriden)
   const stats = useMemo(() => {
     const total = filtered.reduce((s, l) => s + (l.cost || 0), 0);
-    const fuel  = filtered.filter(l => l.type === 'Yakıt Alımı').reduce((s, l) => s + (l.cost || 0), 0);
+    const fuel = filtered.filter(l => l.type === 'Yakıt Alımı').reduce((s, l) => s + (l.cost || 0), 0);
     return { total, fuel, count: filtered.length };
   }, [filtered]);
 
@@ -148,7 +150,7 @@ export const Logs: React.FC = () => {
         <div className="h-8 bg-slate-800 rounded-xl w-40 animate-pulse" />
         <div className="h-12 bg-slate-800 rounded-2xl animate-pulse" />
         <div className="space-y-3">
-          {[1,2,3,4].map(i => (
+          {[1, 2, 3, 4].map(i => (
             <div key={i} className="h-20 bg-slate-800 rounded-2xl animate-pulse" />
           ))}
         </div>
@@ -220,11 +222,10 @@ export const Logs: React.FC = () => {
           <div className="flex space-x-2 overflow-x-auto hide-scrollbar pb-1">
             <button
               onClick={() => setSelectedVehicleId('all')}
-              className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${
-                selectedVehicleId === 'all'
+              className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${selectedVehicleId === 'all'
                   ? 'bg-blue-600 border-blue-500 text-white'
                   : 'bg-slate-800 border-slate-700 text-slate-400'
-              }`}
+                }`}
             >
               <Car size={12} />
               <span>{t('logs.all_vehicles')}</span>
@@ -233,11 +234,10 @@ export const Logs: React.FC = () => {
               <button
                 key={v.id}
                 onClick={() => setSelectedVehicleId(v.id)}
-                className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${
-                  selectedVehicleId === v.id
+                className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${selectedVehicleId === v.id
                     ? 'bg-blue-600 border-blue-500 text-white'
                     : 'bg-slate-800 border-slate-700 text-slate-400'
-                }`}
+                  }`}
               >
                 <span>{v.brand} {v.model}</span>
               </button>
@@ -251,13 +251,12 @@ export const Logs: React.FC = () => {
             <button
               key={typeStr}
               onClick={() => setSelectedType(typeStr)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium border transition active:scale-95 ${
-                selectedType === typeStr
+              className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium border transition active:scale-95 ${selectedType === typeStr
                   ? 'bg-slate-600 border-slate-500 text-white'
                   : 'bg-slate-800 border-slate-700 text-slate-400'
-              }`}
+                }`}
             >
-              {typeStr === 'all' ? t('logs.all_types') : t(`add_record.type_${typeStr.replace(/\s|[&]/g,'').toLowerCase()}`, { defaultValue: typeStr })}
+              {typeStr === 'all' ? t('logs.all_types') : t(`add_record.type_${typeStr.replace(/\s|[&]/g, '').toLowerCase()}`, { defaultValue: typeStr })}
             </button>
           ))}
         </div>
@@ -265,22 +264,17 @@ export const Logs: React.FC = () => {
 
       {/* Log Listesi */}
       {groupKeys.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-          <div className="w-20 h-20 bg-slate-800 rounded-3xl flex items-center justify-center mb-4 border border-slate-700">
-            <FileText size={36} className="opacity-30" />
-          </div>
-          <h3 className="font-bold text-lg text-slate-300">{t('logs.no_record')}</h3>
-          <p className="text-sm mt-1 text-center max-w-[220px]">
-            {searchQuery || selectedVehicleId !== 'all' || selectedType !== 'all'
+        <div className="py-12 animate-fadeIn">
+          <EmptyState
+            icon={FileText}
+            title={t('logs.no_record')}
+            description={searchQuery || selectedVehicleId !== 'all' || selectedType !== 'all'
               ? t('logs.no_record_filter')
               : t('logs.no_record_yet')}
-          </p>
-          <button
-            onClick={() => navigate('/add-record')}
-            className="mt-6 bg-blue-600 text-white text-sm font-bold px-6 py-3 rounded-2xl active:scale-95 transition shadow-lg shadow-blue-900/30"
-          >
-            İlk Kaydı Ekle
-          </button>
+            actionLabel="İlk Kaydı Ekle"
+            onAction={() => navigate('/add-record')}
+            accentColor="#3b82f6"
+          />
         </div>
       ) : (
         <div className="space-y-6">
@@ -306,63 +300,68 @@ export const Logs: React.FC = () => {
                   const { icon: Icon, color, bg } = getMeta(log.type);
                   const vehicle = vehicles.find(v => v.id === log.vehicleId);
                   return (
-                    <div
+                    <SwipeableItem
                       key={log.id}
-                      className="bg-slate-800 rounded-2xl border border-slate-700 p-4 flex items-center space-x-4 group relative overflow-hidden active:scale-[0.99] transition-transform"
+                      onDelete={() => handleDelete(log.id)}
+                      deleteLabel={t('logs.delete')}
                     >
-                      {/* İkon */}
-                      <div className={`${bg} p-3 rounded-xl flex-shrink-0`}>
-                        <Icon size={22} className={color} />
-                      </div>
-
-                      {/* Bilgi */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline justify-between">
-                          <h3 className="font-bold text-sm text-white truncate pr-2">{t(`add_record.type_${log.type.replace(/\s|[&]/g,'').toLowerCase()}`, { defaultValue: log.type })}</h3>
-                          <span className="font-bold text-base text-white flex-shrink-0">
-                            ₺{(log.cost || 0).toLocaleString()}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center space-x-2 mt-1">
-                          {vehicle && (
-                            <span className="text-[11px] text-blue-400 font-medium truncate max-w-[100px]">
-                              {vehicle.brand} {vehicle.model}
-                            </span>
-                          )}
-                          {vehicle && <span className="text-slate-600 text-[10px]">•</span>}
-                          <span className="text-[11px] text-slate-400">
-                            {formatDate(log.date)}
-                          </span>
-                          {log.mileage > 0 && (
-                            <>
-                              <span className="text-slate-600 text-[10px]">•</span>
-                              <span className="text-[11px] text-slate-400">
-                                {log.mileage.toLocaleString()} km
-                              </span>
-                            </>
-                          )}
-                        </div>
-
-                        {log.notes && (
-                          <p className="text-[11px] text-slate-500 mt-1 truncate italic">
-                            {log.notes}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Sil Butonu — hover'da görünür */}
-                      <button
-                        onClick={() => handleDelete(log.id)}
-                        disabled={deletingId === log.id}
-                        className="opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all active:scale-95 flex-shrink-0"
+                      <div
+                        className="bg-slate-800 rounded-2xl border border-slate-700 p-4 flex items-center space-x-4 group relative overflow-hidden active:scale-[0.99] transition-transform w-full"
                       >
-                        {deletingId === log.id
-                          ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                          : <Trash2 size={16} />
-                        }
-                      </button>
-                    </div>
+                        {/* İkon */}
+                        <div className={`${bg} p-3 rounded-xl flex-shrink-0`}>
+                          <Icon size={22} className={color} />
+                        </div>
+
+                        {/* Bilgi */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline justify-between">
+                            <h3 className="font-bold text-sm text-white truncate pr-2">{t(`add_record.type_${log.type.replace(/\s|[&]/g, '').toLowerCase()}`, { defaultValue: log.type })}</h3>
+                            <span className="font-bold text-base text-white flex-shrink-0">
+                              ₺{(log.cost || 0).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-2 mt-1">
+                            {vehicle && (
+                              <span className="text-[11px] text-blue-400 font-medium truncate max-w-[100px]">
+                                {vehicle.brand} {vehicle.model}
+                              </span>
+                            )}
+                            {vehicle && <span className="text-slate-600 text-[10px]">•</span>}
+                            <span className="text-[11px] text-slate-400">
+                              {formatDate(log.date)}
+                            </span>
+                            {log.mileage > 0 && (
+                              <>
+                                <span className="text-slate-600 text-[10px]">•</span>
+                                <span className="text-[11px] text-slate-400">
+                                  {log.mileage.toLocaleString()} km
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          {log.notes && (
+                            <p className="text-[11px] text-slate-500 mt-1 truncate italic">
+                              {log.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Masaüstü Sil Butonu — hover'da görünür, mobilde swipe öncelikli ama bu da kalsın */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(log.id); }}
+                          disabled={deletingId === log.id}
+                          className="hidden sm:flex opacity-0 group-hover:opacity-100 p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all active:scale-95 flex-shrink-0"
+                        >
+                          {deletingId === log.id
+                            ? <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                            : <Trash2 size={16} />
+                          }
+                        </button>
+                      </div>
+                    </SwipeableItem>
                   );
                 })}
               </div>
