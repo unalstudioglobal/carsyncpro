@@ -56,8 +56,63 @@ export interface UserProfile {
   department?: string;
   avatar?: string;
   isPremium?: boolean;
-  role?: 'user' | 'admin' | 'editor';
-  createdAt?: any; // Firestore Timestamp
+  role: 'user' | 'admin' | 'editor';
+  createdAt: any;
+  lastLogin?: any;
+  totalPoints?: number;
+  coins?: number;
+  referralCode?: string;
+}
+
+export interface SystemConfig {
+  announcement: string;
+  maintenanceMode: boolean;
+  appVersion: {
+    android: string;
+    ios: string;
+  };
+  storeLinks: {
+    playStore: string;
+    appStore: string;
+    moreAppsAndroid: string;
+    moreAppsIos: string;
+  };
+  rewards: {
+    referralPoints: number;
+    dailyLoginPoints: number;
+    hintCoinCost: number;
+  };
+  ads: {
+    enabled: boolean;
+    provider: 'admob' | 'facebook';
+    android: {
+      appId: string;
+      bannerId: string;
+      interstitialId: string;
+      rewardedId: string;
+      nativeId: string;
+      openAppId: string;
+    };
+    ios: {
+      appId: string;
+      bannerId: string;
+      interstitialId: string;
+      rewardedId: string;
+      nativeId: string;
+      openAppId: string;
+    };
+  };
+  social: {
+    instagram: string;
+    facebook: string;
+    youtube: string;
+    website: string;
+  };
+  features: {
+    showCategories: boolean;
+    showLearningZone: boolean;
+    showDailyQuiz: boolean;
+  };
 }
 
 export interface NotificationHistory {

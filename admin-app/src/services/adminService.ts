@@ -15,7 +15,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { db, auth } from '../firebaseConfig';
-import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet, NotificationHistory } from '../types';
+import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet, NotificationHistory, SystemConfig } from '../types';
 
 export const fetchAllUsers = async (): Promise<UserProfile[]> => {
     const usersCol = collection(db, 'users');
@@ -63,13 +63,13 @@ export const checkAdminAccess = async (uid: string): Promise<boolean> => {
     return userDoc.data()?.role === 'admin';
 };
 
-export const getSystemConfig = async () => {
+export const getSystemConfig = async (): Promise<SystemConfig | null> => {
     const configRef = doc(db, 'system', 'config');
     const snap = await getDoc(configRef);
-    return snap.exists() ? snap.data() : null;
+    return snap.exists() ? snap.data() as SystemConfig : null;
 };
 
-export const updateSystemConfig = async (data: any) => {
+export const updateSystemConfig = async (data: Partial<SystemConfig>) => {
     const configRef = doc(db, 'system', 'config');
     await setDoc(configRef, data, { merge: true });
 

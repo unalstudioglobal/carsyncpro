@@ -8,6 +8,7 @@ import { AuditLogs } from './pages/AuditLogs';
 import { Subscriptions } from './pages/Subscriptions';
 import { UsersManagement } from './pages/UsersManagement';
 import { Notifications } from './pages/Notifications';
+import { Leaderboard } from './pages/Leaderboard';
 import { AdminGuard } from './components/AdminGuard';
 import { AdminLayout } from './layouts/AdminLayout';
 
@@ -28,6 +29,7 @@ function App() {
             <Route path="/audit-logs" element={<AuditLogs />} />
             <Route path="/users" element={<UsersManagement />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
