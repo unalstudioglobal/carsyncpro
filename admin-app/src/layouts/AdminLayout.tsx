@@ -3,7 +3,8 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     Shield, Car, Activity, LogOut,
     Settings as SettingsIcon,
-    TrendingUp, ClipboardList, Crown, UserCheck, Send, User, Globe, Layout
+    TrendingUp, ClipboardList, Crown, UserCheck, Send, User, Globe, Layout,
+    Lock, CreditCard, Megaphone, Award, Coins, Cpu, Info, Mail, BookOpen, FileText
 } from 'lucide-react';
 import { auth } from '../firebaseConfig';
 import { Toaster } from 'react-hot-toast';
@@ -23,6 +24,17 @@ export const AdminLayout: React.FC = () => {
         { path: '/users-list', label: 'Kullanıcı Listesi', icon: User },
         { path: '/languages', label: 'Diller', icon: Globe },
         { path: '/web-home-settings', label: 'Web Ana Sayfa', icon: Layout },
+        { path: '/system-config', label: 'Sistem Yapılandırmaları', icon: SettingsIcon },
+        { path: '/auth-settings', label: 'Kimlik Doğrulama Ayarları', icon: Lock },
+        { path: '/payment-settings', label: 'Ödeme Ayarları', icon: CreditCard },
+        { path: '/ads-settings', label: 'Reklamlar', icon: Megaphone },
+        { path: '/badge-settings', label: 'Rozet Ayarları', icon: Award },
+        { path: '/coin-store-settings', label: 'Para Mağazası Ayarları', icon: Coins },
+        { path: '/ai-settings', label: 'Yapay Zeka Ayarları', icon: Cpu },
+        { path: '/about-settings', label: 'Hakkımızda', icon: Info },
+        { path: '/contact-settings', label: 'Bize Ulaşın', icon: Mail },
+        { path: '/how-to-play', label: 'Nasıl Oynanır', icon: BookOpen },
+        { path: '/privacy-settings', label: 'Gizlilik Politikası', icon: FileText },
         { path: '/analytics', label: 'Analitik', icon: TrendingUp },
         { path: '/subscriptions', label: 'Abonelikler', icon: Crown },
         { path: '/vehicles', label: 'Sistemdeki Araçlar', icon: Car },

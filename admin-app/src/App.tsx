@@ -12,6 +12,17 @@ import FirebaseSettings from './pages/FirebaseSettings';
 import { UsersList } from './pages/UsersList';
 import { Languages } from './pages/Languages';
 import { WebHomeSettings } from './pages/WebHomeSettings';
+import { SystemConfig } from './pages/SystemConfig';
+import { AuthSettings } from './pages/AuthSettings';
+import { PaymentSettings } from './pages/PaymentSettings';
+import { AdsSettings } from './pages/AdsSettings';
+import { AISettings } from './pages/AISettings';
+import { BadgeSettings } from './pages/BadgeSettings';
+import { CoinStoreSettings } from './pages/CoinStoreSettings';
+import { AboutSettings } from './pages/AboutSettings';
+import { ContactSettings } from './pages/ContactSettings';
+import { HowToPlaySettings } from './pages/HowToPlaySettings';
+import { PrivacySettings } from './pages/PrivacySettings';
 import { Leaderboard } from './pages/Leaderboard';
 import { AdminGuard } from './components/AdminGuard';
 import { AdminLayout } from './layouts/AdminLayout';
@@ -30,6 +41,17 @@ function App() {
             <Route path="/users-list" element={<UsersList />} />
             <Route path="/languages" element={<Languages />} />
             <Route path="/web-home-settings" element={<WebHomeSettings />} />
+            <Route path="/system-config" element={<SystemConfig />} />
+            <Route path="/auth-settings" element={<AuthSettings />} />
+            <Route path="/payment-settings" element={<PaymentSettings />} />
+            <Route path="/ads-settings" element={<AdsSettings />} />
+            <Route path="/ai-settings" element={<AISettings />} />
+            <Route path="/badge-settings" element={<BadgeSettings />} />
+            <Route path="/coin-store-settings" element={<CoinStoreSettings />} />
+            <Route path="/about-settings" element={<AboutSettings />} />
+            <Route path="/contact-settings" element={<ContactSettings />} />
+            <Route path="/how-to-play" element={<HowToPlaySettings />} />
+            <Route path="/privacy-settings" element={<PrivacySettings />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/vehicles" element={<Vehicles />} />
