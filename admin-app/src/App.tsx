@@ -11,6 +11,7 @@ import { Notifications } from './pages/Notifications';
 import FirebaseSettings from './pages/FirebaseSettings';
 import { UsersList } from './pages/UsersList';
 import { Languages } from './pages/Languages';
+import { WebHomeSettings } from './pages/WebHomeSettings';
 import { Leaderboard } from './pages/Leaderboard';
 import { AdminGuard } from './components/AdminGuard';
 import { AdminLayout } from './layouts/AdminLayout';
@@ -28,7 +29,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users-list" element={<UsersList />} />
             <Route path="/languages" element={<Languages />} />
-            <Route path="/languages" element={<Languages />} />
+            <Route path="/web-home-settings" element={<WebHomeSettings />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/vehicles" element={<Vehicles />} />

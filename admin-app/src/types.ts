@@ -188,3 +188,22 @@ export interface WidgetConfig {
   enabled: boolean;
   order: number;
 }
+
+export interface WebHomeSection {
+  id: string;
+  isEnabled: boolean;
+  title1: string;
+  title2: string;
+  heading: string;
+  description1: string;
+  description2: string;
+  image1?: string;
+  image2?: string;
+}
+
+export interface WebHomeConfig {
+  language: string;
+  section1: WebHomeSection;
+  section2: WebHomeSection;
+  section3: WebHomeSection;
+}

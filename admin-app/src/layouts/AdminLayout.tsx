@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     Shield, Car, Activity, LogOut,
     Settings as SettingsIcon,
-    TrendingUp, ClipboardList, Crown, UserCheck, Send, User, Globe
+    TrendingUp, ClipboardList, Crown, UserCheck, Send, User, Globe, Layout
 } from 'lucide-react';
 import { auth } from '../firebaseConfig';
 import { Toaster } from 'react-hot-toast';
@@ -22,6 +22,7 @@ export const AdminLayout: React.FC = () => {
         { path: '/dashboard', label: 'Genel Bakış', icon: Activity },
         { path: '/users-list', label: 'Kullanıcı Listesi', icon: User },
         { path: '/languages', label: 'Diller', icon: Globe },
+        { path: '/web-home-settings', label: 'Web Ana Sayfa', icon: Layout },
         { path: '/analytics', label: 'Analitik', icon: TrendingUp },
         { path: '/subscriptions', label: 'Abonelikler', icon: Crown },
         { path: '/vehicles', label: 'Sistemdeki Araçlar', icon: Car },
