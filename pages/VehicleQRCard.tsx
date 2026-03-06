@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronLeft, QrCode, Download, Share2, Car, Gauge, Calendar,
   Shield, Wrench, Fuel, CheckCircle2, AlertTriangle, Copy, Check,
@@ -23,7 +24,7 @@ type CardTheme = 'dark' | 'light' | 'carbon' | 'racing';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const THEMES: Record<CardTheme, {
-  label: string;
+  labelKey: string;
   bg: string;
   text: string;
   subtext: string;
@@ -33,39 +34,37 @@ const THEMES: Record<CardTheme, {
   qrFg: string;
 }> = {
   dark: {
-    label: 'Gece',
+    labelKey: 'qr_card.theme_dark',
     bg: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
     text: '#f8fafc', subtext: '#94a3b8', border: '#334155',
     accent: '#6366f1', qrBg: '#1e293b', qrFg: '#f8fafc',
   },
   light: {
-    label: 'Gündüz',
+    labelKey: 'qr_card.theme_light',
     bg: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)',
     text: '#0f172a', subtext: '#64748b', border: '#cbd5e1',
     accent: '#6366f1', qrBg: '#f8fafc', qrFg: '#0f172a',
   },
   carbon: {
-    label: 'Karbon',
+    labelKey: 'qr_card.theme_carbon',
     bg: 'linear-gradient(135deg, #18181b 0%, #27272a 50%, #18181b 100%)',
     text: '#fafafa', subtext: '#a1a1aa', border: '#3f3f46',
     accent: '#f59e0b', qrBg: '#27272a', qrFg: '#fafafa',
   },
   racing: {
-    label: 'Yarış',
+    labelKey: 'qr_card.theme_racing',
     bg: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 30%, #1a1a2e 100%)',
     text: '#fff7ed', subtext: '#fca5a5', border: '#b91c1c',
     accent: '#ef4444', qrBg: '#1a1a2e', qrFg: '#fff7ed',
   },
 };
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  'Sorun Yok':       { label: '✅ Sorun Yok',       color: '#10b981' },
-  'Servis Gerekli':  { label: '⚠️ Servis Gerekli',  color: '#f59e0b' },
-  'Acil':            { label: '🚨 Acil Servis',     color: '#ef4444' },
-  'Satıldı':         { label: '💰 Satıldı',          color: '#64748b' },
+const STATUS_LABELS: Record<string, { labelKey: string; icon: string; color: string }> = {
+  'Sorun Yok': { labelKey: 'qr_card.status_ok', icon: '✅', color: '#10b981' },
+  'Servis Gerekli': { labelKey: 'qr_card.status_service', icon: '⚠️', color: '#f59e0b' },
+  'Acil': { labelKey: 'qr_card.status_urgent', icon: '🚨', color: '#ef4444' },
+  'Satıldı': { labelKey: 'qr_card.status_sold', icon: '💰', color: '#64748b' },
 };
-
-const MONTHS_TR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
 
 // ─── QR Generator (using qrcode-svg via canvas) ──────────────────────────────
 
@@ -85,22 +84,25 @@ const VehicleCardDisplay: React.FC<{
   qrDataUrl: string | null;
   cardRef: React.RefObject<HTMLDivElement>;
 }> = ({ data, theme, showQR, qrDataUrl, cardRef }) => {
+  const { t, i18n } = useTranslation();
   const { vehicle, lastService, totalServices, totalSpent, fuelCount } = data;
-  const t = THEMES[theme];
+  const themeCfg = THEMES[theme];
   const statusCfg = STATUS_LABELS[vehicle.status] || STATUS_LABELS['Sorun Yok'];
+
   const lastServiceDate = lastService
-    ? (() => {
-        const d = new Date(lastService.date + 'T00:00:00');
-        return `${d.getDate()} ${MONTHS_TR[d.getMonth()]} ${d.getFullYear()}`;
-      })()
-    : 'Kayıt yok';
+    ? new Date(lastService.date + 'T00:00:00').toLocaleDateString(i18n.language, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+    : t('qr_card.no_record');
 
   return (
     <div
       ref={cardRef}
       style={{
-        background: t.bg,
-        border: `1px solid ${t.border}`,
+        background: themeCfg.bg,
+        border: `1px solid ${themeCfg.border}`,
         borderRadius: 20,
         padding: 24,
         width: '100%',
@@ -115,12 +117,12 @@ const VehicleCardDisplay: React.FC<{
       <div style={{
         position: 'absolute', top: -40, right: -40,
         width: 150, height: 150, borderRadius: '50%',
-        background: t.accent, opacity: 0.08,
+        background: themeCfg.accent, opacity: 0.08,
       }} />
       <div style={{
         position: 'absolute', bottom: -30, left: -30,
         width: 100, height: 100, borderRadius: '50%',
-        background: t.accent, opacity: 0.05,
+        background: themeCfg.accent, opacity: 0.05,
       }} />
 
       {/* Header */}
@@ -128,16 +130,16 @@ const VehicleCardDisplay: React.FC<{
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <div style={{
-              background: t.accent, borderRadius: 8, padding: '4px 10px',
+              background: themeCfg.accent, borderRadius: 8, padding: '4px 10px',
               fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: 1,
             }}>
               CARSYNC PRO
             </div>
           </div>
-          <h2 style={{ color: t.text, fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.1 }}>
+          <h2 style={{ color: themeCfg.text, fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.1 }}>
             {vehicle.brand} {vehicle.model}
           </h2>
-          <p style={{ color: t.subtext, fontSize: 13, margin: '4px 0 0' }}>
+          <p style={{ color: themeCfg.subtext, fontSize: 13, margin: '4px 0 0' }}>
             {vehicle.year} • {vehicle.plate}
           </p>
         </div>
@@ -153,26 +155,26 @@ const VehicleCardDisplay: React.FC<{
           }}>
             {vehicle.healthScore}
           </div>
-          <div style={{ fontSize: 9, color: t.subtext, fontWeight: 600, letterSpacing: 0.5 }}>SAĞLIK</div>
+          <div style={{ fontSize: 9, color: themeCfg.subtext, fontWeight: 600, letterSpacing: 0.5 }}>{t('qr_card.health')}</div>
         </div>
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: t.border, marginBottom: 16 }} />
+      <div style={{ height: 1, background: themeCfg.border, marginBottom: 16 }} />
 
       {/* Stats grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
         {[
-          { label: 'Kilometre', value: `${vehicle.mileage.toLocaleString('tr-TR')} km` },
-          { label: 'Servis', value: `${totalServices} kayıt` },
-          { label: 'Yakıt', value: `${fuelCount} dolum` },
+          { label: t('mileage'), value: `${vehicle.mileage.toLocaleString(i18n.language)} km` },
+          { label: t('maintenance'), value: t('qr_card.service_count', { count: totalServices }) },
+          { label: t('fuel'), value: t('qr_card.fuel_count', { count: fuelCount }) },
         ].map(({ label, value }) => (
           <div key={label} style={{
-            background: `${t.border}40`, borderRadius: 10,
+            background: `${themeCfg.border}40`, borderRadius: 10,
             padding: '10px 8px', textAlign: 'center',
           }}>
-            <div style={{ color: t.text, fontSize: 13, fontWeight: 700 }}>{value}</div>
-            <div style={{ color: t.subtext, fontSize: 10, marginTop: 2 }}>{label}</div>
+            <div style={{ color: themeCfg.text, fontSize: 13, fontWeight: 700 }}>{value}</div>
+            <div style={{ color: themeCfg.subtext, fontSize: 10, marginTop: 2 }}>{label}</div>
           </div>
         ))}
       </div>
@@ -180,48 +182,50 @@ const VehicleCardDisplay: React.FC<{
       {/* Status + last service */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <div style={{
-          flex: 1, background: `${t.border}40`, borderRadius: 10, padding: '8px 12px',
+          flex: 1, background: `${themeCfg.border}40`, borderRadius: 10, padding: '8px 12px',
         }}>
-          <div style={{ color: t.subtext, fontSize: 10, marginBottom: 3 }}>DURUM</div>
-          <div style={{ color: statusCfg.color, fontSize: 12, fontWeight: 700 }}>{statusCfg.label}</div>
+          <div style={{ color: themeCfg.subtext, fontSize: 10, marginBottom: 3 }}>{t('qr_card.status')}</div>
+          <div style={{ color: statusCfg.color, fontSize: 12, fontWeight: 700 }}>
+            {statusCfg.icon} {t(statusCfg.labelKey)}
+          </div>
         </div>
         <div style={{
-          flex: 1, background: `${t.border}40`, borderRadius: 10, padding: '8px 12px',
+          flex: 1, background: `${themeCfg.border}40`, borderRadius: 10, padding: '8px 12px',
         }}>
-          <div style={{ color: t.subtext, fontSize: 10, marginBottom: 3 }}>SON SERVİS</div>
-          <div style={{ color: t.text, fontSize: 11, fontWeight: 600 }}>{lastServiceDate}</div>
+          <div style={{ color: themeCfg.subtext, fontSize: 10, marginBottom: 3 }}>{t('qr_card.last_service')}</div>
+          <div style={{ color: themeCfg.text, fontSize: 11, fontWeight: 600 }}>{lastServiceDate}</div>
         </div>
       </div>
 
       {/* Total spent */}
       <div style={{
-        background: `${t.accent}15`, border: `1px solid ${t.accent}30`,
+        background: `${themeCfg.accent}15`, border: `1px solid ${themeCfg.accent}30`,
         borderRadius: 10, padding: '10px 14px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         marginBottom: showQR ? 16 : 0,
       }}>
-        <span style={{ color: t.subtext, fontSize: 11 }}>Toplam Harcama</span>
-        <span style={{ color: t.text, fontSize: 16, fontWeight: 800 }}>
-          ₺{totalSpent.toLocaleString('tr-TR')}
+        <span style={{ color: themeCfg.subtext, fontSize: 11 }}>{t('qr_card.total_spent')}</span>
+        <span style={{ color: themeCfg.text, fontSize: 16, fontWeight: 800 }}>
+          ₺{totalSpent.toLocaleString(i18n.language)}
         </span>
       </div>
 
       {/* QR Code */}
       {showQR && qrDataUrl && (
         <>
-          <div style={{ height: 1, background: t.border, marginBottom: 16 }} />
+          <div style={{ height: 1, background: themeCfg.border, marginBottom: 16 }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <img
               src={qrDataUrl}
               alt="QR"
-              style={{ width: 72, height: 72, borderRadius: 10, background: t.qrBg }}
+              style={{ width: 72, height: 72, borderRadius: 10, background: themeCfg.qrBg }}
             />
             <div>
-              <p style={{ color: t.text, fontSize: 11, fontWeight: 700, margin: 0 }}>Araç Geçmişi</p>
-              <p style={{ color: t.subtext, fontSize: 10, margin: '3px 0 0' }}>
-                Serviste okutun, tüm geçmiş görünsün
+              <p style={{ color: themeCfg.text, fontSize: 11, fontWeight: 700, margin: 0 }}>{t('qr_card.vehicle_history')}</p>
+              <p style={{ color: themeCfg.subtext, fontSize: 10, margin: '3px 0 0' }}>
+                {t('qr_card.history_subtitle')}
               </p>
-              <p style={{ color: t.subtext, fontSize: 9, marginTop: 4, fontFamily: 'monospace' }}>
+              <p style={{ color: themeCfg.subtext, fontSize: 9, marginTop: 4, fontFamily: 'monospace' }}>
                 CarSync Pro • {vehicle.plate}
               </p>
             </div>
@@ -237,6 +241,7 @@ const VehicleCardDisplay: React.FC<{
 export const VehicleQRCard: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { t, i18n } = useTranslation();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [logs, setLogs] = useState<ServiceLog[]>([]);
@@ -263,13 +268,13 @@ export const VehicleQRCard: React.FC = () => {
   // Generate QR when vehicle changes
   useEffect(() => {
     if (!selectedId) return;
-    const t = THEMES[theme];
+    const themeCfg = THEMES[theme];
     setQrLoading(true);
     const vehicle = vehicles.find(v => v.id === selectedId);
     if (!vehicle) return;
 
-    const qrText = `CarSync Pro | ${vehicle.brand} ${vehicle.model} (${vehicle.year}) | ${vehicle.plate} | ${vehicle.mileage.toLocaleString()} km`;
-    const url = getQRUrl(qrText, t.qrBg, t.qrFg, 200);
+    const qrText = `CarSync Pro | ${vehicle.brand} ${vehicle.model} (${vehicle.year}) | ${vehicle.plate} | ${vehicle.mileage.toLocaleString(i18n.language)} km`;
+    const url = getQRUrl(qrText, themeCfg.qrBg, themeCfg.qrFg, 200);
 
     // Preload image
     const img = new Image();
@@ -289,7 +294,7 @@ export const VehicleQRCard: React.FC = () => {
       setQrLoading(false);
     };
     img.src = url;
-  }, [selectedId, theme, vehicles]);
+  }, [selectedId, theme, vehicles, i18n.language]);
 
   const cardData = (() => {
     const vehicle = vehicles.find(v => v.id === selectedId);
@@ -309,14 +314,12 @@ export const VehicleQRCard: React.FC = () => {
     if (!cardRef.current || !cardData) return;
 
     try {
-      // Use html2canvas-like approach — just save as screenshot hint
-      // Since we can't load html2canvas without npm, use Print instead
       const printWindow = window.open('', '_blank');
       if (!printWindow) return;
       printWindow.document.write(`
         <html>
           <head>
-            <title>Araç Kartı - ${cardData.vehicle.brand} ${cardData.vehicle.model}</title>
+            <title>${t('qr_card.vehicle_history')} - ${cardData.vehicle.brand} ${cardData.vehicle.model}</title>
             <style>
               body { margin: 0; padding: 20px; background: #000; display: flex; justify-content: center; }
               @media print { body { background: white; } }
@@ -332,12 +335,18 @@ export const VehicleQRCard: React.FC = () => {
     } catch (err) {
       console.error('Download failed:', err);
     }
-  }, [cardData]);
+  }, [cardData, t]);
 
   const handleCopyLink = () => {
-    const text = cardData
-      ? `🚗 ${cardData.vehicle.brand} ${cardData.vehicle.model} (${cardData.vehicle.year})\n📍 ${cardData.vehicle.plate}\n📊 ${cardData.vehicle.mileage.toLocaleString()} km\n❤️ Sağlık: ${cardData.vehicle.healthScore}/100\n\nCarSync Pro ile takip ediliyor.`
-      : '';
+    if (!cardData) return;
+    const text = t('qr_card.share_text', {
+      brand: cardData.vehicle.brand,
+      model: cardData.vehicle.model,
+      year: cardData.vehicle.year,
+      plate: cardData.vehicle.plate,
+      mileage: cardData.vehicle.mileage.toLocaleString(i18n.language),
+      score: cardData.vehicle.healthScore
+    });
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -346,9 +355,16 @@ export const VehicleQRCard: React.FC = () => {
 
   const handleShare = async () => {
     if (!cardData) return;
-    const text = `🚗 ${cardData.vehicle.brand} ${cardData.vehicle.model} (${cardData.vehicle.year}) - ${cardData.vehicle.plate} - ${cardData.vehicle.mileage.toLocaleString()} km - CarSync Pro`;
+    const text = t('qr_card.share_text', {
+      brand: cardData.vehicle.brand,
+      model: cardData.vehicle.model,
+      year: cardData.vehicle.year,
+      plate: cardData.vehicle.plate,
+      mileage: cardData.vehicle.mileage.toLocaleString(i18n.language),
+      score: cardData.vehicle.healthScore
+    });
     if (navigator.share) {
-      await navigator.share({ title: 'Araç Kartım', text });
+      await navigator.share({ title: t('qr_card.title'), text });
     } else {
       handleCopyLink();
     }
@@ -361,7 +377,7 @@ export const VehicleQRCard: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center">
             <QrCode className="text-indigo-400 animate-pulse" size={24} />
           </div>
-          <p className="text-slate-400 text-sm">Yükleniyor...</p>
+          <p className="text-slate-400 text-sm">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -376,8 +392,8 @@ export const VehicleQRCard: React.FC = () => {
             <ChevronLeft size={20} className="text-slate-300" />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">Araç Kartı & QR</h1>
-            <p className="text-slate-500 text-xs">Servis personeline göster veya paylaş</p>
+            <h1 className="text-lg font-bold text-white">{t('qr_card.title')}</h1>
+            <p className="text-slate-500 text-xs">{t('qr_card.subtitle')}</p>
           </div>
           <div className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-1.5">
             <QrCode size={12} className="text-violet-400" />
@@ -389,17 +405,16 @@ export const VehicleQRCard: React.FC = () => {
       <div className="px-4 py-5 space-y-5">
         {/* Vehicle selector */}
         <div>
-          <label className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Araç Seç</label>
+          <label className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2 block">{t('qr_card.select_vehicle')}</label>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
             {vehicles.map(v => (
               <button
                 key={v.id}
                 onClick={() => setSelectedId(v.id)}
-                className={`flex-shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                  selectedId === v.id
+                className={`flex-shrink-0 flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${selectedId === v.id
                     ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
                     : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
-                }`}
+                  }`}
               >
                 <Car size={12} />
                 {v.brand} {v.model}
@@ -423,24 +438,23 @@ export const VehicleQRCard: React.FC = () => {
         {qrLoading && showQR && (
           <div className="flex items-center justify-center gap-2 text-slate-500 text-xs py-2">
             <RefreshCw size={12} className="animate-spin" />
-            QR oluşturuluyor...
+            {t('qr_card.generating_qr')}
           </div>
         )}
 
         {/* Theme selector */}
         <div>
-          <label className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2 block">Kart Teması</label>
+          <label className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2 block">{t('qr_card.card_theme')}</label>
           <div className="grid grid-cols-4 gap-2">
-            {(Object.entries(THEMES) as [CardTheme, typeof THEMES[CardTheme]][]).map(([key, t]) => (
+            {(Object.entries(THEMES) as [CardTheme, typeof THEMES[CardTheme]][]).map(([key, themeCfg]) => (
               <button
                 key={key}
                 onClick={() => setTheme(key)}
-                className={`rounded-xl overflow-hidden border-2 transition-all ${
-                  theme === key ? 'border-violet-500 scale-95' : 'border-transparent'
-                }`}
+                className={`rounded-xl overflow-hidden border-2 transition-all ${theme === key ? 'border-violet-500 scale-95' : 'border-transparent'
+                  }`}
               >
-                <div style={{ background: t.bg, height: 44 }} className="flex items-center justify-center">
-                  <span style={{ color: t.text, fontSize: 9, fontWeight: 700 }}>{t.label}</span>
+                <div style={{ background: themeCfg.bg, height: 44 }} className="flex items-center justify-center">
+                  <span style={{ color: themeCfg.text, fontSize: 9, fontWeight: 700 }}>{t(themeCfg.labelKey)}</span>
                 </div>
               </button>
             ))}
@@ -450,15 +464,14 @@ export const VehicleQRCard: React.FC = () => {
         {/* Toggle QR */}
         <button
           onClick={() => setShowQR(!showQR)}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
-            showQR
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${showQR
               ? 'bg-violet-500/10 border-violet-500/20 text-violet-300'
               : 'bg-slate-800/40 border-slate-700/30 text-slate-400'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2">
             <QrCode size={16} />
-            <span className="text-sm font-medium">QR Kodu Göster</span>
+            <span className="text-sm font-medium">{t('qr_card.show_qr')}</span>
           </div>
           <div className={`w-10 h-5 rounded-full transition-all relative ${showQR ? 'bg-violet-600' : 'bg-slate-700'}`}>
             <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${showQR ? 'left-5' : 'left-0.5'}`} />
@@ -472,25 +485,24 @@ export const VehicleQRCard: React.FC = () => {
             className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-slate-800/60 border border-slate-700/30 text-slate-300 hover:bg-slate-700/60 transition-all"
           >
             <Printer size={20} className="text-slate-400" />
-            <span className="text-xs font-medium">Yazdır</span>
+            <span className="text-xs font-medium">{t('qr_card.print')}</span>
           </button>
           <button
             onClick={handleCopyLink}
-            className={`flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all ${
-              copied
+            className={`flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all ${copied
                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
                 : 'bg-slate-800/60 border-slate-700/30 text-slate-300 hover:bg-slate-700/60'
-            }`}
+              }`}
           >
             {copied ? <Check size={20} className="text-emerald-400" /> : <Copy size={20} className="text-slate-400" />}
-            <span className="text-xs font-medium">{copied ? 'Kopyalandı!' : 'Kopyala'}</span>
+            <span className="text-xs font-medium">{copied ? t('qr_card.copied') : t('qr_card.copy')}</span>
           </button>
           <button
             onClick={handleShare}
             className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-violet-600 border border-violet-500 text-white hover:bg-violet-500 transition-all shadow-lg shadow-violet-500/20"
           >
             <Share2 size={20} />
-            <span className="text-xs font-medium">Paylaş</span>
+            <span className="text-xs font-medium">{t('qr_card.share')}</span>
           </button>
         </div>
 
@@ -498,12 +510,12 @@ export const VehicleQRCard: React.FC = () => {
         <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl p-4 space-y-3">
           <p className="text-slate-300 text-xs font-semibold flex items-center gap-2">
             <Info size={13} className="text-violet-400" />
-            Nasıl Kullanılır?
+            {t('qr_card.how_to_use')}
           </p>
           {[
-            { icon: Wrench,       text: 'Serviste teknisyene QR okutun, tüm bakım geçmişi görünsün' },
-            { icon: Shield,       text: 'Araç satışında alıcıya kart göstererek şeffaflık sağlayın' },
-            { icon: Activity,     text: 'Ekip araçlarında şoförler için hızlı bilgi kartı olarak kullanın' },
+            { icon: Wrench, text: t('qr_card.use_case_1') },
+            { icon: Shield, text: t('qr_card.use_case_2') },
+            { icon: Activity, text: t('qr_card.use_case_3') },
           ].map(({ icon: Icon, text }, i) => (
             <div key={i} className="flex items-start gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">

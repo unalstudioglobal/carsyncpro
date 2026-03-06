@@ -25,8 +25,7 @@ import {
   orderBy,
   Timestamp,
 } from "firebase/firestore";
-import { ref, uploadString, getDownloadURL } from "firebase/storage";
-import { db, auth, storage } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig";
 import { Vehicle, ServiceLog, Appointment, Document, TireSet } from "../types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -38,18 +37,6 @@ const getUid = (): string =>
 const vehiclesCol = () => collection(db, "users", getUid(), "vehicles");
 const logsCol = () => collection(db, "users", getUid(), "logs");
 const appointmentsCol = () => collection(db, "users", getUid(), "appointments");
-
-/**
- * Base64 string'i Firebase Storage'a yükler ve URL döndürür.
- * Eğer input zaten bir URL ise (http...) olduğu gibi döndürür.
- */
-const uploadImage = async (base64OrUrl: string, path: string): Promise<string> => {
-  if (!base64OrUrl || base64OrUrl.startsWith("http")) return base64OrUrl;
-
-  const storageRef = ref(storage, path);
-  await uploadString(storageRef, base64OrUrl, 'data_url');
-  return await getDownloadURL(storageRef);
-};
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const LS_VEHICLES = "ls_vehicles";
@@ -213,52 +200,12 @@ export const fetchVehicles = async (): Promise<Vehicle[]> => {
   return Array.from(new Map(vehicles.map(v => [v.id, v])).values());
 };
 
-/** Promise'e timeout ekler */
-const withTimeout = <T>(promise: Promise<T>, ms: number, label = ""): Promise<T> =>
-  Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`Timeout (${ms}ms): ${label}`)), ms)),
-  ]);
-
-/** Tek bir resmi güvenli şekilde yüklemeyi dener, başarısızsa orijinali döndürür */
-const safeUploadImage = async (base64OrUrl: string, path: string): Promise<string> => {
-  if (!base64OrUrl || base64OrUrl.startsWith("http")) return base64OrUrl;
-  try {
-    return await withTimeout(uploadImage(base64OrUrl, path), 8000, "Storage upload");
-  } catch (err) {
-    console.warn("⚠️ Resim Storage'a yüklenemedi, sıkıştırılmış base64 kullanılıyor:", err);
-    return base64OrUrl; // Sıkıştırılmış base64 (~50-100KB) Firestore limiti içinde
-  }
-};
-
 /** Yeni araç ekler. Firestore ID'sini döndürür. */
 export const addVehicle = async (vehicle: Omit<Vehicle, "id">): Promise<string> => {
   if (await isFirestoreAvailable()) {
     try {
-      // Upload main image
-      let imageUrl = vehicle.image;
-      if (imageUrl && imageUrl.startsWith("data:")) {
-        const path = `users/${getUid()}/vehicles/${Date.now()}_main.jpg`;
-        imageUrl = await safeUploadImage(imageUrl, path);
-      }
-
-      // Upload gallery images
-      const galleryImages = [];
-      if (vehicle.images && vehicle.images.length > 0) {
-        for (let i = 0; i < vehicle.images.length; i++) {
-          let img = vehicle.images[i];
-          if (img.startsWith("data:")) {
-            const path = `users/${getUid()}/vehicles/${Date.now()}_${i}.jpg`;
-            img = await safeUploadImage(img, path);
-          }
-          galleryImages.push(img);
-        }
-      }
-
       const vehicleData = {
         ...vehicle,
-        image: imageUrl,
-        images: galleryImages,
         createdAt: serverTimestamp(),
       };
 
@@ -281,30 +228,8 @@ export const addVehicle = async (vehicle: Omit<Vehicle, "id">): Promise<string> 
 export const updateVehicle = async (id: string, data: Partial<Vehicle>): Promise<void> => {
   if (await isFirestoreAvailable()) {
     try {
-      let updatedData = { ...data };
-
-      // Upload main image if changed and is base64
-      if (updatedData.image && updatedData.image.startsWith("data:")) {
-        const path = `users/${getUid()}/vehicles/${id}_main_${Date.now()}.jpg`;
-        updatedData.image = await safeUploadImage(updatedData.image, path);
-      }
-
-      // Upload gallery images if changed
-      if (updatedData.images && updatedData.images.length > 0) {
-        const newGallery = [];
-        for (let i = 0; i < updatedData.images.length; i++) {
-          let img = updatedData.images[i];
-          if (img.startsWith("data:")) {
-            const path = `users/${getUid()}/vehicles/${id}_${i}_${Date.now()}.jpg`;
-            img = await safeUploadImage(img, path);
-          }
-          newGallery.push(img);
-        }
-        updatedData.images = newGallery;
-      }
-
-      await updateDoc(doc(vehiclesCol(), id), { ...updatedData, updatedAt: serverTimestamp() });
-      _syncVehicleToLS(id, updatedData as Vehicle);
+      await updateDoc(doc(vehiclesCol(), id), { ...data, updatedAt: serverTimestamp() });
+      _syncVehicleToLS(id, data as Vehicle);
       return;
     } catch (err) {
       console.warn("Firestore updateVehicle hatası:", err);
@@ -369,16 +294,8 @@ export const fetchLogs = async (vehicleId?: string): Promise<ServiceLog[]> => {
 export const addLog = async (log: Omit<ServiceLog, "id">): Promise<string> => {
   if (await isFirestoreAvailable()) {
     try {
-      // Upload receipt image if exists
-      let receiptUrl = log.imageUrl;
-      if (receiptUrl && receiptUrl.startsWith("data:")) {
-        const path = `users/${getUid()}/logs/${Date.now()}_receipt.jpg`;
-        receiptUrl = await uploadImage(receiptUrl, path);
-      }
-
       const logData = {
         ...log,
-        imageUrl: receiptUrl,
         createdAt: serverTimestamp(),
       };
 

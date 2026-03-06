@@ -31,24 +31,22 @@ type ViewMode = 'list' | 'calendar';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const SERVICE_META: Record<string, { icon: React.ElementType; color: string; bg: string; border: string; estimatedCost: string }> = {
-  'Yağ Değişimi': { icon: Droplet, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', estimatedCost: '₺800-1.500' },
-  'Periyodik Bakım': { icon: Wrench, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', estimatedCost: '₺2.000-5.000' },
-  'Lastik Değişimi': { icon: Disc, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', estimatedCost: '₺4.000-12.000' },
-  'Lastik Rotasyonu': { icon: RotateCw, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', estimatedCost: '₺200-400' },
-  'Fren Servisi': { icon: Wrench, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', estimatedCost: '₺1.500-4.000' },
-  'Akü Değişimi': { icon: Battery, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', estimatedCost: '₺1.200-2.500' },
-  'Muayene': { icon: ClipboardCheck, color: 'text-teal-400', bg: 'bg-teal-500/10', border: 'border-teal-500/20', estimatedCost: '₺400-700' },
-  'Yıkama & Detay': { icon: Sparkles, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', estimatedCost: '₺500-2.000' },
-  'Genel Kontrol': { icon: Shield, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/20', estimatedCost: '₺500-1.000' },
-  'Diğer': { icon: Wrench, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', estimatedCost: '—' },
+const SERVICE_META: Record<string, { key: string; icon: React.ElementType; color: string; bg: string; border: string; estimatedCost: string }> = {
+  'Yağ Değişimi': { key: 'oil_change', icon: Droplet, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', estimatedCost: '₺800-1.500' },
+  'Periyodik Bakım': { key: 'periodic', icon: Wrench, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', estimatedCost: '₺2.000-5.000' },
+  'Lastik Değişimi': { key: 'tire_change', icon: Disc, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', estimatedCost: '₺4.000-12.000' },
+  'Lastik Rotasyonu': { key: 'tire_rotation', icon: RotateCw, color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20', estimatedCost: '₺200-400' },
+  'Fren Servisi': { key: 'brake', icon: Wrench, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20', estimatedCost: '₺1.500-4.000' },
+  'Akü Değişimi': { key: 'battery', icon: Battery, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', estimatedCost: '₺1.200-2.500' },
+  'Muayene': { key: 'inspection', icon: ClipboardCheck, color: 'text-teal-400', bg: 'bg-teal-500/10', border: 'border-teal-500/20', estimatedCost: '₺400-700' },
+  'Yıkama & Detay': { key: 'detailing', icon: Sparkles, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', estimatedCost: '₺500-2.000' },
+  'Genel Kontrol': { key: 'general', icon: Shield, color: 'text-green-400', bg: 'bg-blue-500/10', border: 'border-green-500/20', estimatedCost: '₺500-1.000' }, // Corrected color for key consistency
+  'Diğer': { key: 'other', icon: Wrench, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', estimatedCost: '—' },
 };
 
 const getMeta = (type: string) => SERVICE_META[type] ?? SERVICE_META['Diğer'];
 
-const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-const MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-const DAYS_TR = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+// Removed hardcoded date constants to use localized Date methods
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -58,9 +56,13 @@ const getDaysUntil = (dateStr: string): number => {
   return Math.ceil((target.getTime() - today.getTime()) / 86400000);
 };
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string, i18n: any) => {
   const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getDate()} ${MONTHS_TR[d.getMonth()]} ${d.getFullYear()}`;
+  return d.toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 };
 
 const getApptStatus = (appt: Appointment): ApptStatus => {
@@ -151,7 +153,7 @@ const ApptModal: React.FC<{
                 <button key={key} onClick={() => setServiceType(key)}
                   className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-left ${serviceType === key ? `${m.bg} ${m.border} border ${m.color}` : 'bg-slate-800 text-slate-500 border border-slate-700/50'}`}>
                   <SIcon size={13} className={serviceType === key ? m.color : 'text-slate-600'} />
-                  <span className="truncate">{key}</span>
+                  <span className="truncate">{t(`appt.service_items.${m.key}`)}</span>
                 </button>
               );
             })}
@@ -174,7 +176,7 @@ const ApptModal: React.FC<{
           <div>
             <label className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2 block">{t('appt.location')}</label>
             <input value={location} onChange={e => setLocation(e.target.value)}
-              placeholder="t('appt.location_ph')"
+              placeholder={t('appt.location_ph')}
               className="w-full bg-slate-800 text-white rounded-xl px-3 py-2.5 text-sm border border-slate-700 focus:outline-none focus:border-blue-500 placeholder:text-slate-600" />
           </div>
           <div>
@@ -204,7 +206,7 @@ const ApptModal: React.FC<{
         <div>
           <label className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2 block">{t('appt.notes')}</label>
           <textarea value={notes} onChange={e => setNotes(e.target.value)}
-            placeholder="t('appt.notes_ph')"
+            placeholder={t('appt.notes_ph')}
             rows={2}
             className="w-full bg-slate-800 text-white rounded-xl px-4 py-3 text-sm border border-slate-700 focus:outline-none focus:border-blue-500 resize-none placeholder:text-slate-600" />
         </div>
@@ -247,6 +249,8 @@ const ApptCard: React.FC<{
           days === 1 ? t('appt.tomorrow') :
             t('appt.days_left', { days });
 
+  const { i18n } = useTranslation();
+
   return (
     <div className={`rounded-2xl border overflow-hidden transition-all ${status === 'completed' ? 'bg-slate-800/15 border-slate-700/15 opacity-60' :
       status === 'overdue' ? 'bg-red-500/8 border-red-500/25' :
@@ -268,7 +272,7 @@ const ApptCard: React.FC<{
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
               <p className={`font-bold text-sm ${status === 'completed' ? 'text-slate-500 line-through' : 'text-white'}`}>
-                {appt.serviceType}
+                {t(`appt.service_items.${meta.key}`)}
               </p>
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${scfg.bg} ${scfg.color} border ${scfg.border}`}>
                 {scfg.label}
@@ -295,7 +299,7 @@ const ApptCard: React.FC<{
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
             <Calendar size={11} />
-            {formatDate(appt.date)}
+            {formatDate(appt.date, i18n)}
           </div>
           <span className={`text-xs font-bold ${scfg.color}`}>{daysLabel}</span>
         </div>
@@ -337,7 +341,7 @@ const ApptCard: React.FC<{
 
 // Mini calendar component
 const MiniCalendar: React.FC<{ appointments: Appointment[] }> = ({ appointments }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -381,7 +385,9 @@ const MiniCalendar: React.FC<{ appointments: Appointment[] }> = ({ appointments 
         <button onClick={prevMonth} className="w-7 h-7 rounded-lg bg-slate-700/60 flex items-center justify-center">
           <ChevronLeft size={14} className="text-slate-400" />
         </button>
-        <p className="text-white font-bold text-sm">{MONTHS_TR[month]} {year}</p>
+        <p className="text-white font-bold text-sm">
+          {new Date(year, month).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' })}
+        </p>
         <button onClick={nextMonth} className="w-7 h-7 rounded-lg bg-slate-700/60 flex items-center justify-center">
           <ChevronRight size={14} className="text-slate-400" />
         </button>
@@ -389,7 +395,7 @@ const MiniCalendar: React.FC<{ appointments: Appointment[] }> = ({ appointments 
 
       {/* Day headers */}
       <div className="grid grid-cols-7 mb-2">
-        {['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pa'].map(d => (
+        {(i18n.language === 'tr' ? ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']).map(d => (
           <div key={d} className="text-center text-slate-600 text-[10px] font-semibold py-1">{d}</div>
         ))}
       </div>

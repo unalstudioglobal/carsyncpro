@@ -103,6 +103,7 @@ const App: React.FC = () => {
                   <Route path="/" element={<Garage />} />
                   <Route path="/dashboard/:id" element={<Dashboard />} />
                   <Route path="/chat/:id" element={<CarChat />} />
+                  <Route path="/car-chat" element={<CarChat />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/logs" element={<Logs />} />
                   <Route path="/settings" element={<Settings />} />

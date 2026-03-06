@@ -10,6 +10,7 @@ import {
 import { fetchVehicles, fetchLogs } from '../services/firestoreService';
 import { Vehicle, ServiceLog } from '../types';
 import { getSetting, saveSetting, removeSetting } from '../services/settingsService';
+import { useTranslation } from 'react-i18next';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -29,33 +30,7 @@ interface SearchResult {
   badgeColor?: string;
 }
 
-// ─── Static Pages & Actions ──────────────────────────────────────────────────
-
-const STATIC_RESULTS: SearchResult[] = [
-  // Pages
-  { id: 'p-garage', category: 'page', title: 'Garajım', subtitle: 'Tüm araçlarını görüntüle', icon: Car, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/', keywords: ['garaj', 'araç', 'home', 'anasayfa'] },
-  { id: 'p-analytics', category: 'page', title: 'Analitik & Raporlar', subtitle: 'Harcama analizi ve grafikler', icon: BarChart2, iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)', route: '/analytics', keywords: ['analiz', 'harcama', 'grafik', 'rapor', 'para'] },
-  { id: 'p-logs', category: 'page', title: 'Servis Kayıtları', subtitle: 'Tüm bakım ve yakıt kayıtları', icon: FileText, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/logs', keywords: ['kayıt', 'servis', 'bakım', 'yakıt', 'log'] },
-  { id: 'p-settings', category: 'page', title: 'Ayarlar', subtitle: 'Hesap ve uygulama ayarları', icon: Settings, iconColor: '#64748b', iconBg: 'rgba(100,116,139,0.12)', route: '/settings', keywords: ['ayar', 'profil', 'hesap', 'şifre'] },
-  { id: 'p-notif', category: 'page', title: 'Bildirimler', subtitle: 'Uyarılar ve hatırlatmalar', icon: Bell, iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)', route: '/notifications', keywords: ['bildirim', 'uyarı', 'hatırlatma', 'alert'] },
-  { id: 'p-budget', category: 'page', title: 'Bütçe Hedefleri', subtitle: 'Aylık harcama limitleri', icon: Gauge, iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)', route: '/budget-goals', keywords: ['bütçe', 'limit', 'harcama', 'para', 'hedef'] },
-  { id: 'p-compare', category: 'page', title: 'Araç Karşılaştırma', subtitle: 'İki aracı başa baş analiz et', icon: TrendingUp, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/vehicle-comparison', keywords: ['karşılaştır', 'analiz', 'başabaş', 'araç'] },
-  { id: 'p-calendar', category: 'page', title: 'Sigorta Takvimi', subtitle: 'Sigorta ve muayene takibi', icon: Calendar, iconColor: '#f43f5e', iconBg: 'rgba(244,63,94,0.12)', route: '/insurance-calendar', keywords: ['sigorta', 'muayene', 'takvim', 'kasko', 'tarih'] },
-  { id: 'p-qr', category: 'page', title: 'QR Araç Kartı', subtitle: 'Paylaşılabilir araç kartı', icon: QrCode, iconColor: '#06b6d4', iconBg: 'rgba(6,182,212,0.12)', route: '/vehicle-qr', keywords: ['qr', 'kod', 'kart', 'paylaş', 'servis'] },
-  { id: 'p-report', category: 'page', title: 'PDF Rapor', subtitle: 'Servis geçmişi PDF\'i', icon: FileText, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/service-report', keywords: ['pdf', 'rapor', 'indir', 'servis', 'geçmiş'] },
-  { id: 'p-family', category: 'page', title: 'Aile Garajı', subtitle: 'Paylaşımlı araç yönetimi', icon: Users, iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)', route: '/family-garage', keywords: ['aile', 'paylaş', 'kullanıcı', 'ekip'] },
-  { id: 'p-fuel', category: 'page', title: 'Yakıt Takibi', subtitle: 'Menzil tahmini ve tüketim', icon: Fuel, iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)', route: '/fuel-reminder', keywords: ['yakıt', 'menzil', 'tüketim', 'litre', 'dolum'] },
-  { id: 'p-appt', category: 'page', title: 'Servis Randevuları', subtitle: 'Randevu planlama ve takibi', icon: Calendar, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/service-appointment', keywords: ['randevu', 'servis', 'tarih', 'plan', 'tamir'] },
-  { id: 'p-fuelmap', category: 'page', title: 'İstasyon Bul', subtitle: 'Yakın akaryakıt istasyonları', icon: Navigation, iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)', route: '/fuel-finder', keywords: ['istasyon', 'petrol', 'benzin', 'yakıt', 'harita'] },
-  { id: 'p-theme', category: 'page', title: 'Tema & Özelleştirme', subtitle: 'Renk ve görünüm ayarları', icon: Sparkles, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/theme', keywords: ['tema', 'renk', 'görünüm', 'özelleştir', 'karanlık'] },
-  { id: 'p-ai', category: 'page', title: 'AI Bakım Tahmini', subtitle: 'Yapay zeka ile bakım önerileri', icon: Zap, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/predictive-maintenance', keywords: ['yapay', 'zeka', 'ai', 'tahmin', 'bakım'] },
-  { id: 'p-damage', category: 'page', title: 'Hasar Tespiti', subtitle: 'Fotoğraftan hasar analizi', icon: Shield, iconColor: '#f43f5e', iconBg: 'rgba(244,63,94,0.12)', route: '/damage-detection', keywords: ['hasar', 'fotoğraf', 'tespit', 'kaza', 'analiz'] },
-  { id: 'p-chat', category: 'page', title: 'Araç Asistanı', subtitle: 'AI ile sohbet et', icon: Zap, iconColor: '#06b6d4', iconBg: 'rgba(6,182,212,0.12)', route: '/car-chat', keywords: ['sohbet', 'asistan', 'ai', 'soru', 'chat'] },
-  // Actions
-  { id: 'a-add-vehicle', category: 'action', title: 'Yeni Araç Ekle', subtitle: 'Garaja araç ekle', icon: Car, iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)', route: '/add-vehicle', keywords: ['ekle', 'yeni', 'araç', 'kayıt', 'oluştur'], badge: 'Eylem', badgeColor: '#10b981' },
-  { id: 'a-add-log', category: 'action', title: 'Servis Kaydı Ekle', subtitle: 'Bakım veya yakıt kaydı oluştur', icon: Wrench, iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)', route: '/add-record', keywords: ['bakım', 'kayıt', 'ekle', 'yakıt', 'servis'], badge: 'Eylem', badgeColor: '#f59e0b' },
-  { id: 'a-add-appt', category: 'action', title: 'Randevu Oluştur', subtitle: 'Servis randevusu planla', icon: Calendar, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/service-appointment', keywords: ['randevu', 'oluştur', 'planla', 'servis'], badge: 'Eylem', badgeColor: '#8b5cf6' },
-];
+// ─── Log Meta ─────────────────────────────────────────────────────────────────
 
 // ─── Log Meta ─────────────────────────────────────────────────────────────────
 
@@ -75,12 +50,10 @@ const LOG_COLORS: Record<string, [string, string]> = {
   'Muayene': ['#14b8a6', 'rgba(20,184,166,0.12)'],
 };
 
-const MONTHS_TR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-
-const formatDate = (d: string) => {
+const formatDate = (d: string, locale: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
   const dt = new Date(d + 'T00:00:00');
-  return `${dt.getDate()} ${MONTHS_TR[dt.getMonth()]} ${dt.getFullYear()}`;
+  return dt.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const normalize = (s: string) =>
@@ -110,6 +83,33 @@ interface GlobalSearchProps {
 export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { t, i18n } = useTranslation();
+
+  const STATIC_RESULTS: SearchResult[] = useMemo(() => [
+    // Pages
+    { id: 'p-garage', category: 'page', title: t('nav.garage'), subtitle: t('nav.garage_subtitle', 'Tüm araçlarını görüntüle'), icon: Car, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/', keywords: ['garaj', 'araç', 'home', 'anasayfa'] },
+    { id: 'p-analytics', category: 'page', title: t('nav.analytics'), subtitle: t('nav.analytics_subtitle', 'Harcama analizi ve grafikler'), icon: BarChart2, iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)', route: '/analytics', keywords: ['analiz', 'harcama', 'grafik', 'rapor', 'para'] },
+    { id: 'p-logs', category: 'page', title: t('nav.records'), subtitle: t('nav.records_subtitle', 'Tüm bakım ve yakıt kayıtları'), icon: FileText, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/logs', keywords: ['kayıt', 'servis', 'bakım', 'yakıt', 'log'] },
+    { id: 'p-settings', category: 'page', title: t('nav.settings'), subtitle: t('nav.settings_subtitle', 'Hesap ve uygulama ayarları'), icon: Settings, iconColor: '#64748b', iconBg: 'rgba(100,116,139,0.12)', route: '/settings', keywords: ['ayar', 'profil', 'hesap', 'şifre'] },
+    { id: 'p-notif', category: 'page', title: t('nav.notifications'), subtitle: t('nav.notifications_subtitle', 'Uyarılar ve hatırlatmalar'), icon: Bell, iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)', route: '/notifications', keywords: ['bildirim', 'uyarı', 'hatırlatma', 'alert'] },
+    { id: 'p-budget', category: 'page', title: t('nav.budget'), subtitle: t('nav.budget_subtitle', 'Aylık harcama limitleri'), icon: Gauge, iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)', route: '/budget-goals', keywords: ['bütçe', 'limit', 'harcama', 'para', 'hedef'] },
+    { id: 'p-compare', category: 'page', title: t('comparison.title'), subtitle: t('comparison.subtitle'), icon: TrendingUp, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/vehicle-comparison', keywords: ['karşılaştır', 'analiz', 'başabaş', 'araç'] },
+    { id: 'p-calendar', category: 'page', title: t('nav.insurance_calendar'), subtitle: t('nav.insurance_calendar_subtitle', 'Sigorta ve muayene takibi'), icon: Calendar, iconColor: '#f43f5e', iconBg: 'rgba(244,63,94,0.12)', route: '/insurance-calendar', keywords: ['sigorta', 'muayene', 'takvim', 'kasko', 'tarih'] },
+    { id: 'p-qr', category: 'page', title: t('nav.qr_card'), subtitle: t('nav.qr_card_subtitle', 'Paylaşılabilir araç kartı'), icon: QrCode, iconColor: '#06b6d4', iconBg: 'rgba(6,182,212,0.12)', route: '/vehicle-qr', keywords: ['qr', 'kod', 'kart', 'paylaş', 'servis'] },
+    { id: 'p-report', category: 'page', title: t('nav.pdf_report'), subtitle: t('nav.pdf_report_subtitle', 'Servis geçmişi PDF\'i'), icon: FileText, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/service-report', keywords: ['pdf', 'rapor', 'indir', 'servis', 'geçmiş'] },
+    { id: 'p-family', category: 'page', title: t('nav.family_garage'), subtitle: t('nav.family_garage_subtitle', 'Paylaşımlı araç yönetimi'), icon: Users, iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)', route: '/family-garage', keywords: ['aile', 'paylaş', 'kullanıcı', 'ekip'] },
+    { id: 'p-fuel', category: 'page', title: t('nav.fuel_tracking'), subtitle: t('nav.fuel_tracking_subtitle', 'Menzil tahmini ve tüketim'), icon: Fuel, iconColor: '#3b82f6', iconBg: 'rgba(59,130,246,0.12)', route: '/fuel-reminder', keywords: ['yakıt', 'menzil', 'tüketim', 'litre', 'dolum'] },
+    { id: 'p-appt', category: 'page', title: t('nav.service_appointments'), subtitle: t('nav.service_appointments_subtitle', 'Randevu planlama ve takibi'), icon: Calendar, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/service-appointment', keywords: ['randevu', 'servis', 'tarih', 'plan', 'tamir'] },
+    { id: 'p-fuelmap', category: 'page', title: t('nav.find_station'), subtitle: t('nav.find_station_subtitle', 'Yakın akaryakıt istasyonları'), icon: Navigation, iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)', route: '/fuel-finder', keywords: ['istasyon', 'petrol', 'benzin', 'yakıt', 'harita'] },
+    { id: 'p-theme', category: 'page', title: t('nav.theme_customization'), subtitle: t('nav.theme_customization_subtitle', 'Renk ve görünüm ayarları'), icon: Sparkles, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/theme', keywords: ['tema', 'renk', 'görünüm', 'özelleştir', 'karanlık'] },
+    { id: 'p-ai', category: 'page', title: t('nav.ai_maintenance'), subtitle: t('nav.ai_maintenance_subtitle', 'Yapay zeka ile bakım önerileri'), icon: Zap, iconColor: '#6366f1', iconBg: 'rgba(99,102,241,0.12)', route: '/predictive-maintenance', keywords: ['yapay', 'zeka', 'ai', 'tahmin', 'bakım'] },
+    { id: 'p-damage', category: 'page', title: t('nav.damage_detection'), subtitle: t('nav.damage_detection_subtitle', 'Fotoğraftan hasar analizi'), icon: Shield, iconColor: '#f43f5e', iconBg: 'rgba(244,63,94,0.12)', route: '/damage-detection', keywords: ['hasar', 'fotoğraf', 'tespit', 'kaza', 'analiz'] },
+    { id: 'p-chat', category: 'page', title: t('nav.car_assistant'), subtitle: t('nav.car_assistant_subtitle', 'AI ile sohbet et'), icon: Zap, iconColor: '#06b6d4', iconBg: 'rgba(6,182,212,0.12)', route: '/car-chat', keywords: ['sohbet', 'asistan', 'ai', 'soru', 'chat'] },
+    // Actions
+    { id: 'a-add-vehicle', category: 'action', title: t('nav.add_vehicle'), subtitle: t('nav.add_vehicle_subtitle', 'Garaja araç ekle'), icon: Car, iconColor: '#10b981', iconBg: 'rgba(16,185,129,0.12)', route: '/add-vehicle', keywords: ['ekle', 'yeni', 'araç', 'kayıt', 'oluştur'], badge: t('search.badge_action', 'Eylem'), badgeColor: '#10b981' },
+    { id: 'a-add-log', category: 'action', title: t('nav.add_record'), subtitle: t('nav.add_record_subtitle', 'Bakım veya yakıt kaydı oluştur'), icon: Wrench, iconColor: '#f59e0b', iconBg: 'rgba(245,158,11,0.12)', route: '/add-record', keywords: ['bakım', 'kayıt', 'ekle', 'yakıt', 'servis'], badge: t('search.badge_action', 'Eylem'), badgeColor: '#f59e0b' },
+    { id: 'a-add-appt', category: 'action', title: t('nav.create_appointment'), subtitle: t('nav.create_appointment_subtitle', 'Servis randevusu planla'), icon: Calendar, iconColor: '#8b5cf6', iconBg: 'rgba(139,92,246,0.12)', route: '/service-appointment', keywords: ['randevu', 'oluştur', 'planla', 'servis'], badge: t('search.badge_action', 'Eylem'), badgeColor: '#8b5cf6' },
+  ], [t]);
 
   const [query, setQuery] = useState('');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -141,13 +141,13 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
       id: `v-${v.id}`,
       category: 'vehicle' as const,
       title: `${v.brand} ${v.model}`,
-      subtitle: `${v.plate} · ${v.mileage.toLocaleString('tr-TR')} km · Sağlık: ${v.healthScore}/100`,
+      subtitle: `${v.plate} · ${v.mileage.toLocaleString(i18n.language)} km · ${t('comparison.health_score')}: ${v.healthScore}/100`,
       icon: Car,
       iconColor: '#6366f1',
       iconBg: 'rgba(99,102,241,0.12)',
       route: `/dashboard/${v.id}`,
       keywords: [v.brand, v.model, v.plate, String(v.year)].map(normalize),
-      badge: v.status === 'Acil' ? 'Acil' : v.status === 'Servis Gerekli' ? 'Servis' : undefined,
+      badge: v.status === 'Acil' ? t('dashboard.vehicle_status.urgent') : v.status === 'Servis Gerekli' ? t('dashboard.vehicle_status.service_required') : undefined,
       badgeColor: v.status === 'Acil' ? '#ef4444' : '#f59e0b',
     })),
     [vehicles]
@@ -166,7 +166,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
           id: `l-${l.id}`,
           category: 'log' as const,
           title: l.type,
-          subtitle: `${vehicle?.brand || ''} ${vehicle?.model || ''} · ${formatDate(l.date)} · ₺${l.cost.toLocaleString('tr-TR')}`,
+          subtitle: `${vehicle?.brand || ''} ${vehicle?.model || ''} · ${formatDate(l.date, i18n.language)} · ₺${l.cost.toLocaleString(i18n.language)}`,
           icon: Icon,
           iconColor: color,
           iconBg: bg,
@@ -200,14 +200,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
   const grouped = useMemo(() => {
     const g: Record<string, SearchResult[]> = {};
     results.forEach(r => {
-      const key = r.category === 'vehicle' ? 'Araçlar' :
-        r.category === 'log' ? 'Servis Kayıtları' :
-          r.category === 'action' ? 'Hızlı Eylemler' : 'Sayfalar';
+      const key = r.category === 'vehicle' ? t('search.categories.vehicles') :
+        r.category === 'log' ? t('search.categories.logs') :
+          r.category === 'action' ? t('search.categories.actions') : t('search.categories.pages');
       if (!g[key]) g[key] = [];
       g[key].push(r);
     });
     return g;
-  }, [results]);
+  }, [results, t]);
 
   const flatResults = useMemo(() =>
     Object.values(grouped).flat(), [grouped]);
@@ -241,7 +241,12 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
 
   if (!isOpen) return null;
 
-  const CAT_ORDER = ['Hızlı Eylemler', 'Araçlar', 'Sayfalar', 'Servis Kayıtları'];
+  const CAT_ORDER = [
+    t('search.categories.actions'),
+    t('search.categories.vehicles'),
+    t('search.categories.pages'),
+    t('search.categories.logs')
+  ];
 
   return (
     <div
@@ -255,28 +260,21 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
 
       <div className="relative w-full max-w-2xl mx-auto h-full px-4 pt-16 flex flex-col pb-6">
         {/* Search input */}
-        <div className="glass-panel-premium flex items-center gap-3 px-5 py-2 mb-4 relative z-10 transition-all focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-400/50">
-          <Search size={18} color="#6366f1" style={{ flexShrink: 0 }} />
+        <div className="glass-panel-premium flex items-center gap-3 px-5 py-3 mb-4 relative z-10 transition-all focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-400/50">
+          <Search size={18} className="text-indigo-400 shrink-0" />
           <input
             ref={inputRef}
             value={query}
             onChange={e => { setQuery(e.target.value); setActiveIdx(0); }}
-            placeholder="Araç, kayıt veya sayfa ara..."
-            style={{
-              flex: 1, background: 'none', border: 'none', outline: 'none',
-              color: '#f8fafc', fontSize: 16, padding: '14px 0',
-            }}
+            placeholder={t('search.placeholder')}
+            className="flex-1 bg-transparent border-none outline-none text-slate-50 text-base py-1"
           />
           {query && (
-            <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-              <X size={16} color="#475569" />
+            <button onClick={() => setQuery('')} className="bg-transparent border-none cursor-pointer p-1 text-slate-400 hover:text-slate-300 transition-colors">
+              <X size={16} />
             </button>
           )}
-          <kbd style={{
-            background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(51,65,85,0.6)',
-            borderRadius: 6, padding: '3px 8px', color: '#475569', fontSize: 11,
-            flexShrink: 0,
-          }}>ESC</kbd>
+          <kbd className="bg-slate-800/80 border border-slate-700/60 rounded-md px-2 py-1 text-slate-400 text-[11px] shrink-0 font-medium">ESC</kbd>
         </div>
 
         {/* Results */}
@@ -287,9 +285,9 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
               {recent.length > 0 && (
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-slate-500 text-xs font-bold tracking-wider">SON ARAMALAR</p>
+                    <p className="text-slate-500 text-xs font-bold tracking-wider">{t('search.recent')}</p>
                     <button onClick={() => { clearRecent(); setRecent([]); }} className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">
-                      Temizle
+                      {t('search.clear')}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -303,7 +301,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
                 </div>
               )}
 
-              <p className="text-slate-500 text-xs font-bold tracking-wider mb-3">HIZLI ERİŞİM</p>
+              <p className="text-slate-500 text-xs font-bold tracking-wider mb-3">{t('search.quick_access')}</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {STATIC_RESULTS.filter(r => r.category === 'action').concat(
                   STATIC_RESULTS.filter(r => ['p-garage', 'p-logs', 'p-analytics', 'p-notif'].includes(r.id))
@@ -377,9 +375,9 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
               <div style={{ width: 56, height: 56, borderRadius: 18, background: 'rgba(30,41,59,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                 <Search size={24} color="#334155" />
               </div>
-              <p style={{ color: '#94a3b8', fontWeight: 600, fontSize: 15, marginBottom: 6 }}>Sonuç bulunamadı</p>
+              <p style={{ color: '#94a3b8', fontWeight: 600, fontSize: 15, marginBottom: 6 }}>{t('search.no_results')}</p>
               <p style={{ color: '#475569', fontSize: 13 }}>
-                "<span style={{ color: '#64748b' }}>{query}</span>" için eşleşme yok.
+                {t('search.no_results_desc', { query })}
               </p>
             </div>
           )}
@@ -391,14 +389,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
               padding: '10px 16px', borderTop: '1px solid rgba(30,41,59,0.8)',
             }}>
               <div style={{ display: 'flex', gap: 16 }}>
-                {[['↑↓', 'Gezin'], ['↵', 'Aç'], ['ESC', 'Kapat']].map(([key, label]) => (
+                {[['↑↓', t('search.hint_nav')], ['↵', t('search.hint_open')], ['ESC', t('search.hint_close')]].map(([key, label]) => (
                   <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <kbd style={{ background: 'rgba(30,41,59,0.8)', border: '1px solid rgba(51,65,85,0.5)', borderRadius: 5, padding: '2px 6px', color: '#475569', fontSize: 10 }}>{key}</kbd>
                     <span style={{ color: '#334155', fontSize: 11 }}>{label}</span>
                   </span>
                 ))}
               </div>
-              <span style={{ color: '#1e293b', fontSize: 11 }}>{results.length} sonuç</span>
+              <span style={{ color: '#1e293b', fontSize: 11 }}>{t('search.count', { count: results.length })}</span>
             </div>
           )}
         </div>
@@ -409,26 +407,21 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
 
 // ─── Search Trigger Button ────────────────────────────────────────────────────
 
-export const SearchTrigger: React.FC<{ onClick: () => void }> = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      background: 'rgba(30,41,59,0.6)', border: '1px solid rgba(51,65,85,0.5)',
-      borderRadius: 14, padding: '10px 14px', cursor: 'pointer',
-      width: '100%', textAlign: 'left',
-      transition: 'all 0.15s',
-    }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.5)'; e.currentTarget.style.background = 'rgba(99,102,241,0.08)'; }}
-    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(51,65,85,0.5)'; e.currentTarget.style.background = 'rgba(30,41,59,0.6)'; }}
-  >
-    <Search size={15} color="#475569" />
-    <span style={{ flex: 1, color: '#475569', fontSize: 14 }}>Ara...</span>
-    <kbd style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(51,65,85,0.5)', borderRadius: 6, padding: '2px 7px', color: '#334155', fontSize: 11 }}>
-      ⌘K
-    </kbd>
-  </button>
-);
+export const SearchTrigger: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2.5 bg-slate-800/60 hover:bg-indigo-500/10 border border-slate-700/50 hover:border-indigo-500/50 rounded-xl px-3.5 py-2.5 cursor-pointer w-full text-left transition-all group"
+    >
+      <Search size={15} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
+      <span className="flex-1 text-slate-400 text-sm group-hover:text-slate-300 transition-colors">{t('search.trigger_placeholder')}</span>
+      <kbd className="bg-slate-900/80 border border-slate-700/50 rounded-md px-2 py-0.5 text-slate-500 text-[11px] font-medium group-hover:text-indigo-300 transition-colors">
+        ⌘K
+      </kbd>
+    </button>
+  );
+};
 
 // ─── useGlobalSearch Hook ─────────────────────────────────────────────────────
 

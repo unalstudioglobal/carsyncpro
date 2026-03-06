@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
+@variant dark (&:where(.dark, .dark *));
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
 
 /* ── Design Tokens ──────────────────────────────────────── */
@@ -549,6 +549,60 @@ body {
   }
 }
 
+/* ── Premium Logo Shine & 3D Effect ── */
+@keyframes premium-shine {
+  0% {
+    background-position: 200% 50%;
+  }
+
+  100% {
+    background-position: -200% 50%;
+  }
+}
+
+.animate-premium-shine {
+  background: linear-gradient(110deg,
+      #0F172A 20%,
+      var(--gold) 40%,
+      #ffffff 50%,
+      var(--gold) 60%,
+      #0F172A 80%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: premium-shine 3s linear infinite alternate;
+}
+
+html.dark .animate-premium-shine {
+  background: linear-gradient(110deg,
+      #F0EEE8 20%,
+      var(--gold) 40%,
+      #ffffff 50%,
+      var(--gold) 60%,
+      #F0EEE8 80%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.logo-3d {
+  /* Hard shadow for 3D extrusion, soft shadow for depth, gold shadow for glow */
+  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.8)) drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.7)) drop-shadow(0px 8px 12px rgba(0, 0, 0, 0.5)) drop-shadow(0px 0px 15px rgba(201, 168, 76, 0.5));
+}
+
+.logo-3d:hover {
+  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9)) drop-shadow(3px 3px 0px rgba(0, 0, 0, 0.8)) drop-shadow(0px 12px 20px rgba(0, 0, 0, 0.6)) drop-shadow(0px 0px 25px rgba(201, 168, 76, 0.8));
+  transform: scale(1.02) translateY(-2px);
+}
+
+.logo-3d:active {
+  filter: drop-shadow(1px 1px 0px rgba(0, 0, 0, 0.9)) drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.7)) drop-shadow(0px 0px 10px rgba(201, 168, 76, 0.3));
+  transform: scale(0.98) translateY(2px);
+}
+
+/* ── Calendar UI (React Day Picker v9) ──────────────────── */
 /* ── Safe areas ─────────────────────────────────────────── */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
@@ -617,6 +671,18 @@ body {
 }
 
 /* ── Glass Chip ─────────────────────────────────────────── */
+.blur-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark .blur-glass {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .glass-chip {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
@@ -710,10 +776,157 @@ body {
 
 /* ── Premium Glass Panel ─────────────────────────────────── */
 .glass-panel-premium {
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(36px);
   -webkit-backdrop-filter: blur(36px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border-radius: 24px;
+}
+
+.dark .glass-panel-premium {
+  background: rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
+}
+
+/* ── Bento Grid Utils ────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.bento-col-span-2 {
+  grid-column: span 1;
+}
+
+@media (min-width: 768px) {
+  .bento-col-span-2 {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bento-col-span-4 {
+    grid-column: span 4;
+  }
+}
+
+/* ── Web Sidebar ────────────────────────────────────────── */
+.web-sidebar {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  background: var(--bg-deep);
+  border-right: 1px solid var(--border-mid);
+  z-index: 100;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .web-sidebar {
+    display: flex;
+  }
+
+  .main-content-outer {
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+  }
+
+  .main-content-web {
+    margin-left: 280px !important;
+    max-width: none !important;
+  }
+
+  .hide-on-desktop {
+    display: none !important;
+  }
+}
+
+/* ── Glass Levels ────────────────────────────────────────── */
+.glass-1 {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-2 {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-3 {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ── BRUTE FORCE LIGHT MODE CONTRAST FIX ── */
+html:not(.dark) .text-white,
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-500 {
+  color: #0F172A !important;
+}
+
+html:not(.dark) .bg-slate-800,
+html:not(.dark) .bg-slate-800\/20,
+html:not(.dark) .bg-slate-800\/30,
+html:not(.dark) .bg-slate-800\/40,
+html:not(.dark) .bg-slate-800\/50,
+html:not(.dark) .bg-slate-800\/60,
+html:not(.dark) .bg-slate-800\/80,
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-900\/50,
+html:not(.dark) .bg-slate-900\/80,
+html:not(.dark) .bg-slate-900\/90,
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-slate-950\/80,
+html:not(.dark) .bg-slate-950\/90,
+html:not(.dark) .bg-\[\#0a0f1e\]\/90,
+html:not(.dark) .bg-\[\#0a0f1e\],
+html:not(.dark) .bg-\[\#0f172a\],
+html:not(.dark) .bg-white\/5,
+html:not(.dark) .glass-panel-premium,
+html:not(.dark) .blur-glass {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-700\/20,
+html:not(.dark) .border-slate-700\/30,
+html:not(.dark) .border-slate-700\/40,
+html:not(.dark) .border-slate-700\/50,
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-800\/30,
+html:not(.dark) .border-slate-800\/50,
+html:not(.dark) .border-white\/10,
+html:not(.dark) .border-white\/5 {
+  border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) .text-gold {
+  color: #B45309 !important;
 }

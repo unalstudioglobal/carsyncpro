@@ -509,6 +509,24 @@ Sadece JSON. Türkçe.` }
     }
   });
 
+  // ── 7. Places API Proxy (CORS Bypass) ──────────────────
+  app.get("/api/places", async (req, res) => {
+    const targetUrl = req.query.url as string;
+    if (!targetUrl || !targetUrl.startsWith("https://maps.googleapis.com/")) {
+      res.status(400).json({ error: "Geçersiz veya eksik URL" });
+      return;
+    }
+
+    try {
+      const response = await fetch(targetUrl);
+      const data = await response.json();
+      res.json(data);
+    } catch (err: any) {
+      console.error("Places API proxy hatası:", err);
+      res.status(500).json({ error: "Places API isteği başarısız oldu." });
+    }
+  });
+
   // ── Vite / Static ──────────────────────────────────────
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");

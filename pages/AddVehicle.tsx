@@ -271,9 +271,9 @@ export const AddVehicle: React.FC = () => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
 
-  const compressImage = (dataUrl: string, maxWidth = 800, quality = 0.7): Promise<string> => {
+  const compressImage = (dataUrl: string, maxWidth = 400, quality = 0.7): Promise<string> => {
     return new Promise((resolve) => {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let w = img.width;
@@ -296,7 +296,23 @@ export const AddVehicle: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      Array.from(files).forEach((file: File) => {
+      const currentCount = formData.images.length;
+      const newFiles = Array.from(files);
+
+      if (currentCount >= 4) {
+        toast.error('En fazla 4 araç fotoğrafı ekleyebilirsiniz.');
+        e.target.value = '';
+        return;
+      }
+
+      const availableSlots = 4 - currentCount;
+      const filesToProcess = newFiles.slice(0, availableSlots);
+
+      if (newFiles.length > availableSlots) {
+        toast.warning(`En fazla 4 fotoğraf yükleyebilirsiniz. Sadece ilk ${availableSlots} fotoğraf eklendi.`);
+      }
+
+      filesToProcess.forEach((file: File) => {
         const reader = new FileReader();
         reader.onloadend = async () => {
           const compressed = await compressImage(reader.result as string);

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  ChevronLeft, Brain, Zap, Clock, AlertTriangle, CheckCircle2, 
+import {
+  ChevronLeft, Brain, Zap, Clock, AlertTriangle, CheckCircle2,
   Wrench, Droplet, Disc, Battery, RotateCw, Fuel, ClipboardCheck,
   Sparkles, TrendingUp, Calendar, Gauge, ArrowRight, RefreshCw,
   Shield, Timer, Info
@@ -10,6 +10,7 @@ import {
 import { fetchVehicles, fetchLogs } from '../services/firestoreService';
 import { Vehicle, ServiceLog } from '../types';
 import { GoogleGenAI } from "@google/genai";
+import { AdBanner } from '../components/AdBanner';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -44,46 +45,42 @@ interface AIPredictionResult {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const SERVICE_INTERVALS: Record<string, { km: number; months: number; icon: React.ElementType; iconColor: string }> = {
-  'Yağ Değişimi':      { km: 10000, months: 6,  icon: Droplet,        iconColor: 'text-amber-400'  },
-  'Periyodik Bakım':   { km: 15000, months: 12, icon: Wrench,         iconColor: 'text-blue-400'   },
-  'Lastik Değişimi':   { km: 40000, months: 36, icon: Disc,           iconColor: 'text-purple-400' },
-  'Lastik Rotasyonu':  { km: 10000, months: 6,  icon: RotateCw,       iconColor: 'text-indigo-400' },
-  'Fren Servisi':      { km: 30000, months: 24, icon: Wrench,         iconColor: 'text-red-400'    },
-  'Akü Değişimi':      { km: 60000, months: 48, icon: Battery,        iconColor: 'text-yellow-400' },
-  'Muayene':           { km: 999999,months: 24, icon: ClipboardCheck, iconColor: 'text-teal-400'   },
-  'Hava Filtresi':     { km: 20000, months: 12, icon: Sparkles,       iconColor: 'text-cyan-400'   },
-  'Polen Filtresi':    { km: 15000, months: 12, icon: Sparkles,       iconColor: 'text-green-400'  },
-  'Antifriz':          { km: 40000, months: 24, icon: Droplet,        iconColor: 'text-blue-300'   },
-  'Triger Kayışı':     { km: 60000, months: 48, icon: Zap,            iconColor: 'text-orange-400' },
+  'oil_change': { km: 10000, months: 6, icon: Droplet, iconColor: 'text-amber-400' },
+  'periodic': { km: 15000, months: 12, icon: Wrench, iconColor: 'text-blue-400' },
+  'tire_change': { km: 40000, months: 36, icon: Disc, iconColor: 'text-purple-400' },
+  'tire_rotation': { km: 10000, months: 6, icon: RotateCw, iconColor: 'text-indigo-400' },
+  'brake': { km: 30000, months: 24, icon: Wrench, iconColor: 'text-red-400' },
+  'battery': { km: 60000, months: 48, icon: Battery, iconColor: 'text-yellow-400' },
+  'inspection': { km: 999999, months: 24, icon: ClipboardCheck, iconColor: 'text-teal-400' },
+  'air_filter': { km: 20000, months: 12, icon: Sparkles, iconColor: 'text-cyan-400' },
+  'pollen_filter': { km: 15000, months: 12, icon: Sparkles, iconColor: 'text-green-400' },
+  'antifreeze': { km: 40000, months: 24, icon: Droplet, iconColor: 'text-blue-300' },
+  'timing_belt': { km: 60000, months: 48, icon: Zap, iconColor: 'text-orange-400' },
 };
 
 const URGENCY_CONFIG = {
-  critical: { 
-    label: 'Kritik',      
-    bg: 'bg-red-500/15',    
-    border: 'border-red-500/40',   
+  critical: {
+    bg: 'bg-red-500/15',
+    border: 'border-red-500/40',
     text: 'text-red-400',
     dot: 'bg-red-500',
     badge: 'bg-red-500/20 text-red-300'
   },
-  warning:  { 
-    label: 'Yaklaşıyor',  
-    bg: 'bg-amber-500/10',  
-    border: 'border-amber-500/30', 
+  warning: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
     text: 'text-amber-400',
     dot: 'bg-amber-500',
     badge: 'bg-amber-500/20 text-amber-300'
   },
-  soon:     { 
-    label: 'Planla',      
-    bg: 'bg-blue-500/10',   
-    border: 'border-blue-500/30',  
+  soon: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
     text: 'text-blue-400',
     dot: 'bg-blue-500',
     badge: 'bg-blue-500/20 text-blue-300'
   },
-  ok:       { 
-    label: 'İyi Durumda', 
+  ok: {
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
     text: 'text-emerald-400',
@@ -95,7 +92,7 @@ const URGENCY_CONFIG = {
 // ─── AI Service ──────────────────────────────────────────────────────────────
 
 const getPredictiveMaintenance = async (
-  vehicle: Vehicle, 
+  vehicle: Vehicle,
   logs: ServiceLog[],
   lang: string
 ): Promise<AIPredictionResult | null> => {
@@ -111,7 +108,8 @@ const getPredictiveMaintenance = async (
     .map(l => `${l.type} - ${l.date} - ${l.mileage}km - ₺${l.cost}`)
     .join('\n');
 
-  const prompt = `Sen bir uzman araç bakım mühendisisin. Aşağıdaki araç ve servis geçmişini analiz et.
+  const prompt = lang === 'Turkish' || lang === 'Türkçe'
+    ? `Sen bir uzman araç bakım mühendisisin. Aşağıdaki araç ve servis geçmişini analiz et.
 
 ARAÇ BİLGİLERİ:
 - Marka/Model: ${vehicle.brand} ${vehicle.model} (${vehicle.year})
@@ -122,41 +120,55 @@ ARAÇ BİLGİLERİ:
 SERVİS GEÇMİŞİ (son kayıtlar):
 ${logSummary || 'Kayıt bulunamadı'}
 
-Görev: Bu araca özgü bakım tahminleri oluştur. Aşağıdaki bakım kalemlerini analiz et:
-- Yağ Değişimi
-- Periyodik Bakım  
-- Lastik Değişimi
-- Lastik Rotasyonu
-- Fren Servisi
-- Akü Değişimi
-- Hava Filtresi
-- Polen Filtresi
-- Triger Kayışı
-- Antifriz
+Görev: Bu araca özgü bakım tahminleri oluştur. Aşağıdaki bakım kalemlerini analiz et (Item anahtarları: oil_change, periodic, tire_change, tire_rotation, brake, battery, air_filter, pollen_filter, timing_belt, antifreeze):
 
 JSON formatında yanıt ver:
 {
   "predictions": [
     {
-      "item": "bakım kalemi adı",
+      "item": "yukarıdaki anahtarlardan biri",
       "urgencyLevel": "critical|warning|soon|ok",
       "estimatedMonths": sayı,
       "estimatedKm": araca özel tahmini km (mevcut km + kalan),
-      "reasoning": "kısa ${lang} açıklama, neden bu tahmini yaptın",
+      "reasoning": "kısa Türkçe açıklama, neden bu tahmini yaptın",
       "confidence": 0-100 arası güven skoru
     }
   ],
   "overallRisk": "Yüksek|Orta|Düşük",
-  "summary": "Araç hakkında 1-2 cümle genel değerlendirme (${lang})"
+  "summary": "Araç hakkında 1-2 cümle genel değerlendirme (Türkçe)"
 }
 
-Kriterlere göre urgencyLevel belirle:
-- critical: geçmiş olmalı veya hemen yapılmalı
-- warning: 1-2 ay içinde
-- soon: 3-6 ay içinde  
-- ok: 6 ay sonra veya yapılmış
+Sadece JSON döndür, başka metin ekleme.`
+    : `You are an expert vehicle maintenance engineer. Analyze the following vehicle and service history.
 
-Sadece JSON döndür, başka metin ekleme.`;
+VEHICLE INFO:
+- Make/Model: ${vehicle.brand} ${vehicle.model} (${vehicle.year})
+- Current Mileage: ${vehicle.mileage} km
+- Health Score: ${vehicle.healthScore}/100
+- Status: ${vehicle.status}
+
+SERVICE HISTORY (recent records):
+${logSummary || 'No records found'}
+
+Task: Generate specific maintenance predictions for this vehicle. Analyze the following items (Item keys: oil_change, periodic, tire_change, tire_rotation, brake, battery, air_filter, pollen_filter, timing_belt, antifreeze):
+
+Respond in JSON format:
+{
+  "predictions": [
+    {
+      "item": "one of the keys above",
+      "urgencyLevel": "critical|warning|soon|ok",
+      "estimatedMonths": number,
+      "estimatedKm": vehicle specific estimated km (current km + remaining),
+      "reasoning": "short English explanation, why did you make this prediction",
+      "confidence": confidence score between 0-100
+    }
+  ],
+  "overallRisk": "High|Medium|Low",
+  "summary": "1-2 sentence general assessment of the vehicle (English)"
+}
+
+Return ONLY JSON, do not add any other text.`;
 
   try {
     const response = await ai.models.generateContent({
@@ -164,16 +176,16 @@ Sadece JSON döndür, başka metin ekleme.`;
       contents: prompt,
       config: { responseMimeType: 'application/json' }
     });
-    
+
     let text = response.text || '{}';
-    
+
     // Clean up markdown code blocks if present
     text = text.replace(/```json\n?|\n?```/g, '').trim();
-    
+
     // Extract just the JSON object if there's extra text
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
-    
+
     if (firstBrace !== -1 && lastBrace !== -1) {
       text = text.substring(firstBrace, lastBrace + 1);
     }
@@ -195,13 +207,15 @@ const getLastServiceInfo = (logs: ServiceLog[], vehicleId: string, type: string)
   return { km: relevant[0].mileage, date: relevant[0].date };
 };
 
-const addMonths = (date: Date, months: number): string => {
+const addMonths = (date: Date, months: number, i18n: any): string => {
   const d = new Date(date);
   d.setMonth(d.getMonth() + months);
-  return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+  return d.toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' });
 };
 
-const formatKm = (km: number) => km.toLocaleString('tr-TR') + ' km';
+const formatKmValue = (km: number, i18n: any) => {
+  return km.toLocaleString(i18n.language === 'tr' ? 'tr-TR' : 'en-US') + ' km';
+};
 
 // ─── Sub Components ──────────────────────────────────────────────────────────
 
@@ -216,9 +230,9 @@ const ConfidenceBadge: React.FC<{ confidence: number }> = ({ confidence }) => {
   );
 };
 
-const PredictionCard: React.FC<{ 
-  prediction: MaintenancePrediction; 
-  onSchedule: (item: string) => void 
+const PredictionCard: React.FC<{
+  prediction: MaintenancePrediction;
+  onSchedule: (item: string) => void
 }> = ({ prediction, onSchedule }) => {
   const { t } = useTranslation();
   const { icon: Icon, iconColor, urgency, item, estimatedDate, estimatedKm, currentKm, lastDoneKm, confidence, aiReason } = prediction;
@@ -250,7 +264,7 @@ const PredictionCard: React.FC<{
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-white font-semibold text-sm">{item}</h3>
+            <h3 className="text-white font-semibold text-sm">{t(`predictive.maintenance_items.${item}`)}</h3>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.badge}`}>
               {urgencyLabels[urgency]}
             </span>
@@ -262,15 +276,14 @@ const PredictionCard: React.FC<{
           <div className="mb-2">
             <div className="flex justify-between text-xs text-slate-500 mb-1">
               <span>{t('predictive.last_service')}</span>
-              <span>{lastDoneKm ? formatKm(lastDoneKm) : t('predictive.unknown')}</span>
+              <span>{lastDoneKm ? formatKmValue(lastDoneKm, { language: t('predictive.ai_prompt_lang') === 'Türkçe' ? 'tr' : 'en' }) : t('predictive.unknown')}</span>
             </div>
             <div className="h-1.5 bg-slate-700/60 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full transition-all duration-1000 ${
-                  urgency === 'critical' ? 'bg-red-500' :
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${urgency === 'critical' ? 'bg-red-500' :
                   urgency === 'warning' ? 'bg-amber-500' :
-                  urgency === 'soon' ? 'bg-blue-500' : 'bg-emerald-500'
-                }`}
+                    urgency === 'soon' ? 'bg-blue-500' : 'bg-emerald-500'
+                  }`}
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -286,7 +299,7 @@ const PredictionCard: React.FC<{
               {kmRemaining > 0 && (
                 <div className="flex items-center gap-1 text-xs text-slate-400">
                   <Gauge size={10} />
-                  <span>{t('predictive.remaining_km', { km: formatKm(kmRemaining) })}</span>
+                  <span>{t('predictive.remaining_km', { km: formatKmValue(kmRemaining, { language: t('predictive.ai_prompt_lang') === 'Türkçe' ? 'tr' : 'en' }) })}</span>
                 </div>
               )}
             </div>
@@ -299,11 +312,10 @@ const PredictionCard: React.FC<{
       {(urgency === 'critical' || urgency === 'warning') && (
         <button
           onClick={() => onSchedule(item)}
-          className={`mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all ${
-            urgency === 'critical' 
-              ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30' 
-              : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
-          }`}
+          className={`mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all ${urgency === 'critical'
+            ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30'
+            : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30'
+            }`}
         >
           <Calendar size={12} />
           {t('predictive.schedule_btn')}
@@ -314,16 +326,24 @@ const PredictionCard: React.FC<{
   );
 };
 
-const RiskMeter: React.FC<{ risk: 'Yüksek' | 'Orta' | 'Düşük' | null }> = ({ risk }) => {
+const RiskMeter: React.FC<{ risk: 'Yüksek' | 'Orta' | 'Düşük' | 'High' | 'Medium' | 'Low' | null }> = ({ risk }) => {
   const { t } = useTranslation();
-  const riskLabels: Record<string, string> = { 'Yüksek': t('predictive.risk_high'), 'Orta': t('predictive.risk_med'), 'Düşük': t('predictive.risk_low') };
+  const riskLabels: Record<string, string> = {
+    'Yüksek': t('predictive.risk_high'), 'High': t('predictive.risk_high'),
+    'Orta': t('predictive.risk_med'), 'Medium': t('predictive.risk_med'),
+    'Düşük': t('predictive.risk_low'), 'Low': t('predictive.risk_low')
+  };
   const config = {
-    'Yüksek': { pct: 85, color: 'text-red-400', bg: 'bg-red-500', label: 'Yüksek Risk' },
-    'Orta':   { pct: 50, color: 'text-amber-400', bg: 'bg-amber-500', label: 'Orta Risk' },
-    'Düşük':  { pct: 20, color: 'text-emerald-400', bg: 'bg-emerald-500', label: 'Düşük Risk' },
+    'Yüksek': { pct: 85, color: 'text-red-400', bg: 'bg-red-500' },
+    'High': { pct: 85, color: 'text-red-400', bg: 'bg-red-500' },
+    'Orta': { pct: 50, color: 'text-amber-400', bg: 'bg-amber-500' },
+    'Medium': { pct: 50, color: 'text-amber-400', bg: 'bg-amber-500' },
+    'Düşük': { pct: 20, color: 'text-emerald-400', bg: 'bg-emerald-500' },
+    'Low': { pct: 20, color: 'text-emerald-400', bg: 'bg-emerald-500' },
   };
   if (!risk) return null;
-  const c = config[risk];
+  const c = (config as any)[risk];
+  if (!c) return null;
   return (
     <div className="flex items-center gap-3">
       <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
@@ -407,7 +427,7 @@ export const PredictiveMaintenance: React.FC = () => {
       })();
 
       const estimatedKm = aiPrediction?.estimatedKm || (lastKm ? lastKm + interval.km : selectedVehicle.mileage + Math.round(interval.km * 0.3));
-      const estimatedDate = addMonths(now, aiPrediction?.estimatedMonths ?? interval.months / 2);
+      const estimatedDate = addMonths(now, aiPrediction?.estimatedMonths ?? interval.months / 2, { language: t('predictive.ai_prompt_lang') === 'Türkçe' ? 'tr' : 'en' });
 
       built.push({
         item: itemName,
@@ -421,7 +441,7 @@ export const PredictiveMaintenance: React.FC = () => {
         lastDoneKm: lastKm,
         lastDoneDate: lastDate,
         confidence: aiPrediction?.confidence ?? 60,
-        aiReason: aiPrediction?.reasoning ?? 'Genel bakım takvimine göre hesaplandı.',
+        aiReason: aiPrediction?.reasoning ?? t('predictive.reason_default'),
       });
     }
 
@@ -436,8 +456,8 @@ export const PredictiveMaintenance: React.FC = () => {
     navigate('/add-record', { state: { serviceType: item } });
   };
 
-  const filtered = activeFilter === 'all' 
-    ? predictions 
+  const filtered = activeFilter === 'all'
+    ? predictions
     : predictions.filter(p => p.urgency === activeFilter);
 
   const counts = {
@@ -467,8 +487,8 @@ export const PredictiveMaintenance: React.FC = () => {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/50 px-4 pt-12 pb-4">
         <div className="flex items-center gap-3 mb-4">
-          <button 
-            onClick={() => navigate(-1)} 
+          <button
+            onClick={() => navigate(-1)}
             className="w-9 h-9 rounded-xl bg-slate-800/60 flex items-center justify-center"
           >
             <ChevronLeft size={20} className="text-slate-300" />
@@ -489,16 +509,15 @@ export const PredictiveMaintenance: React.FC = () => {
             <button
               key={v.id}
               onClick={() => setSelectedVehicleId(v.id)}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                selectedVehicleId === v.id
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                  : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
-              }`}
+              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${selectedVehicleId === v.id
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
+                }`}
             >
               <span>{v.brand} {v.model}</span>
               {selectedVehicleId === v.id && (
                 <span className="bg-white/20 rounded-full px-1.5 py-0.5 text-[10px]">
-                  {formatKm(v.mileage)}
+                  {formatKmValue(v.mileage, { language: t('predictive.ai_prompt_lang') === 'Türkçe' ? 'tr' : 'en' })}
                 </span>
               )}
             </button>
@@ -544,17 +563,16 @@ export const PredictiveMaintenance: React.FC = () => {
         {!analyzing && predictions.length > 0 && (
           <div className="grid grid-cols-4 gap-2">
             {[
-              { key: 'critical', label: t('predictive.filter_critical_short'), color: 'text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/20'     },
-              { key: 'warning',  label: t('predictive.filter_warning_short'), color: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/20'   },
-              { key: 'soon',     label: t('predictive.filter_soon_short'), color: 'text-blue-400',    bg: 'bg-blue-500/10',    border: 'border-blue-500/20'    },
-              { key: 'ok',       label: t('predictive.filter_ok_short'), color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+              { key: 'critical', label: t('predictive.filter_critical_short'), color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
+              { key: 'warning', label: t('predictive.filter_warning_short'), color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+              { key: 'soon', label: t('predictive.filter_soon_short'), color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+              { key: 'ok', label: t('predictive.filter_ok_short'), color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
             ].map(({ key, label, color, bg, border }) => (
               <button
                 key={key}
                 onClick={() => setActiveFilter(activeFilter === key ? 'all' : key as typeof activeFilter)}
-                className={`rounded-xl ${bg} border ${border} p-2.5 text-center transition-all ${
-                  activeFilter === key ? 'ring-1 ring-white/20 scale-95' : ''
-                }`}
+                className={`rounded-xl ${bg} border ${border} p-2.5 text-center transition-all ${activeFilter === key ? 'ring-1 ring-white/20 scale-95' : ''
+                  }`}
               >
                 <p className={`text-xl font-bold ${color}`}>{counts[key as keyof typeof counts]}</p>
                 <p className="text-slate-500 text-[10px] mt-0.5">{label}</p>
@@ -577,11 +595,10 @@ export const PredictiveMaintenance: React.FC = () => {
 
                 key={key}
                 onClick={() => setActiveFilter(key)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  activeFilter === key
-                    ? 'bg-slate-200 text-slate-900'
-                    : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
-                }`}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeFilter === key
+                  ? 'bg-slate-200 text-slate-900'
+                  : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
+                  }`}
               >
                 {label}
               </button>
@@ -592,17 +609,17 @@ export const PredictiveMaintenance: React.FC = () => {
         {/* Prediction cards */}
         {analyzing ? (
           <div className="space-y-3">
-            {[1,2,3,4].map(i => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className="h-32 rounded-2xl bg-slate-800/40 animate-pulse border border-slate-700/30" />
             ))}
           </div>
         ) : (
           <div className="space-y-3">
             {filtered.map((pred, idx) => (
-              <PredictionCard 
-                key={`${pred.item}-${idx}`} 
-                prediction={pred} 
-                onSchedule={handleSchedule} 
+              <PredictionCard
+                key={`${pred.item}-${idx}`}
+                prediction={pred}
+                onSchedule={handleSchedule}
               />
             ))}
           </div>
@@ -615,7 +632,7 @@ export const PredictiveMaintenance: React.FC = () => {
             className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-slate-800/40 border border-slate-700/30 text-slate-400 text-sm hover:bg-slate-700/40 transition-all"
           >
             <RefreshCw size={14} />
-            Analizi Yenile
+            {t('predictive.refresh_btn')}
           </button>
         )}
 
@@ -640,11 +657,13 @@ export const PredictiveMaintenance: React.FC = () => {
           <div className="flex items-start gap-2 bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
             <Info size={14} className="text-slate-500 flex-shrink-0 mt-0.5" />
             <p className="text-slate-500 text-xs leading-relaxed">
-              Tahminler servis geçmişiniz ve araç verilerinize dayalı AI analiziyle oluşturulur. 
-              Gerçek değerler aracınızın kullanım koşullarına göre farklılık gösterebilir.
+              {t('predictive.disclaimer')}
             </p>
           </div>
         )}
+
+        {/* Google Ad Placement */}
+        <AdBanner slotId="7103291209" format="fluid" layoutKey="-gw-3+1f-3d+2z" />
       </div>
     </div>
   );

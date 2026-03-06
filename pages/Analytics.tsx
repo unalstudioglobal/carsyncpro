@@ -7,6 +7,7 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, 
 import { fetchVehicles, fetchLogs } from '../services/firestoreService';
 import { Vehicle, ServiceLog } from '../types';
 import { OnboardingGuide } from '../components/OnboardingGuide';
+import { AdBanner } from '../components/AdBanner';
 import { toast } from '../services/toast';
 import { exportLogsCsv, exportMonthlySummaryCsv, exportFullBackupJson } from '../services/exportService';
 import jsPDF from 'jspdf';
@@ -20,9 +21,9 @@ const CustomAreaTooltip = ({ active, payload, label, t }: any) => {
         const total = payload.reduce((sum, entry) => sum + (entry.value || 0), 0);
         return (
             <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700 p-4 rounded-2xl shadow-2xl min-w-[180px]">
-                <p className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">{label}</p>
+                <p className="text-slate-600 dark:text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">{label}</p>
                 <div className="mb-3 pb-3 border-b border-slate-700">
-                    <span className="text-2xl font-bold text-white block">₺{total.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-black dark:text-white block">₺{total.toLocaleString()}</span>
                     <span className="text-[10px] text-slate-500 uppercase font-bold">{t ? t('analytics.total_expense') : 'Toplam Harcama'}</span>
                 </div>
                 <div className="space-y-1.5">
@@ -30,9 +31,9 @@ const CustomAreaTooltip = ({ active, payload, label, t }: any) => {
                         <div key={index} className="flex items-center justify-between text-xs">
                             <div className="flex items-center space-x-2">
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                                <span className="text-slate-300">{entry.name}</span>
+                                <span className="text-slate-700 dark:text-slate-300">{entry.name}</span>
                             </div>
-                            <span className="font-mono text-white font-medium">₺{entry.value?.toLocaleString()}</span>
+                            <span className="font-mono text-black dark:text-white font-medium">₺{entry.value?.toLocaleString()}</span>
                         </div>
                     ))}
                 </div>
@@ -46,7 +47,7 @@ const CustomComparisonTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-slate-900/90 backdrop-blur-md border border-slate-700 p-3 rounded-xl shadow-xl">
-                <p className="text-slate-400 text-xs font-bold mb-2 text-center">{label}</p>
+                <p className="text-slate-600 dark:text-slate-400 text-xs font-bold mb-2 text-center">{label}</p>
                 <div className="space-y-2">
                     {payload.map((entry, index) => (
                         <div key={index} className="flex items-center justify-between space-x-4 bg-slate-800/50 p-2 rounded-lg">
@@ -54,7 +55,7 @@ const CustomComparisonTooltip = ({ active, payload, label }: any) => {
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
                                 <span className="text-slate-200 text-xs font-medium">{entry.name}</span>
                             </div>
-                            <span className="text-white font-bold text-sm">{entry.value} <span className="text-[10px] text-slate-500 font-normal">L/100km</span></span>
+                            <span className="text-black dark:text-white font-bold text-sm">{entry.value} <span className="text-[10px] text-slate-500 font-normal">L/100km</span></span>
                         </div>
                     ))}
                 </div>
@@ -68,7 +69,7 @@ const CustomFuelTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 p-3 rounded-xl shadow-xl text-center">
-                <p className="text-slate-400 text-[10px] font-bold uppercase mb-1">{label}</p>
+                <p className="text-slate-600 dark:text-slate-400 text-[10px] font-bold uppercase mb-1">{label}</p>
                 <div className="text-xl font-bold text-cyan-400">
                     {payload[0].value} <span className="text-sm text-slate-500">L/100km</span>
                 </div>
@@ -486,7 +487,7 @@ export const Analytics: React.FC = () => {
                     <select
                         value={v1Id}
                         onChange={(e) => setV1Id(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 text-sm rounded-xl p-4 outline-none focus:border-blue-500 appearance-none"
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-700 text-sm rounded-xl p-4 outline-none focus:border-blue-500 appearance-none"
                     >
                         {vehicles.map(v => <option key={v.id} value={v.id}>{v.brand} {v.model}</option>)}
                     </select>
@@ -496,7 +497,7 @@ export const Analytics: React.FC = () => {
                     <select
                         value={v2Id}
                         onChange={(e) => setV2Id(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 text-sm rounded-xl p-4 outline-none focus:border-blue-500 appearance-none"
+                        className="w-full bg-white dark:bg-slate-800 border border-slate-700 text-sm rounded-xl p-4 outline-none focus:border-blue-500 appearance-none"
                     >
                         {vehicles.map(v => <option key={v.id} value={v.id}>{v.brand} {v.model}</option>)}
                     </select>
@@ -504,7 +505,7 @@ export const Analytics: React.FC = () => {
             </div>
 
             {/* Comparison Chart */}
-            <div className="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl">
+            <div className="glass-panel-premium p-5 shadow-xl">
                 <h3 className="text-sm font-bold mb-4 flex items-center">
                     <Fuel size={18} className="mr-2 text-blue-500" /> {t('analytics.fuel_consumption_label')}
                 </h3>
@@ -528,9 +529,9 @@ export const Analytics: React.FC = () => {
             {/* Stat Cards Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Cost Comparison */}
-                <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                <div className="glass-panel-premium p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-2 text-slate-400">
+                        <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
                             <CreditCard size={18} />
                             <span className="text-xs font-bold uppercase">{t('analytics.monthly_cost')}</span>
                         </div>
@@ -538,7 +539,7 @@ export const Analytics: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4 relative">
                         <div className="text-center">
-                            <div className="text-lg font-bold text-white">₺{(v1Cost ?? 3425).toLocaleString()}</div>
+                            <div className="text-lg font-bold text-black dark:text-white">₺{(v1Cost ?? 3425).toLocaleString()}</div>
                             <div className="text-[10px] text-slate-500 truncate mt-1">{v1.model}</div>
                         </div>
                         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[1px] h-10 bg-slate-700"></div>
@@ -560,9 +561,9 @@ export const Analytics: React.FC = () => {
                 </div>
 
                 {/* Health Score Comparison */}
-                <div className="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                <div className="glass-panel-premium p-5">
                     <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-2 text-slate-400">
+                        <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
                             <TrendingUp size={18} />
                             <span className="text-xs font-bold uppercase">{t('analytics.health_score')}</span>
                         </div>
@@ -570,7 +571,7 @@ export const Analytics: React.FC = () => {
                     <div className="space-y-4">
                         <div>
                             <div className="flex justify-between text-xs mb-1.5">
-                                <span className="text-slate-300">{v1.model}</span>
+                                <span className="text-slate-700 dark:text-slate-300">{v1.model}</span>
                                 <span className="font-bold">{v1.healthScore}/100</span>
                             </div>
                             <div className="w-full bg-slate-700 rounded-full h-2">
@@ -579,7 +580,7 @@ export const Analytics: React.FC = () => {
                         </div>
                         <div>
                             <div className="flex justify-between text-xs mb-1.5">
-                                <span className="text-slate-300">{v2.model}</span>
+                                <span className="text-slate-700 dark:text-slate-300">{v2.model}</span>
                                 <span className={`font-bold ${v2.healthScore < 90 ? 'text-yellow-500' : 'text-green-500'}`}>{v2.healthScore}/100</span>
                             </div>
                             <div className="w-full bg-slate-700 rounded-full h-2">
@@ -604,8 +605,8 @@ export const Analytics: React.FC = () => {
         return (
             <div className="p-5 h-full flex flex-col items-center justify-center text-center">
                 <TrendingUp size={48} className="text-slate-600 mb-4" />
-                <h2 className="text-xl font-bold text-white mb-2">{t('analytics.no_data')}</h2>
-                <p className="text-slate-400 mb-6">{t('analytics.no_data_desc')}</p>
+                <h2 className="text-xl font-bold text-black dark:text-white mb-2">{t('analytics.no_data')}</h2>
+                <p className="text-slate-600 dark:text-slate-400 mb-6">{t('analytics.no_data_desc')}</p>
                 <button onClick={() => navigate('/')} className="text-blue-500 font-medium">{t('analytics.go_to_garage')}</button>
             </div>
         );
@@ -618,11 +619,11 @@ export const Analytics: React.FC = () => {
             <OnboardingGuide tourKey="tour_analytics_v1" steps={onboardingSteps} />
             <header className="flex justify-between items-center pt-2">
                 <div className="flex items-center space-x-3">
-                    <button onClick={() => isComparing ? setIsComparing(false) : navigate(-1)} className="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition">
+                    <button onClick={() => isComparing ? setIsComparing(false) : navigate(-1)} className="w-11 h-11 rounded-full glass-panel-premium flex items-center justify-center hover:bg-slate-700/50 transition">
                         {isComparing ? <ChevronRight className="rotate-180" size={24} /> : <CreditCard size={22} className="text-blue-500" />}
                     </button>
                     <div>
-                        <div className="text-xs text-slate-400">{isComparing ? t('analytics.analysis_mode') : (vehicles[0] ? `${vehicles[0].brand} ${vehicles[0].model}` : t('analytics.vehicle'))}</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">{isComparing ? t('analytics.analysis_mode') : (vehicles[0] ? `${vehicles[0].brand} ${vehicles[0].model}` : t('analytics.vehicle'))}</div>
                         <h1 className="text-xl font-bold">{isComparing ? t('analytics.comparison') : t('analytics.title')}</h1>
                     </div>
                 </div>
@@ -650,14 +651,14 @@ export const Analytics: React.FC = () => {
                                     <ArrowRightLeft size={24} />
                                 </div>
                                 {!isPremium && (
-                                    <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg shadow-amber-900/20 flex items-center tracking-wide border border-amber-400/20">
+                                    <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-black dark:text-white text-[10px] font-bold px-2.5 py-1 rounded-lg shadow-lg shadow-amber-900/20 flex items-center tracking-wide border border-amber-400/20">
                                         <Lock size={10} className="mr-1.5" /> PREMIUM
                                     </span>
                                 )}
                             </div>
 
-                            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">{t('analytics.comparison')}</h3>
-                            <p className="text-slate-400 text-sm leading-relaxed max-w-[85%] mb-4">
+                            <h3 className="text-xl font-bold text-black dark:text-white mb-2 group-hover:text-blue-400 transition-colors">{t('analytics.comparison')}</h3>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed max-w-[85%] mb-4">
                                 İki aracın yakıt tüketimi, bakım maliyetleri ve sağlık puanlarını yan yana kıyaslayın.
                             </p>
 
@@ -668,12 +669,12 @@ export const Analytics: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex bg-slate-800 p-1.5 rounded-xl">
+                    <div className="flex bg-white dark:bg-slate-800 p-1.5 rounded-xl">
                         {timeFilters.map((p) => (
                             <button
                                 key={p}
                                 onClick={() => setTimeRange(p)}
-                                className={`flex-1 py-2.5 text-xs font-medium rounded-lg transition ${timeRange === p ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                                className={`flex-1 py-2.5 text-xs font-medium rounded-lg transition ${timeRange === p ? 'bg-blue-600 text-black dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-black dark:text-white'}`}
                             >
                                 {p}
                             </button>
@@ -681,24 +682,24 @@ export const Analytics: React.FC = () => {
                     </div>
 
                     {/* Main Chart (Stacked Area) */}
-                    <div className="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl animate-fadeIn">
+                    <div className="glass-panel-premium p-5 shadow-xl animate-fadeIn">
                         <div className="mb-6 flex justify-between items-end">
                             <div>
-                                <div className="text-slate-400 text-xs font-medium mb-1">{t('analytics.total_expense')} ({timeRange})</div>
+                                <div className="text-slate-600 dark:text-slate-400 text-xs font-medium mb-1">{t('analytics.total_expense')} ({timeRange})</div>
                                 <div className="flex items-baseline space-x-2">
-                                    <span className="text-3xl font-bold text-white">₺{lastPointTotal.toLocaleString()}</span>
+                                    <span className="text-3xl font-bold text-black dark:text-white">₺{lastPointTotal.toLocaleString()}</span>
                                     <span className="text-sm text-green-500 font-medium">↑ %12</span>
                                 </div>
                             </div>
                             {/* Legend-like items */}
                             <div className="flex flex-col items-end space-y-1">
-                                <div className="flex items-center text-[10px] text-slate-400">
+                                <div className="flex items-center text-[10px] text-slate-600 dark:text-slate-400">
                                     <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>Yakıt
                                 </div>
-                                <div className="flex items-center text-[10px] text-slate-400">
+                                <div className="flex items-center text-[10px] text-slate-600 dark:text-slate-400">
                                     <span className="w-2 h-2 rounded-full bg-amber-500 mr-2"></span>Bakım
                                 </div>
-                                <div className="flex items-center text-[10px] text-slate-400">
+                                <div className="flex items-center text-[10px] text-slate-600 dark:text-slate-400">
                                     <span className="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>Sigorta
                                 </div>
                             </div>
@@ -745,60 +746,60 @@ export const Analytics: React.FC = () => {
 
                     {/* Detailed Stats Cards - 4 Grid Summary */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fadeIn">
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 relative overflow-hidden group hover:border-blue-500/30 transition-colors">
+                        <div className="glass-panel-premium p-4 relative overflow-hidden group hover:border-blue-500/30 transition-colors">
                             <div className="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Fuel size={40} className="text-blue-500" />
                             </div>
                             <div className="flex items-center space-x-2 mb-2">
                                 <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-500"><Fuel size={16} /></div>
-                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('analytics.fuel')}</span>
+                                <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">{t('analytics.fuel')}</span>
                             </div>
-                            <div className="text-lg font-bold text-white">₺{rangeTotals.fuel.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-black dark:text-white">₺{rangeTotals.fuel.toLocaleString()}</div>
                             <div className="text-[10px] text-slate-500 mt-1">{t('analytics.expense_period')}</div>
                         </div>
 
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 relative overflow-hidden group hover:border-amber-500/30 transition-colors">
+                        <div className="glass-panel-premium p-4 relative overflow-hidden group hover:border-amber-500/30 transition-colors">
                             <div className="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Wrench size={40} className="text-amber-500" />
                             </div>
                             <div className="flex items-center space-x-2 mb-2">
                                 <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-500"><Wrench size={16} /></div>
-                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('analytics.maintenance')}</span>
+                                <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">{t('analytics.maintenance')}</span>
                             </div>
-                            <div className="text-lg font-bold text-white">₺{rangeTotals.maintenance.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-black dark:text-white">₺{rangeTotals.maintenance.toLocaleString()}</div>
                             <div className="text-[10px] text-slate-500 mt-1">{t('analytics.expense_period')}</div>
                         </div>
 
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 relative overflow-hidden group hover:border-purple-500/30 transition-colors">
+                        <div className="glass-panel-premium p-4 relative overflow-hidden group hover:border-purple-500/30 transition-colors">
                             <div className="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <Shield size={40} className="text-purple-500" />
                             </div>
                             <div className="flex items-center space-x-2 mb-2">
                                 <div className="p-1.5 bg-purple-500/10 rounded-lg text-purple-500"><Shield size={16} /></div>
-                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('analytics.insurance')}</span>
+                                <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">{t('analytics.insurance')}</span>
                             </div>
-                            <div className="text-lg font-bold text-white">₺{rangeTotals.insurance.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-black dark:text-white">₺{rangeTotals.insurance.toLocaleString()}</div>
                             <div className="text-[10px] text-slate-500 mt-1">{t('analytics.expense_period')}</div>
                         </div>
 
-                        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 relative overflow-hidden group hover:border-slate-500/30 transition-colors">
+                        <div className="glass-panel-premium p-4 relative overflow-hidden group hover:border-slate-500/30 transition-colors">
                             <div className="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <MoreHorizontal size={40} className="text-slate-500" />
                             </div>
                             <div className="flex items-center space-x-2 mb-2">
                                 <div className="p-1.5 bg-slate-500/10 rounded-lg text-slate-500"><MoreHorizontal size={16} /></div>
-                                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{t('analytics.other')}</span>
+                                <span className="text-[10px] text-slate-600 dark:text-slate-400 uppercase font-bold tracking-wider">{t('analytics.other')}</span>
                             </div>
-                            <div className="text-lg font-bold text-white">₺{rangeTotals.other.toLocaleString()}</div>
+                            <div className="text-lg font-bold text-black dark:text-white">₺{rangeTotals.other.toLocaleString()}</div>
                             <div className="text-[10px] text-slate-500 mt-1">{t('analytics.expense_period')}</div>
                         </div>
                     </div>
 
                     {/* NEW: Fuel Consumption Trend Chart */}
-                    <div className="bg-slate-800 rounded-2xl p-5 border border-slate-700 shadow-xl animate-fadeIn">
+                    <div className="glass-panel-premium p-5 shadow-xl animate-fadeIn">
                         <div className="flex items-center space-x-2 mb-4">
                             <Droplet size={18} className="text-cyan-500" />
-                            <h3 className="text-sm font-bold text-white">{t('analytics.fuel_trend')}</h3>
+                            <h3 className="text-sm font-bold text-black dark:text-white">{t('analytics.fuel_trend')}</h3>
                         </div>
                         <div className="h-40 w-full min-w-0">
                             {fuelData.length > 0 ? (
@@ -831,7 +832,7 @@ export const Analytics: React.FC = () => {
                     {/* Breakdown Chart */}
                     <div className="pt-2 animate-fadeIn">
                         <h3 className="text-lg font-bold mb-4">{t('analytics.detailed_distribution')}</h3>
-                        <div className="bg-slate-800 rounded-xl p-5 border border-slate-700 relative">
+                        <div className="glass-panel-premium p-5 relative">
                             <div className="h-64 w-full min-w-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
@@ -853,16 +854,16 @@ export const Analytics: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-8 mt-6 pt-4 border-t border-slate-700">
                                 <div>
-                                    <div className="text-xs text-slate-400 mb-1 flex items-center">
-                                        <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> Bu Ay Toplam
+                                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1 flex items-center">
+                                        <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span> {t('analytics.this_month_total')}
                                     </div>
                                     <div className="font-bold text-lg">₺{currentMonthTotal.toLocaleString()}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-slate-400 mb-1 flex items-center">
+                                    <div className="text-xs text-slate-600 dark:text-slate-400 mb-1 flex items-center">
                                         <span className="w-2 h-2 rounded-full bg-slate-500 mr-2"></span> {t('analytics.average_monthly_cost')}
                                     </div>
-                                    <div className="font-bold text-lg text-slate-300">₺{averageMonthlyCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                                    <div className="font-bold text-lg text-slate-700 dark:text-slate-300">₺{averageMonthlyCost.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
                                 </div>
                             </div>
                         </div>
@@ -871,47 +872,47 @@ export const Analytics: React.FC = () => {
                     {/* Financial Report Section */}
                     <div className="pt-4 pb-6 animate-fadeIn">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold">Finansal Rapor</h3>
-                            <div className="bg-slate-800 p-1 rounded-lg flex space-x-1">
+                            <h3 className="text-lg font-bold">{t('analytics.report_title')}</h3>
+                            <div className="bg-white dark:bg-slate-800 p-1 rounded-lg flex space-x-1">
                                 <button
                                     onClick={() => setReportPeriod('monthly')}
-                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${reportPeriod === 'monthly' ? 'bg-slate-600 text-white shadow-sm scale-105' : 'text-slate-400 hover:text-slate-200'}`}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${reportPeriod === 'monthly' ? 'bg-slate-600 text-black dark:text-white shadow-sm scale-105' : 'text-slate-600 dark:text-slate-400 hover:text-slate-200'}`}
                                 >
                                     {t('analytics.monthly')}
                                 </button>
                                 <button
                                     onClick={() => setReportPeriod('yearly')}
-                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${reportPeriod === 'yearly' ? 'bg-slate-600 text-white shadow-sm scale-105' : 'text-slate-400 hover:text-slate-200'}`}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${reportPeriod === 'yearly' ? 'bg-slate-600 text-black dark:text-white shadow-sm scale-105' : 'text-slate-600 dark:text-slate-400 hover:text-slate-200'}`}
                                 >
                                     {t('analytics.yearly')}
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden relative">
+                        <div className="glass-panel-premium overflow-hidden relative">
                             {/* Decorative Header */}
                             <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-amber-500"></div>
 
                             <div className="p-6">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
-                                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t('analytics.report_summary')}</div>
-                                        <h2 className="text-xl font-bold text-white">{reportData.title}</h2>
-                                        <p className="text-slate-500 text-sm mt-1">{reportData.distance.toLocaleString()} km yol katedildi</p>
+                                        <div className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest mb-1">{t('analytics.report_summary')}</div>
+                                        <h2 className="text-xl font-bold text-black dark:text-white">{reportData.title}</h2>
+                                        <p className="text-slate-500 text-sm mt-1">{t('analytics.dist_covered', { val: reportData.distance.toLocaleString() })}</p>
                                     </div>
                                     <div className="bg-slate-700/50 p-3 rounded-xl">
-                                        <FileText className="text-slate-300" size={24} />
+                                        <FileText className="text-slate-700 dark:text-slate-300" size={24} />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6 mb-6">
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">Toplam Maliyet</div>
-                                        <div className="text-2xl font-bold text-white">₺{reportData.total.toLocaleString()}</div>
+                                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">{t('analytics.total_cost')}</div>
+                                        <div className="text-2xl font-bold text-black dark:text-white">₺{reportData.total.toLocaleString()}</div>
                                     </div>
                                     <div>
-                                        <div className="text-sm text-slate-400 mb-1">{t('analytics.cost_per_km')}</div>
-                                        <div className="text-2xl font-bold text-white">₺{reportData.avgPerKm.toLocaleString()}</div>
+                                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">{t('analytics.cost_per_km')}</div>
+                                        <div className="text-2xl font-bold text-black dark:text-white">₺{reportData.avgPerKm.toLocaleString()}</div>
                                     </div>
                                 </div>
 
@@ -920,7 +921,7 @@ export const Analytics: React.FC = () => {
                                         <div key={item.label} className="flex items-center justify-between group">
                                             <div className="flex items-center space-x-3">
                                                 <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                                                <span className="text-sm text-slate-300">{item.label}</span>
+                                                <span className="text-sm text-slate-700 dark:text-slate-300">{item.label}</span>
                                             </div>
                                             <div className="flex items-center">
                                                 <span className="text-sm font-semibold mr-3">₺{item.value.toLocaleString()}</span>
@@ -935,8 +936,8 @@ export const Analytics: React.FC = () => {
                                 <button
                                     onClick={handleDownload}
                                     className={`btn-premium-3d w-full py-4 !shadow-blue-900/30 group relative overflow-hidden ${!isPremium
-                                        ? '!bg-slate-800 border border-slate-700 !text-slate-400 hover:!border-amber-500/50 hover:!text-amber-500 !shadow-amber-900/10'
-                                        : '!bg-blue-600 !text-white'
+                                        ? '!bg-white dark:bg-slate-800 border border-slate-700 !text-slate-600 dark:text-slate-400 hover:!border-amber-500/50 hover:!text-amber-500 !shadow-amber-900/10'
+                                        : '!bg-blue-600 !text-black dark:text-white'
                                         }`}
                                 >
                                     {!isPremium && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 animate-shimmer"></div>}
@@ -944,7 +945,7 @@ export const Analytics: React.FC = () => {
                                     {!isPremium ? <Lock size={18} className="text-amber-500 transition-transform group-hover:scale-110" /> : <Download size={18} />}
                                     <span className="relative z-10">{t('analytics.download_pdf')}</span>
                                     {!isPremium && (
-                                        <span className="relative z-10 text-[10px] font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-white px-2 py-0.5 rounded ml-2 shadow-sm border border-amber-400/20">
+                                        <span className="relative z-10 text-[10px] font-bold bg-gradient-to-r from-amber-500 to-orange-600 text-black dark:text-white px-2 py-0.5 rounded ml-2 shadow-sm border border-amber-400/20">
                                             PRO
                                         </span>
                                     )}
@@ -964,29 +965,29 @@ export const Analytics: React.FC = () => {
                                     <FileCheck size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-bold text-white">{t('analytics.sale_report_title')}</h3>
-                                    <p className="text-slate-400 text-xs">{t('analytics.sale_report_desc')}</p>
+                                    <h3 className="text-lg font-bold text-black dark:text-white">{t('analytics.sale_report_title')}</h3>
+                                    <p className="text-slate-600 dark:text-slate-400 text-xs">{t('analytics.sale_report_desc')}</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
                                     <div className="text-xs text-slate-500 mb-1">{t('analytics.content')}</div>
-                                    <div className="text-sm font-medium text-slate-300">Servis Geçmişi & Bakımlar</div>
+                                    <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('analytics.content_val')}</div>
                                 </div>
                                 <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
                                     <div className="text-xs text-slate-500 mb-1">{t('analytics.analysis')}</div>
-                                    <div className="text-sm font-medium text-slate-300">Sağlık Puanı & Durum</div>
+                                    <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('analytics.analysis_val')}</div>
                                 </div>
                                 <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
                                     <div className="text-xs text-slate-500 mb-1">{t('analytics.format')}</div>
-                                    <div className="text-sm font-medium text-slate-300">Profesyonel PDF</div>
+                                    <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('analytics.format_val')}</div>
                                 </div>
                             </div>
 
                             <button
                                 onClick={handleSaleReport}
-                                className="btn-premium-3d w-full !bg-emerald-600 !shadow-emerald-900/40 text-white"
+                                className="btn-premium-3d w-full !bg-emerald-600 !shadow-emerald-900/40 text-black dark:text-white"
                             >
                                 <FileText size={18} />
                                 <span>{t('analytics.create_sale_report')}</span>
@@ -994,6 +995,12 @@ export const Analytics: React.FC = () => {
                             </button>
                         </div>
                     </div>
+
+                    {/* Google Ad Placement */}
+                    <AdBanner slotId="7103291209" format="fluid" layoutKey="-gw-3+1f-3d+2z" />
+
+                    {/* Multiplex (Content Recommendation) Ad */}
+                    <AdBanner slotId="1311433112" format="autorelaxed" label="Önerilen İçerikler" />
                 </>
             ) : renderComparison()}
 

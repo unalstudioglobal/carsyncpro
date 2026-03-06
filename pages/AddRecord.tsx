@@ -70,17 +70,40 @@ export const AddRecord: React.FC = () => {
         }
     ];
 
+    const compressImage = (dataUrl: string, maxWidth = 400, quality = 0.7): Promise<string> => {
+        return new Promise((resolve) => {
+            const img = new window.Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width;
+                let h = img.height;
+                if (w > maxWidth) {
+                    h = (h * maxWidth) / w;
+                    w = maxWidth;
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = () => resolve(dataUrl);
+            img.src = dataUrl;
+        });
+    };
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
             reader.onloadend = async () => {
                 const base64 = reader.result as string;
-                setImagePreview(base64);
+                const compressed = await compressImage(base64);
+                setImagePreview(compressed);
 
-                // Trigger Gemini Analysis
+                // Trigger Gemini Analysis (can use compressed base64 for faster payload too)
                 setLoading(true);
-                const data = await analyzeInvoiceImage(base64.split(',')[1], file.type);
+                const data = await analyzeInvoiceImage(compressed.split(',')[1], 'image/jpeg');
                 setLoading(false);
 
                 if (!data.error) {

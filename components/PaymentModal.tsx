@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, CreditCard, Lock, CheckCircle, Smartphone, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PaymentModalProps {
     amount: number;
@@ -14,6 +15,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
     const [expiry, setExpiry] = useState('');
     const [cvv, setCvv] = useState('');
     const [name, setName] = useState('');
+    const { t, i18n } = useTranslation();
 
     const handlePayment = () => {
         setStep('processing');
@@ -40,7 +42,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
                 {/* Header */}
                 <div className="bg-slate-800 p-6 border-b border-slate-700 flex justify-between items-center">
                     <div>
-                        <h3 className="text-xl font-bold text-white">Ödeme Yap</h3>
+                        <h3 className="text-xl font-bold text-white">{t('payment.title')}</h3>
                         <p className="text-slate-400 text-xs mt-1">{description}</p>
                     </div>
                     <button onClick={onClose} className="p-2 bg-slate-700/50 rounded-full hover:bg-slate-700 text-slate-400 transition">
@@ -58,16 +60,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
                                 <div className="relative z-10">
                                     <div className="flex justify-between items-start mb-6">
                                         <Smartphone size={24} />
-                                        <span className="font-mono text-lg font-bold">₺{amount.toLocaleString()}</span>
+                                        <span className="font-mono text-lg font-bold">₺{amount.toLocaleString(i18n.language)}</span>
                                     </div>
                                     <div className="font-mono text-xl tracking-widest mb-4">{cardNumber || '•••• •••• •••• ••••'}</div>
                                     <div className="flex justify-between text-xs opacity-80 uppercase">
                                         <div>
-                                            <div className="text-[10px] mb-0.5">Kart Sahibi</div>
+                                            <div className="text-[10px] mb-0.5">{t('payment.holder_name')}</div>
                                             <div className="font-bold text-sm">{name || 'AD SOYAD'}</div>
                                         </div>
                                         <div>
-                                            <div className="text-[10px] mb-0.5">SKT</div>
+                                            <div className="text-[10px] mb-0.5">{t('payment.expiry_short')}</div>
                                             <div className="font-bold text-sm">{expiry || 'AA/YY'}</div>
                                         </div>
                                     </div>
@@ -76,20 +78,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">KART SAHİBİ</label>
-                                    <input 
-                                        type="text" 
+                                    <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">{t('payment.card_holder')}</label>
+                                    <input
+                                        type="text"
                                         value={name}
                                         onChange={e => setName(e.target.value.toUpperCase())}
-                                        placeholder="Kart üzerindeki isim"
+                                        placeholder={t('payment.card_holder_placeholder')}
                                         className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500 transition"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">KART NUMARASI</label>
+                                    <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">{t('payment.card_number')}</label>
                                     <div className="relative">
-                                        <input 
-                                            type="text" 
+                                        <input
+                                            type="text"
                                             value={cardNumber}
                                             onChange={e => setCardNumber(formatCardNumber(e.target.value))}
                                             placeholder="0000 0000 0000 0000"
@@ -101,10 +103,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">SON KULLANMA</label>
+                                        <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">{t('payment.expiry_date')}</label>
                                         <div className="relative">
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 value={expiry}
                                                 onChange={e => setExpiry(formatExpiry(e.target.value))}
                                                 placeholder="AA/YY"
@@ -115,10 +117,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">CVV</label>
+                                        <label className="text-xs font-bold text-slate-400 ml-1 mb-1 block">{t('payment.cvv')}</label>
                                         <div className="relative">
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 value={cvv}
                                                 onChange={e => setCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
                                                 placeholder="123"
@@ -131,15 +133,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
                                 </div>
                             </div>
 
-                            <button 
+                            <button
                                 onClick={handlePayment}
                                 disabled={!cardNumber || !expiry || !cvv || !name}
                                 className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-900/40 transition active:scale-95 flex items-center justify-center space-x-2"
                             >
                                 <Lock size={18} />
-                                <span>Güvenli Ödeme Yap (₺{amount.toLocaleString()})</span>
+                                <span>{t('payment.pay_securely', { amount: amount.toLocaleString(i18n.language) })}</span>
                             </button>
-                            
+
                             <div className="flex justify-center space-x-4 opacity-50 grayscale">
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-6" alt="Mastercard" />
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-6" alt="Visa" />
@@ -156,8 +158,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
                                 <Smartphone className="absolute inset-0 m-auto text-blue-500 animate-pulse" size={32} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-white mb-2">Ödeme İşleniyor</h3>
-                                <p className="text-slate-400 text-sm">Lütfen bekleyiniz, bankanızla iletişim kuruluyor...</p>
+                                <h3 className="text-xl font-bold text-white mb-2">{t('payment.processing')}</h3>
+                                <p className="text-slate-400 text-sm">{t('payment.processing_desc')}</p>
                             </div>
                         </div>
                     )}
@@ -168,8 +170,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ amount, description,
                                 <CheckCircle size={48} />
                             </div>
                             <div>
-                                <h3 className="text-2xl font-bold text-white mb-2">Ödeme Başarılı!</h3>
-                                <p className="text-slate-400 text-sm">İşleminiz onaylandı. Makbuzunuz e-posta adresinize gönderildi.</p>
+                                <h3 className="text-2xl font-bold text-white mb-2">{t('payment.success')}</h3>
+                                <p className="text-slate-400 text-sm">{t('payment.success_desc')}</p>
                             </div>
                         </div>
                     )}

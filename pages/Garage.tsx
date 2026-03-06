@@ -31,6 +31,7 @@ export const Garage: React.FC = () => {
 
   // State for Archive Confirmation Dialog
   const [archiveConfirmationId, setArchiveConfirmationId] = useState<string | null>(null);
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
   // State for Transfer Modal
   const [transferModal, setTransferModal] = useState<{ vehicle: Vehicle, code: string } | null>(null);
@@ -212,6 +213,21 @@ export const Garage: React.FC = () => {
       }
     }
     setArchiveConfirmationId(null);
+  };
+
+  const vehicleToDelete = vehicles.find(v => v.id === deleteConfirmationId);
+
+  const handleDeleteConfirm = async () => {
+    if (vehicleToDelete) {
+      const id = vehicleToDelete.id;
+      setVehicles(prev => prev.filter(v => v.id !== id));
+      try {
+        await deleteVehicle(id);
+      } catch (err) {
+        console.error('Silme hatası:', err);
+      }
+    }
+    setDeleteConfirmationId(null);
   };
 
   const handleSellVehicle = async (id: string) => {
@@ -432,6 +448,14 @@ export const Garage: React.FC = () => {
                     <span className="text-[10px] font-bold text-gold uppercase tracking-tighter">{t('garage.main_vehicle')}</span>
                   </div>
 
+                  {/* Delete button for Hero */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmationId(filteredVehicles[0].id); }}
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/60 hover:text-red-400 hover:bg-black/60 transition-all z-10"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+
                   <div className="absolute bottom-4 left-4">
                     <div className="tr-plate">{filteredVehicles[0].plate}</div>
                   </div>
@@ -440,7 +464,7 @@ export const Garage: React.FC = () => {
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h2 className="text-3xl font-display font-black text-white leading-none mb-1">
+                      <h2 className="text-3xl font-display font-black text-black dark:text-white leading-none mb-1">
                         {filteredVehicles[0].brand.toUpperCase()}
                       </h2>
                       <p className="text-gold font-bold text-lg">{filteredVehicles[0].model}</p>
@@ -450,18 +474,18 @@ export const Garage: React.FC = () => {
                         <Activity size={14} className="text-green-400" />
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SAĞLIK SKORU</span>
                       </div>
-                      <span className="text-3xl font-mono font-black text-white">{filteredVehicles[0].healthScore}</span>
+                      <span className="text-3xl font-mono font-black text-black dark:text-white">{filteredVehicles[0].healthScore}</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                    <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-3">
                       <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">Kilometre</p>
-                      <p className="text-lg font-mono font-bold text-white">{filteredVehicles[0].mileage.toLocaleString()} km</p>
+                      <p className="text-lg font-mono font-bold text-black dark:text-white">{filteredVehicles[0].mileage.toLocaleString()} km</p>
                     </div>
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-3">
+                    <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-3">
                       <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">Bakım Durumu</p>
-                      <p className="text-lg font-bold text-green-400">SORUN YOK</p>
+                      <p className="text-lg font-bold text-green-500 dark:text-green-400">SORUN YOK</p>
                     </div>
                   </div>
                 </div>
@@ -481,14 +505,14 @@ export const Garage: React.FC = () => {
                     <div
                       key={vehicle.id}
                       onClick={() => navigate(`/dashboard/${vehicle.id}`)}
-                      className="min-w-[280px] bg-slate-800 rounded-3xl border border-white/5 overflow-hidden animate-fadeRight active:scale-95 transition-all cursor-pointer group hover:border-gold/30 shadow-lg"
+                      className="min-w-[280px] bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-white/5 overflow-hidden animate-fadeRight active:scale-95 transition-all cursor-pointer group hover:border-gold/50 shadow-lg"
                       style={{ animationDelay: `${idx * 0.1}s` }}
                     >
                       <div className="h-32 relative">
                         {vehicle.image ? (
                           <img src={vehicle.image} alt={vehicle.model} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         ) : (
-                          <div className="w-full h-full bg-slate-900 flex items-center justify-center"><Car size={32} className="text-slate-700" /></div>
+                          <div className="w-full h-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center"><Car size={32} className="text-slate-400 dark:text-slate-700" /></div>
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
                         <div className="absolute bottom-3 left-3 flex items-center gap-2">
@@ -496,11 +520,19 @@ export const Garage: React.FC = () => {
                           <span className="text-xs font-bold text-gold">{vehicle.model}</span>
                         </div>
                       </div>
-                      <div className="p-4 flex justify-between items-center bg-slate-800/50 backdrop-blur-sm">
-                        <div className="text-[10px] font-mono font-bold text-slate-400">{vehicle.plate}</div>
+                      <div className="p-4 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 backdrop-blur-sm">
+                        <div className="flex flex-col">
+                          <div className="text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400">{vehicle.plate}</div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmationId(vehicle.id); }}
+                            className="mt-1 flex items-center gap-1 text-[9px] font-bold text-red-500/60 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 size={10} /> {t('common.delete').toUpperCase()}
+                          </button>
+                        </div>
                         <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
-                          <span className="text-[11px] font-bold text-white">%{vehicle.healthScore}</span>
+                          <span className="text-[11px] font-bold text-slate-800 dark:text-white">%{vehicle.healthScore}</span>
                         </div>
                       </div>
                     </div>
@@ -659,6 +691,37 @@ export const Garage: React.FC = () => {
                   className="btn-premium-3d !p-3.5 !bg-red-600 !shadow-red-900/40"
                 >
                   {t('garage.archive')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      {
+        deleteConfirmationId && vehicleToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn" onClick={() => setDeleteConfirmationId(null)}>
+            <div className="bg-slate-900 rounded-3xl border border-red-500/30 p-8 w-full max-w-sm shadow-2xl relative overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="absolute top-0 left-0 w-full h-1 bg-red-600"></div>
+              <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6 mx-auto text-red-500 border border-red-500/20">
+                <Trash2 size={32} />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-center mb-3 text-white">{t('garage.delete_confirm_title')}</h3>
+              <p className="text-slate-400 text-center text-sm mb-8 leading-relaxed">
+                {t('garage.delete_confirm_desc', { model: `${vehicleToDelete.brand} ${vehicleToDelete.model}` })}
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleDeleteConfirm}
+                  className="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition-all active:scale-95 shadow-lg shadow-red-900/20"
+                >
+                  {t('garage.btn_delete')}
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmationId(null)}
+                  className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl transition-all"
+                >
+                  {t('garage.cancel')}
                 </button>
               </div>
             </div>

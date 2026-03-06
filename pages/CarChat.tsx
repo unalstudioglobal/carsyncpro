@@ -88,12 +88,16 @@ export const CarChat: React.FC = () => {
 
     useEffect(() => {
         fetchVehicles().then(vehicles => {
-            const v = vehicles.find(v => v.id === id);
+            let v = vehicles.find(v => v.id === id);
+            if (!v && vehicles.length > 0) {
+                // If no specific vehicle requested, default to the first one available
+                v = vehicles[0];
+            }
             setVehicle(v);
+            if (v) {
+                fetchLogs(v.id).then(setLogs).catch(() => { });
+            }
         });
-        if (id) {
-            fetchLogs(id).then(setLogs).catch(() => { });
-        }
     }, [id]);
 
     const speakText = (text: string) => {

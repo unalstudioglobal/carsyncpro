@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronLeft, ArrowRightLeft, Fuel, Wrench, Shield, MoreHorizontal,
   TrendingUp, TrendingDown, Minus, Gauge, Wallet, Calendar,
@@ -38,34 +39,35 @@ interface VehicleStats {
 const VEHICLE_COLORS = ['#6366f1', '#f59e0b'] as const;
 
 const LOG_CATEGORY_MAP: Record<string, 'fuel' | 'maintenance' | 'insurance' | 'other'> = {
-  'Yakıt Alımı':     'fuel',
-  'Yağ Değişimi':    'maintenance',
+  'Yakıt Alımı': 'fuel',
+  'Yağ Değişimi': 'maintenance',
   'Periyodik Bakım': 'maintenance',
   'Lastik Değişimi': 'maintenance',
-  'Lastik Rotasyonu':'maintenance',
-  'Fren Servisi':    'maintenance',
-  'Akü Değişimi':    'maintenance',
-  'Muayene':         'insurance',
-  'Yıkama & Detay':  'other',
+  'Lastik Rotasyonu': 'maintenance',
+  'Fren Servisi': 'maintenance',
+  'Akü Değişimi': 'maintenance',
+  'Muayene': 'insurance',
+  'Yıkama & Detay': 'other',
 };
 
-const MONTHS_TR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-
-const PERIOD_MONTHS: Record<Period, number | null> = {
-  '3A': 3, '6A': 6, '1Y': 12, 'Tümü': null
+const PERIOD_MONTHS: Record<Period, { count: number | null; labelKey: string }> = {
+  '3A': { count: 3, labelKey: 'comparison.period_3m' },
+  '6A': { count: 6, labelKey: 'comparison.period_6m' },
+  '1Y': { count: 12, labelKey: 'comparison.period_1y' },
+  'Tümü': { count: null, labelKey: 'comparison.period_all' }
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const getPeriodStart = (period: Period): Date | null => {
-  const m = PERIOD_MONTHS[period];
+  const m = PERIOD_MONTHS[period].count;
   if (!m) return null;
   const d = new Date();
   d.setMonth(d.getMonth() - m);
   return d;
 };
 
-const buildStats = (vehicle: Vehicle, logs: ServiceLog[], period: Period): VehicleStats => {
+const buildStats = (vehicle: Vehicle, logs: ServiceLog[], period: Period, lang: string): VehicleStats => {
   const start = getPeriodStart(period);
   const filtered = logs
     .filter(l => l.vehicleId === vehicle.id)
@@ -118,10 +120,14 @@ const buildStats = (vehicle: Vehicle, logs: ServiceLog[], period: Period): Vehic
   const monthlyData = Object.entries(byMonth)
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-6)
-    .map(([ym, v]) => ({
-      month: MONTHS_TR[Number(ym.split('-')[1]) - 1],
-      ...v
-    }));
+    .map(([ym, v]) => {
+      const [year, month] = ym.split('-');
+      const d = new Date(Number(year), Number(month) - 1, 1);
+      return {
+        month: d.toLocaleDateString(lang, { month: 'short' }),
+        ...v
+      };
+    });
 
   return {
     totalCost,
@@ -158,11 +164,13 @@ const StatRow: React.FC<{
   format?: 'currency' | 'number' | 'text';
   icon?: React.ElementType;
 }> = ({ label, v1, v2, unit = '', lowerIsBetter = false, format = 'currency', icon: Icon }) => {
+  const { t, i18n } = useTranslation();
+
   const fmt = (v: number | string | null) => {
     if (v === null || v === undefined) return '—';
     if (typeof v === 'string') return v;
-    if (format === 'currency') return `₺${Number(v).toLocaleString('tr-TR')}`;
-    if (format === 'number') return Number(v).toLocaleString('tr-TR');
+    if (format === 'currency') return `₺${Number(v).toLocaleString(i18n.language)}`;
+    if (format === 'number') return Number(v).toLocaleString(i18n.language);
     return String(v);
   };
 
@@ -186,7 +194,7 @@ const StatRow: React.FC<{
       <div className="flex-1 min-w-0">
         <p className="text-slate-400 text-xs">{label}</p>
         {diff !== null && diff > 0 && (
-          <p className="text-slate-600 text-[10px]">%{diff} fark</p>
+          <p className="text-slate-600 text-[10px]">{t('comparison.diff_prefix', { diff })}</p>
         )}
       </div>
 
@@ -203,8 +211,8 @@ const StatRow: React.FC<{
         {winner === 0
           ? <Minus size={10} className="text-slate-700" />
           : winner === 1
-          ? <TrendingUp size={10} className="text-indigo-400" />
-          : <TrendingUp size={10} className="text-amber-400 rotate-180" />
+            ? <TrendingUp size={10} className="text-indigo-400" />
+            : <TrendingUp size={10} className="text-amber-400 rotate-180" />
         }
       </div>
 
@@ -250,6 +258,7 @@ const VehicleSelector: React.FC<{
 
 export const VehicleComparison: React.FC = () => {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [logs, setLogs] = useState<ServiceLog[]>([]);
@@ -275,8 +284,8 @@ export const VehicleComparison: React.FC = () => {
   const v1 = useMemo(() => vehicles.find(v => v.id === v1Id), [vehicles, v1Id]);
   const v2 = useMemo(() => vehicles.find(v => v.id === v2Id), [vehicles, v2Id]);
 
-  const stats1 = useMemo(() => v1 ? buildStats(v1, logs, period) : null, [v1, logs, period]);
-  const stats2 = useMemo(() => v2 ? buildStats(v2, logs, period) : null, [v2, logs, period]);
+  const stats1 = useMemo(() => v1 ? buildStats(v1, logs, period, i18n.language) : null, [v1, logs, period, i18n.language]);
+  const stats2 = useMemo(() => v2 ? buildStats(v2, logs, period, i18n.language) : null, [v2, logs, period, i18n.language]);
 
   // Radar data: normalize to 0-100
   const radarData = useMemo(() => {
@@ -286,13 +295,13 @@ export const VehicleComparison: React.FC = () => {
     const maxMaint = Math.max(stats1.maintenanceCost, stats2.maintenanceCost, 1);
 
     return [
-      { subject: 'Sağlık',   A: v1.healthScore, B: v2.healthScore },
-      { subject: 'Maliyet',  A: 100 - Math.round((stats1.totalCost / maxCost) * 100), B: 100 - Math.round((stats2.totalCost / maxCost) * 100) },
-      { subject: 'Yakıt',    A: 100 - Math.round((stats1.fuelCost / maxFuel) * 100), B: 100 - Math.round((stats2.fuelCost / maxFuel) * 100) },
-      { subject: 'Bakım',    A: 100 - Math.round((stats1.maintenanceCost / maxMaint) * 100), B: 100 - Math.round((stats2.maintenanceCost / maxMaint) * 100) },
-      { subject: 'Kayıt',    A: Math.min(stats1.totalLogs * 10, 100), B: Math.min(stats2.totalLogs * 10, 100) },
+      { subject: t('comparison.radar_health'), A: v1.healthScore, B: v2.healthScore },
+      { subject: t('comparison.radar_cost'), A: 100 - Math.round((stats1.totalCost / maxCost) * 100), B: 100 - Math.round((stats2.totalCost / maxCost) * 100) },
+      { subject: t('comparison.radar_fuel'), A: 100 - Math.round((stats1.fuelCost / maxFuel) * 100), B: 100 - Math.round((stats2.fuelCost / maxFuel) * 100) },
+      { subject: t('comparison.radar_maintenance'), A: 100 - Math.round((stats1.maintenanceCost / maxMaint) * 100), B: 100 - Math.round((stats2.maintenanceCost / maxMaint) * 100) },
+      { subject: t('comparison.radar_logs'), A: Math.min(stats1.totalLogs * 10, 100), B: Math.min(stats2.totalLogs * 10, 100) },
     ];
-  }, [stats1, stats2, v1, v2]);
+  }, [stats1, stats2, v1, v2, t]);
 
   // Monthly cost chart data
   const barData = useMemo(() => {
@@ -331,7 +340,7 @@ export const VehicleComparison: React.FC = () => {
           <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center">
             <ArrowRightLeft className="text-indigo-400 animate-pulse" size={24} />
           </div>
-          <p className="text-slate-400 text-sm">Yükleniyor...</p>
+          <p className="text-slate-400 text-sm">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -345,22 +354,22 @@ export const VehicleComparison: React.FC = () => {
             <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-slate-800/60 flex items-center justify-center">
               <ChevronLeft size={20} className="text-slate-300" />
             </button>
-            <h1 className="text-lg font-bold text-white">Araç Karşılaştırma</h1>
+            <h1 className="text-lg font-bold text-white">{t('comparison.title')}</h1>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center flex-1 text-center px-8 pb-24">
           <div className="w-20 h-20 rounded-3xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
             <ArrowRightLeft size={32} className="text-slate-500" />
           </div>
-          <p className="text-white font-bold text-lg mb-2">En Az 2 Araç Gerekli</p>
+          <p className="text-white font-bold text-lg mb-2">{t('comparison.min_two_vehicles')}</p>
           <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-            Araçları karşılaştırmak için garajına en az 2 araç eklemen gerekiyor.
+            {t('comparison.min_two_desc')}
           </p>
           <button
             onClick={() => navigate('/add-vehicle')}
             className="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold text-sm"
           >
-            Araç Ekle
+            {t('comparison.add_vehicle')}
           </button>
         </div>
       </div>
@@ -379,12 +388,12 @@ export const VehicleComparison: React.FC = () => {
             <ChevronLeft size={20} className="text-slate-300" />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-white">Araç Karşılaştırma</h1>
-            <p className="text-slate-500 text-xs">Hangi araç daha ekonomik?</p>
+            <h1 className="text-lg font-bold text-white">{t('comparison.title')}</h1>
+            <p className="text-slate-500 text-xs">{t('comparison.subtitle')}</p>
           </div>
           <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-1.5">
             <BarChart2 size={12} className="text-indigo-400" />
-            <span className="text-indigo-300 text-xs font-medium">Analiz</span>
+            <span className="text-indigo-300 text-xs font-medium">{t('comparison.analysis')}</span>
           </div>
         </div>
 
@@ -408,13 +417,12 @@ export const VehicleComparison: React.FC = () => {
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
-                period === p
-                  ? 'bg-slate-200 text-slate-900'
-                  : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
-              }`}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${period === p
+                ? 'bg-slate-200 text-slate-900'
+                : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
+                }`}
             >
-              {p}
+              {t(PERIOD_MONTHS[p].labelKey)}
             </button>
           ))}
         </div>
@@ -430,7 +438,7 @@ export const VehicleComparison: React.FC = () => {
             </div>
             <div>
               <p className="text-white font-bold text-sm">{overallWinner.vehicle.brand} {overallWinner.vehicle.model}</p>
-              <p className="text-slate-400 text-xs">Bu dönemde daha ekonomik araç</p>
+              <p className="text-slate-400 text-xs">{t('comparison.economic_vehicle')}</p>
             </div>
           </div>
         )}
@@ -438,16 +446,15 @@ export const VehicleComparison: React.FC = () => {
         {/* Tab bar */}
         <div className="flex bg-slate-800/40 rounded-2xl p-1 border border-slate-700/30">
           {([
-            { key: 'overview', label: 'Özet' },
-            { key: 'chart',    label: 'Grafik' },
-            { key: 'radar',    label: 'Radar' },
+            { key: 'overview', label: t('comparison.overview') },
+            { key: 'chart', label: t('comparison.chart') },
+            { key: 'radar', label: t('comparison.radar') },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
-                activeTab === key ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-500'
-              }`}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${activeTab === key ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-500'
+                }`}
             >
               {label}
             </button>
@@ -460,14 +467,14 @@ export const VehicleComparison: React.FC = () => {
             <div className="w-2 h-2 rounded-full" style={{ background: VEHICLE_COLORS[0] }} />
             <div className="min-w-0">
               <p className="text-white text-xs font-bold truncate">{v1Label}</p>
-              <p className="text-slate-500 text-[10px]">{v1?.year} • {v1?.mileage.toLocaleString()} km</p>
+              <p className="text-slate-500 text-[10px]">{v1?.year} • {v1?.mileage.toLocaleString(i18n.language)} km</p>
             </div>
           </div>
           <div className="flex-1 flex items-center gap-2 bg-slate-800/40 rounded-xl px-3 py-2 border-l-2" style={{ borderColor: VEHICLE_COLORS[1] }}>
             <div className="w-2 h-2 rounded-full" style={{ background: VEHICLE_COLORS[1] }} />
             <div className="min-w-0">
               <p className="text-white text-xs font-bold truncate">{v2Label}</p>
-              <p className="text-slate-500 text-[10px]">{v2?.year} • {v2?.mileage.toLocaleString()} km</p>
+              <p className="text-slate-500 text-[10px]">{v2?.year} • {v2?.mileage.toLocaleString(i18n.language)} km</p>
             </div>
           </div>
         </div>
@@ -476,17 +483,17 @@ export const VehicleComparison: React.FC = () => {
         {activeTab === 'overview' && stats1 && stats2 && (
           <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl overflow-hidden">
             <div className="px-4">
-              <StatRow label="Toplam Harcama"  v1={stats1.totalCost}        v2={stats2.totalCost}        lowerIsBetter icon={Wallet}   format="currency" />
-              <StatRow label="Aylık Ortalama"  v1={stats1.avgMonthlyCost}   v2={stats2.avgMonthlyCost}   lowerIsBetter icon={Calendar} format="currency" />
-              <StatRow label="Km Başına Maliyet" v1={stats1.costPerKm}      v2={stats2.costPerKm}        lowerIsBetter icon={Gauge}    format="number" unit="₺/km" />
-              <StatRow label="Yakıt Gideri"    v1={stats1.fuelCost}         v2={stats2.fuelCost}         lowerIsBetter icon={Fuel}     format="currency" />
-              <StatRow label="Bakım Gideri"    v1={stats1.maintenanceCost}  v2={stats2.maintenanceCost}  lowerIsBetter icon={Wrench}   format="currency" />
-              <StatRow label="Yakıt Tüketimi"  v1={stats1.avgConsumption}   v2={stats2.avgConsumption}   lowerIsBetter icon={Droplet}  format="number" unit="L/100km" />
-              <StatRow label="Sağlık Skoru"    v1={stats1.healthScore}      v2={stats2.healthScore}      lowerIsBetter={false} icon={CheckCircle2} format="number" unit="/100" />
-              <StatRow label="Toplam Kayıt"    v1={stats1.totalLogs}        v2={stats2.totalLogs}        lowerIsBetter={false} icon={BarChart2} format="number" />
-              <StatRow label="Son Servis"      v1={stats1.lastServiceDays !== null ? `${stats1.lastServiceDays} gün önce` : null}
-                                              v2={stats2.lastServiceDays !== null ? `${stats2.lastServiceDays} gün önce` : null}
-                                              lowerIsBetter icon={Calendar} format="text" />
+              <StatRow label={t('comparison.total_expense')} v1={stats1.totalCost} v2={stats2.totalCost} lowerIsBetter icon={Wallet} format="currency" />
+              <StatRow label={t('comparison.monthly_average')} v1={stats1.avgMonthlyCost} v2={stats2.avgMonthlyCost} lowerIsBetter icon={Calendar} format="currency" />
+              <StatRow label={t('comparison.cost_per_km')} v1={stats1.costPerKm} v2={stats2.costPerKm} lowerIsBetter icon={Gauge} format="number" unit="₺/km" />
+              <StatRow label={t('comparison.fuel_expense')} v1={stats1.fuelCost} v2={stats2.fuelCost} lowerIsBetter icon={Fuel} format="currency" />
+              <StatRow label={t('comparison.maintenance_expense')} v1={stats1.maintenanceCost} v2={stats2.maintenanceCost} lowerIsBetter icon={Wrench} format="currency" />
+              <StatRow label={t('comparison.fuel_consumption')} v1={stats1.avgConsumption} v2={stats2.avgConsumption} lowerIsBetter icon={Droplet} format="number" unit="L/100km" />
+              <StatRow label={t('comparison.health_score')} v1={stats1.healthScore} v2={stats2.healthScore} lowerIsBetter={false} icon={CheckCircle2} format="number" unit="/100" />
+              <StatRow label={t('comparison.total_logs')} v1={stats1.totalLogs} v2={stats2.totalLogs} lowerIsBetter={false} icon={BarChart2} format="number" />
+              <StatRow label={t('comparison.last_service')} v1={stats1.lastServiceDays !== null ? t('comparison.days_ago', { count: stats1.lastServiceDays }) : null}
+                v2={stats2.lastServiceDays !== null ? t('comparison.days_ago', { count: stats2.lastServiceDays }) : null}
+                lowerIsBetter icon={Calendar} format="text" />
             </div>
           </div>
         )}
@@ -496,12 +503,12 @@ export const VehicleComparison: React.FC = () => {
           <div className="space-y-4">
             {/* Cost breakdown bars */}
             <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl p-4">
-              <p className="text-white font-semibold text-sm mb-4">Harcama Dağılımı</p>
+              <p className="text-white font-semibold text-sm mb-4">{t('comparison.expense_distribution')}</p>
               {stats1 && stats2 && [
-                { label: 'Yakıt',   s1: stats1.fuelCost,        s2: stats2.fuelCost,        color: '#3b82f6' },
-                { label: 'Bakım',   s1: stats1.maintenanceCost, s2: stats2.maintenanceCost, color: '#f59e0b' },
-                { label: 'Sigorta', s1: stats1.insuranceCost,   s2: stats2.insuranceCost,   color: '#8b5cf6' },
-                { label: 'Diğer',   s1: stats1.otherCost,       s2: stats2.otherCost,       color: '#64748b' },
+                { label: t('comparison.category_fuel'), s1: stats1.fuelCost, s2: stats2.fuelCost, color: '#3b82f6' },
+                { label: t('comparison.category_maintenance'), s1: stats1.maintenanceCost, s2: stats2.maintenanceCost, color: '#f59e0b' },
+                { label: t('comparison.category_insurance'), s1: stats1.insuranceCost, s2: stats2.insuranceCost, color: '#8b5cf6' },
+                { label: t('comparison.category_other'), s1: stats1.otherCost, s2: stats2.otherCost, color: '#64748b' },
               ].map(({ label, s1, s2, color }) => {
                 const max = Math.max(s1, s2, 1);
                 return (
@@ -510,7 +517,7 @@ export const VehicleComparison: React.FC = () => {
                       <span>{label}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-400 w-24 text-right truncate">₺{s1.toLocaleString('tr-TR')}</span>
+                      <span className="text-xs text-slate-400 w-24 text-right truncate">₺{s1.toLocaleString(i18n.language)}</span>
                       <div className="flex-1 flex flex-col gap-1">
                         <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden">
                           <div className="h-full rounded-full" style={{ width: `${(s1 / max) * 100}%`, background: VEHICLE_COLORS[0] }} />
@@ -519,7 +526,7 @@ export const VehicleComparison: React.FC = () => {
                           <div className="h-full rounded-full" style={{ width: `${(s2 / max) * 100}%`, background: VEHICLE_COLORS[1] }} />
                         </div>
                       </div>
-                      <span className="text-xs text-slate-400 w-24 truncate">₺{s2.toLocaleString('tr-TR')}</span>
+                      <span className="text-xs text-slate-400 w-24 truncate">₺{s2.toLocaleString(i18n.language)}</span>
                     </div>
                   </div>
                 );
@@ -529,7 +536,7 @@ export const VehicleComparison: React.FC = () => {
             {/* Monthly bar chart */}
             {barData.length > 0 && (
               <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl p-4">
-                <p className="text-white font-semibold text-sm mb-4">Aylık Harcama Karşılaştırması</p>
+                <p className="text-white font-semibold text-sm mb-4">{t('comparison.monthly_comparison_title')}</p>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={barData} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
@@ -538,11 +545,11 @@ export const VehicleComparison: React.FC = () => {
                       <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
                       <Tooltip
                         contentStyle={{ background: '#020617', border: '1px solid #334155', borderRadius: 12, fontSize: 11 }}
-                        formatter={(v: number) => [`₺${v.toLocaleString('tr-TR')}`]}
+                        formatter={(v: number) => [`₺${v.toLocaleString(i18n.language)}`]}
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar dataKey={v1Label} fill={VEHICLE_COLORS[0]} radius={[4,4,0,0]} />
-                      <Bar dataKey={v2Label} fill={VEHICLE_COLORS[1]} radius={[4,4,0,0]} />
+                      <Bar dataKey={v1Label} fill={VEHICLE_COLORS[0]} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey={v2Label} fill={VEHICLE_COLORS[1]} radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -554,8 +561,8 @@ export const VehicleComparison: React.FC = () => {
         {/* ── RADAR TAB ── */}
         {activeTab === 'radar' && radarData.length > 0 && (
           <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl p-4">
-            <p className="text-white font-semibold text-sm mb-1">Çok Boyutlu Karşılaştırma</p>
-            <p className="text-slate-500 text-xs mb-4">Yüksek puan her kategoride daha iyi performansı gösterir</p>
+            <p className="text-white font-semibold text-sm mb-1">{t('comparison.multidimensional_comparison')}</p>
+            <p className="text-slate-500 text-xs mb-4">{t('comparison.radar_desc')}</p>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
@@ -572,7 +579,7 @@ export const VehicleComparison: React.FC = () => {
             {/* Radar legend note */}
             <div className="flex items-start gap-2 mt-3 bg-slate-800/40 rounded-xl p-3">
               <Info size={12} className="text-slate-500 flex-shrink-0 mt-0.5" />
-              <p className="text-slate-500 text-xs">Maliyet ve yakıt eksenleri ters normalize edilmiştir — düşük harcama = yüksek puan.</p>
+              <p className="text-slate-500 text-xs">{t('comparison.radar_legend_note')}</p>
             </div>
           </div>
         )}

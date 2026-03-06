@@ -40,9 +40,9 @@ export const Settings: React.FC = () => {
 
     // User State
     const [user, setUser] = useState({
-        name: 'Kullanıcı',
+        name: t('common.user'),
         surname: '',
-        email: 'kullanici@ornek.com',
+        email: 'user@example.com',
         phone: '',
         department: '',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
@@ -75,7 +75,7 @@ export const Settings: React.FC = () => {
                 if (firebaseUser) {
                     setUser(prev => ({
                         ...prev,
-                        name: profile?.name || firebaseUser.displayName || 'Kullanıcı',
+                        name: profile?.name || firebaseUser.displayName || t('common.user'),
                         surname: profile?.surname || '',
                         email: profile?.email || firebaseUser.email || '',
                         phone: profile?.phone || '',
@@ -84,7 +84,7 @@ export const Settings: React.FC = () => {
                     }));
                 }
             } catch (error) {
-                console.error("Error loading data for settings:", error);
+                console.error(t('settings.load_error'), error);
             }
         };
         loadData();
@@ -174,11 +174,11 @@ export const Settings: React.FC = () => {
     const handleExportLogsCSV = () => {
         if (!user.isPremium) return navigate('/premium');
 
-        const headers = ["Arac ID", "Marka", "Model", "Plaka", "Yil", "Mevcut KM", "Islem Tarihi", "Islem Turu", "Maliyet", "Islem KM", "Notlar"];
+        const headers = t('settings.csv_headers.logs', { returnObjects: true }) as string[];
         const rows = logs.map(log => {
             const vehicle = vehicles.find(v => v.id === log.vehicleId);
             return [
-                vehicle?.id || 'Bilinmiyor',
+                vehicle?.id || t('common.unknown'),
                 vehicle?.brand || '-',
                 vehicle?.model || '-',
                 vehicle?.plate || '-',
@@ -199,7 +199,7 @@ export const Settings: React.FC = () => {
     const handleExportVehiclesCSV = () => {
         if (!user.isPremium) return navigate('/premium');
 
-        const headers = ["ID", "Marka", "Model", "Yil", "Plaka", "KM", "Durum", "Saglik Puani", "Piyasa Degeri Min", "Piyasa Degeri Max"];
+        const headers = t('settings.csv_headers.vehicles', { returnObjects: true }) as string[];
         const rows = vehicles.map(v => [
             v.id,
             v.brand,
@@ -225,11 +225,11 @@ export const Settings: React.FC = () => {
         // Title
         doc.setFontSize(22);
         doc.setTextColor(40, 40, 40);
-        doc.text("CarSync Pro - Garaj Raporu", 14, 20);
+        doc.text(t('settings.pdf_title'), 14, 20);
 
         doc.setFontSize(10);
         doc.setTextColor(100, 100, 100);
-        doc.text(`Olusturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 14, 28);
+        doc.text(`${t('settings.pdf_created')}${new Date().toLocaleDateString(i18n.language)}`, 14, 28);
 
         doc.setLineWidth(0.5);
         doc.line(14, 32, 196, 32);
@@ -237,19 +237,19 @@ export const Settings: React.FC = () => {
         // Vehicles Table
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
-        doc.text("Arac Listesi", 14, 42);
+        doc.text(t('settings.pdf_vehicle_list'), 14, 42);
 
         const vehicleRows = vehicles.map(v => [
             `${v.brand} ${v.model}`,
             v.year.toString(),
             v.plate,
-            `${v.mileage.toLocaleString()} km`,
+            `${v.mileage.toLocaleString(i18n.language)} km`,
             v.status
         ]);
 
         autoTable(doc, {
             startY: 46,
-            head: [['Arac', 'Yil', 'Plaka', 'KM', 'Durum']],
+            head: [(t('settings.csv_headers.vehicles', { returnObjects: true }) as string[]).slice(1, 6)], // Use keys for headers, slicing to match body columns
             body: vehicleRows,
             theme: 'striped',
             headStyles: { fillColor: [59, 130, 246] }
@@ -267,7 +267,7 @@ export const Settings: React.FC = () => {
         }
 
         doc.setFontSize(14);
-        doc.text("Servis Gecmisi", 14, finalY);
+        doc.text(t('settings.pdf_service_history'), 14, finalY);
 
         const logRows = logs.map(log => {
             const car = vehicles.find(v => v.id === log.vehicleId);
@@ -275,14 +275,14 @@ export const Settings: React.FC = () => {
                 log.date,
                 car ? car.plate : '-',
                 log.type,
-                `${log.cost.toLocaleString()} TL`,
-                `${log.mileage.toLocaleString()} km`
+                `${log.cost.toLocaleString(i18n.language)} ${i18n.language === 'tr' ? 'TL' : '₺'}`,
+                `${log.mileage.toLocaleString(i18n.language)} km`
             ];
         });
 
         autoTable(doc, {
             startY: finalY + 4,
-            head: [['Tarih', 'Plaka', 'Islem', 'Tutar', 'KM']],
+            head: [(t('settings.csv_headers.logs', { returnObjects: true }) as string[]).slice(6, 11)], // Match date, plate, type, cost, mileage
             body: logRows,
             theme: 'striped',
             headStyles: { fillColor: [75, 85, 99] }
@@ -294,8 +294,8 @@ export const Settings: React.FC = () => {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
-            doc.text('CarSync Pro ile olusturulmustur.', 14, doc.internal.pageSize.height - 10);
-            doc.text(`Sayfa ${i} / ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
+            doc.text(t('settings.pdf_footer'), 14, doc.internal.pageSize.height - 10);
+            doc.text(t('settings.pdf_page', { i, total: pageCount }), doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
         }
 
         doc.save("carsync_garaj_raporu.pdf");
@@ -315,7 +315,7 @@ export const Settings: React.FC = () => {
             setIsEditing(false);
             toast.success(t('settings.msg_saved'));
         } catch (error) {
-            console.error("Error saving profile:", error);
+            console.error(t('settings.msg_err'), error);
             toast.error(t('settings.msg_err'));
         }
     };
@@ -330,7 +330,7 @@ export const Settings: React.FC = () => {
         setView('main');
 
         if (notifications.service && notifications.fuel) {
-            toast.success('Ayarlar kaydedildi. "Yaklaşan Servis" ve "Yakıt Uyarıları" aktif!');
+            toast.success(t('settings.notif_active_msg'));
         } else {
             toast.success(t('settings.notif_saved'));
         }
@@ -349,19 +349,19 @@ export const Settings: React.FC = () => {
 
         setIsUpdatingPassword(true);
         try {
-            const user = auth.currentUser;
-            if (user && user.email) {
-                const credential = EmailAuthProvider.credential(user.email, passwordForm.currentPassword);
-                await reauthenticateWithCredential(user, credential);
-                await updatePassword(user, passwordForm.newPassword);
+            const fbUser = auth.currentUser;
+            if (fbUser && fbUser.email) {
+                const credential = EmailAuthProvider.credential(fbUser.email, passwordForm.currentPassword);
+                await reauthenticateWithCredential(fbUser, credential);
+                await updatePassword(fbUser, passwordForm.newPassword);
                 setShowPasswordSuccess(true);
                 setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
                 setTimeout(() => setShowPasswordSuccess(false), 3000);
             } else {
-                toast.error('Oturum açmış kullanıcı bulunamadı.');
+                toast.error(t('settings.pass_no_user'));
             }
         } catch (error: any) {
-            console.error('Şifre güncelleme hatası:', error);
+            console.error(t('settings.pass_update_err'), error);
             if (error.code === 'auth/wrong-password') {
                 toast.error(t('settings.pass_err_wrong'));
             } else {
@@ -378,7 +378,7 @@ export const Settings: React.FC = () => {
         try {
             await updateUserProfile({ twoFactorEnabled: newState });
         } catch (error) {
-            console.error('2FA güncelleme hatası:', error);
+            console.error(t('settings.sec_2fa_err'), error);
         }
     };
 
@@ -402,7 +402,7 @@ export const Settings: React.FC = () => {
     };
 
     const handleCancelSubscription = () => {
-        if (window.confirm("t('settings.sub_cancel_confirm') Premium özelliklere erişiminizi kaybedeceksiniz.")) {
+        if (window.confirm(t('settings.sub_cancel_confirm'))) {
             saveSetting('isPremium', false);
             setUser(prev => ({ ...prev, isPremium: false }));
             toast.info("t('settings.sub_cancelled')");
@@ -420,7 +420,7 @@ export const Settings: React.FC = () => {
         setArchivedVehicles(prev => prev.filter(v => v.id !== id));
 
         // Notify and offer navigation
-        const shouldNavigate = window.confirm("t('settings.restore_confirm')");
+        const shouldNavigate = window.confirm(t('settings.restore_confirm'));
         if (shouldNavigate) {
             navigate('/');
         }
@@ -429,9 +429,36 @@ export const Settings: React.FC = () => {
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Sıkıştırma ve yeniden boyutlandırma ekliyoruz
             const reader = new FileReader();
-            reader.onloadend = () => {
-                setTempUser(prev => ({ ...prev, avatar: reader.result as string }));
+            reader.onload = (event) => {
+                const img = new window.Image();
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    const MAX_WIDTH = 400;
+                    const MAX_HEIGHT = 400;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext("2d");
+                    ctx?.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL("image/jpeg", 0.7); // Sıkıştırılmış kaliteli JPEG
+                    setTempUser(prev => ({ ...prev, avatar: dataUrl }));
+                };
+                img.src = event.target?.result as string;
             };
             reader.readAsDataURL(file);
         }
@@ -462,7 +489,7 @@ export const Settings: React.FC = () => {
                 navigate('/login');
                 window.location.reload();
             } catch (error) {
-                console.error('Error signing out:', error);
+                console.error(t('nav.logout') + ' error:', error);
                 removeSetting('isAuthenticated');
                 removeSetting('isDemoMode');
                 navigate('/login');
@@ -552,7 +579,7 @@ export const Settings: React.FC = () => {
 
                                 <div className="flex items-center space-x-2 text-xs font-medium bg-black/20 rounded-lg p-3 backdrop-blur-sm w-fit">
                                     <Clock size={14} className="text-amber-200" />
-                                    <span><Trans i18nKey="settings.prem_renew">Yenilenme: <strong>12 Ekim 2024</strong></Trans></span>
+                                    <span><Trans i18nKey="settings.prem_renew" values={{ date: new Date().toLocaleDateString(i18n.language) }}>Yenilenme: <strong>{new Date().toLocaleDateString(i18n.language)}</strong></Trans></span>
                                 </div>
                             </div>
                         </div>
@@ -580,11 +607,11 @@ export const Settings: React.FC = () => {
                             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-2 pt-2">{t('settings.prem_active_feats')}</h3>
                             <div className={`${commonCardClass} space-y-3`}>
                                 {[
-                                    "t('settings.feat_unlimited')",
-                                    "t('settings.feat_ai')",
-                                    "t('settings.feat_reports')",
-                                    "t('settings.feat_no_ads')",
-                                    "t('settings.feat_support')"
+                                    t('settings.feat_unlimited'),
+                                    t('settings.feat_ai'),
+                                    t('settings.feat_reports'),
+                                    t('settings.feat_no_ads'),
+                                    t('settings.feat_support')
                                 ].map((feature, i) => (
                                     <div key={i} className="flex items-center space-x-3">
                                         <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
@@ -686,7 +713,7 @@ export const Settings: React.FC = () => {
                     <button
                         onClick={() => openLink(PRIVACY_POLICY_URL)}
                         className={`w-full ${commonCardClass} p-4 flex items-center justify-between group active:scale-95 hover:bg-slate-50 dark:hover:bg-slate-700/80`}
-                        aria-label="Gizlilik Politikasını harici sekmede aç"
+                        aria-label={t('settings.legal_privacy')}
                     >
                         <div className="flex items-center space-x-3">
                             <div className="bg-slate-100 dark:bg-slate-700/50 p-2 rounded-lg text-slate-600 dark:text-slate-300">
@@ -699,7 +726,7 @@ export const Settings: React.FC = () => {
                     <button
                         onClick={() => openLink(TERMS_OF_USE_URL)}
                         className={`w-full ${commonCardClass} p-4 flex items-center justify-between group active:scale-95 hover:bg-slate-50 dark:hover:bg-slate-700/80`}
-                        aria-label="Kullanım Koşullarını harici sekmede aç"
+                        aria-label={t('settings.legal_terms')}
                     >
                         <div className="flex items-center space-x-3">
                             <div className="bg-slate-100 dark:bg-slate-700/50 p-2 rounded-lg text-slate-600 dark:text-slate-300">
@@ -739,8 +766,8 @@ export const Settings: React.FC = () => {
                     <div className={`${commonCardClass} space-y-4`}>
                         <div className="flex items-center space-x-3 text-amber-500 mb-2"><Droplet size={20} /><span className="font-bold text-sm text-slate-800 dark:text-white">{t('settings.rem_oil')}</span></div>
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">{t('settings.rem_every_km')}</label><div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 flex items-center"><input type="number" value={reminderSettings.oilChange.km} onChange={(e) => setReminderSettings({ ...reminderSettings, oilChange: { ...reminderSettings.oilChange, km: e.target.value } })} className="bg-transparent w-full outline-none text-slate-900 dark:text-white text-sm" /><span className="text-xs text-slate-500 ml-1">km</span></div></div>
-                            <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">{t('settings.rem_every_mo')}</label><div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 flex items-center"><input type="number" value={reminderSettings.oilChange.months} onChange={(e) => setReminderSettings({ ...reminderSettings, oilChange: { ...reminderSettings.oilChange, months: e.target.value } })} className="bg-transparent w-full outline-none text-slate-900 dark:text-white text-sm" /><span className="text-xs text-slate-500 ml-1">ay</span></div></div>
+                            <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">{t('settings.rem_every_km', { count: 0 }).split(' ')[0]}</label><div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 flex items-center"><input type="number" value={reminderSettings.oilChange.km} onChange={(e) => setReminderSettings({ ...reminderSettings, oilChange: { ...reminderSettings.oilChange, km: e.target.value } })} className="bg-transparent w-full outline-none text-slate-900 dark:text-white text-sm" /><span className="text-xs text-slate-500 ml-1">km</span></div></div>
+                            <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">{t('settings.rem_every_mo', { count: 0 }).split(' ')[0]}</label><div className="bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 flex items-center"><input type="number" value={reminderSettings.oilChange.months} onChange={(e) => setReminderSettings({ ...reminderSettings, oilChange: { ...reminderSettings.oilChange, months: e.target.value } })} className="bg-transparent w-full outline-none text-slate-900 dark:text-white text-sm" /><span className="text-xs text-slate-500 ml-1">{t('common.months')}</span></div></div>
                         </div>
                     </div>
                 </div>
@@ -837,7 +864,7 @@ export const Settings: React.FC = () => {
                                     value={passwordForm.newPassword}
                                     onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                                     className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-blue-500 transition"
-                                    placeholder="En az 6 karakter"
+                                    placeholder={t('settings.pass_ph_min')}
                                 />
                             </div>
                         </div>
@@ -866,7 +893,7 @@ export const Settings: React.FC = () => {
                         {showPasswordSuccess && (
                             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-xl flex items-center space-x-2 text-sm animate-fadeIn">
                                 <CheckCircle2 size={16} />
-                                <span>t('settings.pass_success')</span>
+                                <span>{t('settings.pass_success')}</span>
                             </div>
                         )}
                     </div>
@@ -1137,10 +1164,10 @@ export const Settings: React.FC = () => {
                         </div>
                         <div className="flex flex-col items-start">
                             <span className={`font-bold ${user.isPremium ? 'text-amber-600 dark:text-amber-500' : ''}`}>{t('settings.prem_title')}</span>
-                            <span className="text-xs text-slate-500">{user.isPremium ? 'Aktif: Yıllık Plan' : 'Ücretsiz Plan'}</span>
+                            <span className="text-xs text-slate-500">{user.isPremium ? t('settings.prem_plan_yearly') : t('settings.prem_plan_free')}</span>
                         </div>
                     </div>
-                    {user.isPremium && <span className="bg-green-500/10 text-green-500 text-[10px] font-bold px-2 py-0.5 rounded border border-green-500/20 mr-2">AKTİF</span>}
+                    {user.isPremium && <span className="bg-green-500/10 text-green-500 text-[10px] font-bold px-2 py-0.5 rounded border border-green-500/20 mr-2">{t('settings.lbl_active')}</span>}
                     <ChevronRight size={20} className="text-slate-400" />
                 </button>
 

@@ -11,6 +11,7 @@ import { Vehicle, ServiceLog } from '../types';
 import { toast } from '../services/toast';
 import { EmptyState } from '../components/EmptyState';
 import { SwipeableItem } from '../components/SwipeableItem';
+import { AdBanner } from '../components/AdBanner';
 
 // ─── İkon & Renk Yardımcıları ───────────────────────────────────────────────
 
@@ -223,8 +224,8 @@ export const Logs: React.FC = () => {
             <button
               onClick={() => setSelectedVehicleId('all')}
               className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${selectedVehicleId === 'all'
-                  ? 'bg-blue-600 border-blue-500 text-white'
-                  : 'bg-slate-800 border-slate-700 text-slate-400'
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'bg-slate-800 border-slate-700 text-slate-400'
                 }`}
             >
               <Car size={12} />
@@ -235,8 +236,8 @@ export const Logs: React.FC = () => {
                 key={v.id}
                 onClick={() => setSelectedVehicleId(v.id)}
                 className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition active:scale-95 ${selectedVehicleId === v.id
-                    ? 'bg-blue-600 border-blue-500 text-white'
-                    : 'bg-slate-800 border-slate-700 text-slate-400'
+                  ? 'bg-blue-600 border-blue-500 text-white'
+                  : 'bg-slate-800 border-slate-700 text-slate-400'
                   }`}
               >
                 <span>{v.brand} {v.model}</span>
@@ -252,8 +253,8 @@ export const Logs: React.FC = () => {
               key={typeStr}
               onClick={() => setSelectedType(typeStr)}
               className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium border transition active:scale-95 ${selectedType === typeStr
-                  ? 'bg-slate-600 border-slate-500 text-white'
-                  : 'bg-slate-800 border-slate-700 text-slate-400'
+                ? 'bg-slate-600 border-slate-500 text-white'
+                : 'bg-slate-800 border-slate-700 text-slate-400'
                 }`}
             >
               {typeStr === 'all' ? t('logs.all_types') : t(`add_record.type_${typeStr.replace(/\s|[&]/g, '').toLowerCase()}`, { defaultValue: typeStr })}
@@ -369,6 +370,9 @@ export const Logs: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Google Ad Placement */}
+      <AdBanner slotId="7103291209" format="fluid" layoutKey="-gw-3+1f-3d+2z" />
     </div>
   );
 };

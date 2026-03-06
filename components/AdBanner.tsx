@@ -3,7 +3,7 @@ import { getSetting } from '../services/settingsService';
 
 interface AdBannerProps {
   slotId: string; // AdSense Slot ID
-  format?: 'auto' | 'fluid' | 'rectangle';
+  format?: 'auto' | 'fluid' | 'rectangle' | 'autorelaxed';
   layoutKey?: string; // For In-feed ads
   className?: string;
   label?: string;
@@ -71,7 +71,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
           ref={adRef}
           id={`ad-${slotId}`}
           style={{ display: 'block', width: '100%', textAlign: 'center' }}
-          data-ad-client="ca-pub-5162077951759035" // REPLACE WITH YOUR PUBLISHER ID
+          data-ad-client="ca-pub-6329108306834809" // REPLACE WITH YOUR PUBLISHER ID
           data-ad-slot={slotId}
           data-ad-format={format}
           data-ad-layout-key={layoutKey}
