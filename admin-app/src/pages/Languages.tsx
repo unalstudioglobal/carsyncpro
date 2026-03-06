@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Search, Edit3, Trash2, Globe,
     RefreshCw, Filter
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getCollectionConfig, updateCollectionConfig } from '../services/adminService';
 
 interface Language {
     id: string;
@@ -13,50 +14,87 @@ interface Language {
 
 export const Languages: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<'admin' | 'app' | 'web'>('admin');
-    const [languages, setLanguages] = useState<Language[]>([
-        { id: '1', name: 'English', status: 'Enabled' },
-        { id: '2', name: 'Marathi', status: 'Enabled' },
-        { id: '3', name: 'Nepali', status: 'Enabled' },
-        { id: '4', name: 'Turkish', status: 'Enabled' },
-    ]);
+    const [languages, setLanguages] = useState<Language[]>([]);
+    const [loading, setLoading] = useState(true);
     const [newName, setNewName] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
 
     const categories = [
-        { id: 'admin', label: 'Admin Panel' },
-        { id: 'app', label: 'App' },
-        { id: 'web', label: 'Web' }
+        { id: 'admin', label: 'Admin Paneli' },
+        { id: 'app', label: 'Uygulama' },
+        { id: 'web', label: 'Web Sitesi' }
     ];
 
-    const handleAdd = (e: React.FormEvent) => {
+    useEffect(() => {
+        loadLanguages();
+    }, [activeCategory]);
+
+    const loadLanguages = async () => {
+        setLoading(true);
+        try {
+            const data = await getCollectionConfig<Language[]>('content', `languages_${activeCategory}`);
+            if (data && Array.isArray(data)) {
+                setLanguages(data);
+            } else {
+                // Default languages if none exist
+                const defaults: Language[] = [
+                    { id: '1', name: 'English', status: 'Enabled' as 'Enabled' },
+                    { id: '4', name: 'Turkish', status: 'Enabled' as 'Enabled' },
+                ];
+                setLanguages(defaults);
+            }
+        } catch (err) {
+            toast.error('Diller yüklenemedi.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async (updatedLangs: Language[]) => {
+        try {
+            await updateCollectionConfig('content', `languages_${activeCategory}`, updatedLangs);
+        } catch (err) {
+            toast.error(' Kaydedilirken hata oluştu.');
+        }
+    };
+
+    const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newName.trim()) return;
         const newLang: Language = {
-            id: (languages.length + 1).toString(),
+            id: Date.now().toString(),
             name: newName,
-            status: 'Enabled'
+            status: 'Enabled' as 'Enabled'
         };
-        setLanguages([...languages, newLang]);
+        const updated = [...languages, newLang];
+        setLanguages(updated);
+        await handleSave(updated);
         setNewName('');
         toast.success(`${categories.find(c => c.id === activeCategory)?.label} dili başarıyla eklendi`);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm('Bu dili silmek istediğinize emin misiniz?')) {
-            setLanguages(languages.filter(l => l.id !== id));
+            const updated = languages.filter(l => l.id !== id);
+            setLanguages(updated);
+            await handleSave(updated);
             toast.success('Dil silindi');
         }
     };
 
-    const toggleStatus = (id: string) => {
-        setLanguages(languages.map(l =>
-            l.id === id ? { ...l, status: l.status === 'Enabled' ? 'Disabled' : 'Enabled' } : l
-        ));
+    const toggleStatus = async (id: string) => {
+        const updated: Language[] = languages.map(l =>
+            l.id === id ? { ...l, status: (l.status === 'Enabled' ? 'Disabled' : 'Enabled') as 'Enabled' | 'Disabled' } : l
+        );
+        setLanguages(updated);
+        await handleSave(updated);
     };
 
     const filteredLanguages = languages.filter(l =>
         l.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (loading) return <div className="p-8 animate-pulse text-gold uppercase font-black tracking-widest">Yükleniyor...</div>;
 
     return (
         <div className="p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -66,8 +104,8 @@ export const Languages: React.FC = () => {
                         <Globe className="text-gold" size={24} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-white tracking-tight uppercase">System Languages</h1>
-                        <p className="text-white/40 text-sm">Tüm platformlar için dil deskteğini buradan yönetin.</p>
+                        <h1 className="text-3xl font-black text-white tracking-tight uppercase">Sistem Dilleri</h1>
+                        <p className="text-white/40 text-sm">Tüm platformlar için dil desteğini buradan yönetin.</p>
                     </div>
                 </div>
             </header>
@@ -104,15 +142,15 @@ export const Languages: React.FC = () => {
                     {/* Add Form Area */}
                     <div className="glass p-8 rounded-[32px] border-white/5 space-y-6">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-black text-white uppercase tracking-tight">Add {categories.find(c => c.id === activeCategory)?.label} Languages</h2>
+                            <h2 className="text-xl font-black text-white uppercase tracking-tight">{categories.find(c => c.id === activeCategory)?.label} Dili Ekle</h2>
                             <div className="px-4 py-1.5 bg-white/5 rounded-full border border-white/10">
-                                <span className="text-[10px] font-black text-gold uppercase tracking-widest">{activeCategory} mode</span>
+                                <span className="text-[10px] font-black text-gold uppercase tracking-widest">{activeCategory} modu</span>
                             </div>
                         </div>
 
                         <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                             <div className="md:col-span-10 space-y-2">
-                                <label className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">Language Name *</label>
+                                <label className="text-[10px] font-black uppercase text-white/40 tracking-widest ml-1">Dil Adı *</label>
                                 <input
                                     type="text"
                                     value={newName}
@@ -127,7 +165,7 @@ export const Languages: React.FC = () => {
                                     type="submit"
                                     className="w-full bg-gold hover:bg-gold-light text-black font-black uppercase tracking-widest py-3.5 rounded-2xl transition-all shadow-xl shadow-gold/10 active:scale-95"
                                 >
-                                    Submit
+                                    Ekle
                                 </button>
                             </div>
                         </form>
@@ -137,8 +175,8 @@ export const Languages: React.FC = () => {
                     <div className="glass rounded-[32px] border-white/5 overflow-hidden flex flex-col shadow-2xl">
                         <div className="p-6 border-b border-white/5 flex flex-wrap justify-between items-center bg-white/[0.01] gap-4">
                             <h3 className="text-sm font-black text-white/60 uppercase tracking-widest">
-                                {categories.find(c => c.id === activeCategory)?.label} Languages List
-                                <span className="ml-3 text-[10px] text-white/20 font-bold whitespace-nowrap">View / Update / Delete</span>
+                                {categories.find(c => c.id === activeCategory)?.label} Dil Listesi
+                                <span className="ml-3 text-[10px] text-white/20 font-bold whitespace-nowrap">Görüntüle / Güncelle / Sil</span>
                             </h3>
 
                             <div className="flex items-center gap-4 flex-1 md:flex-none justify-end">
@@ -153,7 +191,7 @@ export const Languages: React.FC = () => {
                                     />
                                 </div>
                                 <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
-                                    <button className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"><RefreshCw size={14} /></button>
+                                    <button onClick={loadLanguages} className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"><RefreshCw size={14} /></button>
                                     <button className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-all"><Filter size={14} /></button>
                                 </div>
                             </div>
@@ -163,10 +201,10 @@ export const Languages: React.FC = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-white/[0.02] border-b border-white/5">
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider w-20">Sr No.</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider">Language Name</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider">Status</th>
-                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider text-right w-32">Operate</th>
+                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider w-20">Sıra No</th>
+                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider">Dil Adı</th>
+                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider">Durum</th>
+                                        <th className="px-8 py-4 text-[10px] font-black uppercase text-white/40 tracking-wider text-right w-32">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
@@ -183,7 +221,7 @@ export const Languages: React.FC = () => {
                                                         }`}
                                                 >
                                                     <div className={`w-1 h-1 rounded-full ${lang.status === 'Enabled' ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-                                                    {lang.status}
+                                                    {lang.status === 'Enabled' ? 'Aktif' : 'Pasif'}
                                                 </button>
                                             </td>
                                             <td className="px-8 py-4 text-right">
@@ -201,7 +239,7 @@ export const Languages: React.FC = () => {
                             </table>
                         </div>
                         <div className="p-6 border-t border-white/5 text-[10px] font-bold text-white/10 uppercase tracking-[0.2em] bg-white/[0.01]">
-                            Showing 1 to {filteredLanguages.length} of {filteredLanguages.length} rows
+                            {filteredLanguages.length} dilden 1 - {filteredLanguages.length} arası gösteriliyor
                         </div>
                     </div>
                 </div>

@@ -54,16 +54,16 @@ export const AddVehicle: React.FC = () => {
     let isValid = true;
 
     if (currentStep === 1) {
-      if (!formData.brand.trim()) newErrors.brand = 'Lütfen aracın markasını giriniz.';
+      if (!formData.brand.trim()) newErrors.brand = t('add_vehicle.val_brand');
 
-      if (!formData.model.trim()) newErrors.model = 'Lütfen aracın modelini giriniz.';
+      if (!formData.model.trim()) newErrors.model = t('add_vehicle.val_model');
 
       const yearNum = parseInt(formData.year);
       const currentYear = new Date().getFullYear();
       if (!formData.year || isNaN(yearNum) || formData.year.length !== 4) {
-        newErrors.year = 'Yıl 4 haneli olmalıdır (Örn: 2020).';
+        newErrors.year = t('add_vehicle.val_year_digit');
       } else if (yearNum < 1900 || yearNum > currentYear + 1) {
-        newErrors.year = `Yıl 1900 ile ${currentYear + 1} arasında olmalıdır.`;
+        newErrors.year = t('add_vehicle.val_year_range', { max: currentYear + 1 });
       }
     }
 
@@ -74,15 +74,15 @@ export const AddVehicle: React.FC = () => {
       const plateRegex = /^(0[1-9]|[1-7][0-9]|8[01])[A-Z]{1,3}\d{2,5}$/;
 
       if (!formData.plate.trim()) {
-        newErrors.plate = 'Plaka alanı zorunludur.';
+        newErrors.plate = t('add_vehicle.val_plate_req');
       } else if (!plateRegex.test(cleanPlate)) {
-        newErrors.plate = 'Geçerli bir Türk plakası giriniz. (Örn: 34ABC123 veya 34-ABC-123)';
+        newErrors.plate = t('add_vehicle.val_plate_invalid');
       }
 
       if (!formData.mileage) {
-        newErrors.mileage = 'Kilometre alanı zorunludur.';
+        newErrors.mileage = t('add_vehicle.val_mileage_req');
       } else if (isNaN(Number(formData.mileage)) || Number(formData.mileage) < 0) {
-        newErrors.mileage = 'Geçerli bir kilometre değeri giriniz.';
+        newErrors.mileage = t('add_vehicle.val_mileage_invalid');
       }
     }
 
@@ -129,11 +129,11 @@ export const AddVehicle: React.FC = () => {
               lastLogDate: new Date().toLocaleDateString('tr-TR'),
             });
           }
-          toast.success(isEditMode ? 'Değişiklikler başarıyla kaydedildi!' : 'Yeni araç garajınıza eklendi!');
+          toast.success(isEditMode ? t('add_vehicle.toast_edit_success') : t('add_vehicle.toast_add_success'));
           navigate('/');
         } catch (err) {
           console.error('Araç kaydetme hatası:', err);
-          toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
+          toast.error(t('add_vehicle.toast_error'));
         } finally {
           setIsSaving(false);
         }
@@ -160,12 +160,12 @@ export const AddVehicle: React.FC = () => {
   const renderStep1 = () => (
     <div className="space-y-5 animate-fadeIn">
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-400 ml-1">MARKA</label>
+        <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_brand')}</label>
         <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.brand ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
           <Car size={20} className={errors.brand ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
           <input
             type="text"
-            placeholder="Örn. BMW, Toyota"
+            placeholder={t('add_vehicle.ph_brand')}
             value={formData.brand}
             onChange={(e) => {
               setFormData({ ...formData, brand: e.target.value });
@@ -180,12 +180,12 @@ export const AddVehicle: React.FC = () => {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-400 ml-1">MODEL</label>
+        <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_model')}</label>
         <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.model ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
           <Car size={20} className={errors.model ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
           <input
             type="text"
-            placeholder="Örn. 320i, Corolla"
+            placeholder={t('add_vehicle.ph_model')}
             value={formData.model}
             onChange={(e) => {
               setFormData({ ...formData, model: e.target.value });
@@ -199,12 +199,12 @@ export const AddVehicle: React.FC = () => {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-400 ml-1">YIL</label>
+        <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_year')}</label>
         <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.year ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
           <Calendar size={20} className={errors.year ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
           <input
             type="number"
-            placeholder="2023"
+            placeholder={t('add_vehicle.ph_year')}
             maxLength={4}
             value={formData.year}
             onChange={(e) => {
@@ -226,12 +226,12 @@ export const AddVehicle: React.FC = () => {
   const renderStep2 = () => (
     <div className="space-y-5 animate-fadeIn">
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-400 ml-1">PLAKA</label>
+        <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_plate')}</label>
         <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.plate ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
           <Hash size={20} className={errors.plate ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
           <input
             type="text"
-            placeholder="34 ABC 123"
+            placeholder={t('add_vehicle.ph_plate')}
             value={formData.plate}
             onChange={(e) => {
               setFormData({ ...formData, plate: e.target.value.toUpperCase() });
@@ -246,12 +246,12 @@ export const AddVehicle: React.FC = () => {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-400 ml-1">KİLOMETRE</label>
+        <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_mileage')}</label>
         <div className={`flex items-center bg-slate-800 rounded-xl px-4 py-4 border ${errors.mileage ? 'border-red-500 bg-red-500/5' : 'border-slate-700'} focus-within:border-blue-500 transition-colors`}>
           <Gauge size={20} className={errors.mileage ? "text-red-500" : "text-slate-500"} style={{ marginRight: '0.75rem' }} />
           <input
             type="number"
-            placeholder="Örn. 120000"
+            placeholder={t('add_vehicle.ph_mileage')}
             min="0"
             value={formData.mileage}
             onChange={(e) => {
@@ -300,7 +300,7 @@ export const AddVehicle: React.FC = () => {
       const newFiles = Array.from(files);
 
       if (currentCount >= 4) {
-        toast.error('En fazla 4 araç fotoğrafı ekleyebilirsiniz.');
+        toast.error(t('add_vehicle.toast_max_photos'));
         e.target.value = '';
         return;
       }
@@ -309,7 +309,7 @@ export const AddVehicle: React.FC = () => {
       const filesToProcess = newFiles.slice(0, availableSlots);
 
       if (newFiles.length > availableSlots) {
-        toast.warning(`En fazla 4 fotoğraf yükleyebilirsiniz. Sadece ilk ${availableSlots} fotoğraf eklendi.`);
+        toast.warning(t('add_vehicle.toast_partial_photos', { count: availableSlots }));
       }
 
       filesToProcess.forEach((file: File) => {
@@ -335,7 +335,7 @@ export const AddVehicle: React.FC = () => {
   const renderStep3 = () => (
     <div className="space-y-6 animate-fadeIn">
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-400 ml-1">ARAÇ FOTOĞRAFLARI</label>
+        <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_photos')}</label>
 
         {/* Hidden Inputs */}
         <input
@@ -373,7 +373,7 @@ export const AddVehicle: React.FC = () => {
                 </button>
                 {idx === 0 && (
                   <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-blue-600 text-[10px] font-bold text-white rounded uppercase tracking-wider">
-                    Kapak
+                    {t('add_vehicle.badge_cover')}
                   </div>
                 )}
               </div>
@@ -388,20 +388,20 @@ export const AddVehicle: React.FC = () => {
             className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-700 rounded-2xl text-slate-400 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/5 transition active:scale-95"
           >
             <Camera size={28} className="mb-2" />
-            <span className="text-xs font-bold">Kamera</span>
+            <span className="text-xs font-bold">{t('add_vehicle.btn_camera')}</span>
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-700 rounded-2xl text-slate-400 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/5 transition active:scale-95"
           >
             <LayoutGrid size={28} className="mb-2" />
-            <span className="text-xs font-bold">Galeri</span>
+            <span className="text-xs font-bold">{t('add_vehicle.btn_gallery')}</span>
           </button>
         </div>
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-400 ml-1">DURUM</label>
+        <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_status')}</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {['Sorun Yok', 'Servis Gerekli', 'Acil'].map((status) => (
             <button

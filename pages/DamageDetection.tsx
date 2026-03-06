@@ -42,19 +42,19 @@ interface DamageReport {
 const SEVERITY_CONFIG = (t: any): Record<Severity, {
   label: string; bg: string; border: string; text: string; badge: string; icon: React.ElementType
 }> => ({
-  critical: { label: t('damage_detection.sev_crit'), bg: 'bg-red-500/15', border: 'border-red-500/40', text: 'text-red-400', badge: 'bg-red-500/20 text-red-300', icon: AlertTriangle },
-  major: { label: t('damage_detection.sev_maj'), bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300', icon: ShieldAlert },
-  minor: { label: t('damage_detection.sev_min'), bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-300', icon: Info },
-  none: { label: t('damage_detection.sev_none'), bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300', icon: CheckCircle2 },
+  critical: { label: t('damageDetect.sev_crit'), bg: 'bg-red-500/15', border: 'border-red-500/40', text: 'text-red-400', badge: 'bg-red-500/20 text-red-300', icon: AlertTriangle },
+  major: { label: t('damageDetect.sev_maj'), bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300', icon: ShieldAlert },
+  minor: { label: t('damageDetect.sev_min'), bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', badge: 'bg-blue-500/20 text-blue-300', icon: Info },
+  none: { label: t('damageDetect.sev_none'), bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', badge: 'bg-emerald-500/20 text-emerald-300', icon: CheckCircle2 },
 });
 
 const REPAIR_TYPE_LABELS = (t: any): Record<string, string> => ({
-  paintwork: t('damage_detection.rep_paint'),
-  bodywork: t('damage_detection.rep_body'),
-  glass: t('damage_detection.rep_glass'),
-  mechanical: t('damage_detection.rep_mech'),
-  cosmetic: t('damage_detection.rep_cosm'),
-  none: t('damage_detection.rep_none'),
+  paintwork: t('damageDetect.rep_paint'),
+  bodywork: t('damageDetect.rep_body'),
+  glass: t('damageDetect.rep_glass'),
+  mechanical: t('damageDetect.rep_mech'),
+  cosmetic: t('damageDetect.rep_cosm'),
+  none: t('damageDetect.rep_none'),
 });
 
 // ─── AI Analysis ─────────────────────────────────────────────────────────────
@@ -225,11 +225,11 @@ const DamageCard: React.FC<{ damage: DamageItem; index: number; t: any }> = ({ d
               {REPAIR_TYPE_LABELS(t)[damage.repairType]}
             </span>
             <span className="text-xs bg-slate-700/60 text-slate-300 px-2.5 py-1 rounded-full">
-              ⏱ {t('damage_detection.hours', { h: damage.repairTimeHours })}
+              ⏱ {t('damageDetect.hours', { h: damage.repairTimeHours })}
             </span>
             {damage.diyPossible && (
               <span className="text-xs bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                {t('damage_detection.diy')}
+                {t('damageDetect.diy')}
               </span>
             )}
           </div>
@@ -239,12 +239,12 @@ const DamageCard: React.FC<{ damage: DamageItem; index: number; t: any }> = ({ d
             <div className="bg-slate-800/50 rounded-xl p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CircleDollarSign size={14} className="text-slate-400" />
-                <p className="text-slate-400 text-xs">{t('damage_detection.est_cost')}</p>
+                <p className="text-slate-400 text-xs">{t('damageDetect.est_cost')}</p>
               </div>
               <p className="text-white font-bold text-sm">
-                ₺{damage.estimatedCostMin.toLocaleString(t('damage_detection.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')}
+                ₺{damage.estimatedCostMin.toLocaleString(t('damageDetect.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')}
                 <span className="text-slate-400 font-normal"> – </span>
-                ₺{damage.estimatedCostMax.toLocaleString(t('damage_detection.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')}
+                ₺{damage.estimatedCostMax.toLocaleString(t('damageDetect.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')}
               </p>
             </div>
           )}
@@ -327,11 +327,11 @@ export const DamageDetection: React.FC = () => {
     setError(null);
     setReport(null);
 
-    const result = await analyzeDamageFromImage(imageBase64, imageMime, t('damage_detection.ai_prompt_lang'));
+    const result = await analyzeDamageFromImage(imageBase64, imageMime, t('damageDetect.ai_prompt_lang'));
     if (result) {
       setReport(result);
     } else {
-      setError(t('damage_detection.err_title'));
+      setError(t('damageDetect.err_title'));
     }
     setAnalyzing(false);
   };
@@ -429,7 +429,7 @@ export const DamageDetection: React.FC = () => {
                   className="flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/80 backdrop-blur px-3 py-1.5 rounded-full"
                 >
                   <RotateCw size={11} />
-                  {t('damage_detection.diff_photo')}
+                  {t('damageDetect.diff_photo')}
                 </button>
               </div>
             )}
@@ -453,12 +453,12 @@ export const DamageDetection: React.FC = () => {
             {analyzing ? (
               <>
                 <div className="w-5 h-5 border-2 border-slate-500 border-t-slate-300 rounded-full animate-spin" />
-                {t('damage_detection.analyzing_ai')}
+                {t('damageDetect.analyzing_ai')}
               </>
             ) : (
               <>
                 <Scan size={18} />
-                {t('damage_detection.btn_detect')}
+                {t('damageDetect.btn_detect')}
               </>
             )}
           </button>
@@ -473,12 +473,12 @@ export const DamageDetection: React.FC = () => {
                   <Eye size={18} className="text-rose-400 animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-sm">{t('damage_detection.analyzing_img')}</p>
-                  <p className="text-slate-400 text-xs">{t('damage_detection.analyzing_scan')}</p>
+                  <p className="text-white font-semibold text-sm">{t('damageDetect.analyzing_img')}</p>
+                  <p className="text-slate-400 text-xs">{t('damageDetect.analyzing_scan')}</p>
                 </div>
               </div>
               <div className="space-y-2">
-                {[t('damage_detection.step_1'), t('damage_detection.step_2'), t('damage_detection.step_3')].map((step, i) => (
+                {[t('damageDetect.step_1'), t('damageDetect.step_2'), t('damageDetect.step_3')].map((step, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" style={{ animationDelay: `${i * 0.3}s` }} />
                     <p className="text-slate-400 text-xs">{step}</p>
@@ -495,10 +495,10 @@ export const DamageDetection: React.FC = () => {
           <div className="rounded-2xl bg-red-500/10 border border-red-500/20 p-4 flex items-start gap-3">
             <AlertTriangle size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-red-300 font-medium text-sm mb-1">{t('damage_detection.err_title')}</p>
+              <p className="text-red-300 font-medium text-sm mb-1">{t('damageDetect.err_title')}</p>
               <p className="text-red-400/70 text-xs">{error}</p>
               <button onClick={handleAnalyze} className="mt-2 flex items-center gap-1.5 text-xs text-red-300 hover:text-red-200">
-                <RefreshCw size={11} /> {t('damage_detection.err_retry')}
+                <RefreshCw size={11} /> {t('damageDetect.err_retry')}
               </button>
             </div>
           </div>
@@ -512,7 +512,7 @@ export const DamageDetection: React.FC = () => {
                 onClick={() => setShowJson(!showJson)}
                 className="text-xs text-slate-400 hover:text-white flex items-center gap-1 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 transition-colors"
               >
-                {showJson ? t('damage_detection.show_visual') : t('damage_detection.show_json')}
+                {showJson ? t('damageDetect.show_visual') : t('damageDetect.show_json')}
               </button>
             </div>
 
@@ -532,11 +532,11 @@ export const DamageDetection: React.FC = () => {
                       <p className={`text-xl font-bold ${conditionColor} mb-1`}>
                         {(() => {
                           const cond = report.overallCondition.toLowerCase();
-                          if (cond === 'mükemmel' || cond === 'perfect') return t('damage_detection.cond_perfect');
-                          if (cond === 'iyi' || cond === 'good') return t('damage_detection.cond_good');
-                          if (cond === 'orta' || cond === 'medium') return t('damage_detection.cond_med');
-                          if (cond === 'kötü' || cond === 'poor') return t('damage_detection.cond_poor');
-                          if (cond === 'hasarlı' || cond === 'damaged') return t('damage_detection.cond_damaged');
+                          if (cond === 'mükemmel' || cond === 'perfect') return t('damageDetect.cond_perfect');
+                          if (cond === 'iyi' || cond === 'good') return t('damageDetect.cond_good');
+                          if (cond === 'orta' || cond === 'medium') return t('damageDetect.cond_med');
+                          if (cond === 'kötü' || cond === 'poor') return t('damageDetect.cond_poor');
+                          if (cond === 'hasarlı' || cond === 'damaged') return t('damageDetect.cond_damaged');
                           return report.overallCondition;
                         })()}
                       </p>
@@ -544,7 +544,7 @@ export const DamageDetection: React.FC = () => {
                       {report.safetyRisk && (
                         <div className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-1.5">
                           <AlertTriangle size={12} className="text-red-400" />
-                          <p className="text-red-300 text-xs font-medium">{t('damage_detection.safety_risk')}</p>
+                          <p className="text-red-300 text-xs font-medium">{t('damageDetect.safety_risk')}</p>
                         </div>
                       )}
                     </div>
@@ -559,9 +559,9 @@ export const DamageDetection: React.FC = () => {
                         <CircleDollarSign size={18} className="text-amber-400" />
                       </div>
                       <div>
-                        <p className="text-slate-400 text-xs">{t('damage_detection.total_cost')}</p>
+                        <p className="text-slate-400 text-xs">{t('damageDetect.total_cost')}</p>
                         <p className="text-white font-bold">
-                          ₺{report.totalCostMin.toLocaleString(t('damage_detection.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')} – ₺{report.totalCostMax.toLocaleString(t('damage_detection.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')}
+                          ₺{report.totalCostMin.toLocaleString(t('damageDetect.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')} – ₺{report.totalCostMax.toLocaleString(t('damageDetect.ai_prompt_lang') === 'Türkçe' ? 'tr-TR' : 'en-US')}
                         </p>
                       </div>
                     </div>
@@ -573,7 +573,7 @@ export const DamageDetection: React.FC = () => {
                   <div className="rounded-2xl bg-rose-500/10 border border-rose-500/20 p-4 flex items-start gap-3">
                     <ShieldAlert size={16} className="text-rose-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-rose-300 text-xs font-semibold mb-0.5">{t('damage_detection.priority_action')}</p>
+                      <p className="text-rose-300 text-xs font-semibold mb-0.5">{t('damageDetect.priority_action')}</p>
                       <p className="text-slate-300 text-sm">{report.priorityAction}</p>
                     </div>
                   </div>
@@ -583,7 +583,7 @@ export const DamageDetection: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-white font-bold text-sm">
-                      {t('damage_detection.detected_damages')}
+                      {t('damageDetect.detected_damages')}
                       <span className="ml-2 text-xs text-slate-500 font-normal">({report.damages.length})</span>
                     </h2>
                   </div>
@@ -598,7 +598,7 @@ export const DamageDetection: React.FC = () => {
                       className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800/40 border border-slate-700/30 text-slate-400 text-xs"
                     >
                       {showAllDamages ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      {showAllDamages ? t('damage_detection.show_less') : t('damage_detection.show_more', { c: report.damages.length - 3 })}
+                      {showAllDamages ? t('damageDetect.show_less') : t('damageDetect.show_more', { c: report.damages.length - 3 })}
                     </button>
                   )}
                 </div>
@@ -608,7 +608,7 @@ export const DamageDetection: React.FC = () => {
                   <div className="rounded-2xl bg-slate-800/40 border border-slate-700/30 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Sparkles size={14} className="text-purple-400" />
-                      <p className="text-white font-semibold text-sm">{t('damage_detection.ai_recs')}</p>
+                      <p className="text-white font-semibold text-sm">{t('damageDetect.ai_recs')}</p>
                     </div>
                     <div className="space-y-2">
                       {report.recommendations.map((rec, i) => (
@@ -629,14 +629,14 @@ export const DamageDetection: React.FC = () => {
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 to-orange-600 text-white font-semibold text-sm hover:from-rose-500 hover:to-orange-500 transition-all shadow-lg shadow-rose-500/15"
                 >
                   <Camera size={16} />
-                  {t('damage_detection.new_analysis')}
+                  {t('damageDetect.new_analysis')}
                 </button>
 
                 {/* Disclaimer */}
                 <div className="flex items-start gap-2 bg-slate-800/30 rounded-xl p-3 border border-slate-700/30">
                   <Info size={13} className="text-slate-500 flex-shrink-0 mt-0.5" />
                   <p className="text-slate-500 text-[11px] leading-relaxed">
-                    {t('damage_detection.disclaimer')}
+                    {t('damageDetect.disclaimer')}
                   </p>
                 </div>
               </>

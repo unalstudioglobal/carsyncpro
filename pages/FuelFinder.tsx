@@ -183,10 +183,10 @@ const StationCard: React.FC<{
 
   return (
     <div className={`rounded-2xl border overflow-hidden transition-all duration-300 ${isCheapest
-        ? 'bg-emerald-500/10 border-emerald-500/30'
-        : station.isOpen
-          ? 'bg-slate-800/40 border-slate-700/30'
-          : 'bg-slate-800/20 border-slate-700/20 opacity-60'
+      ? 'bg-emerald-500/10 border-emerald-500/30'
+      : station.isOpen
+        ? 'bg-slate-800/40 border-slate-700/30'
+        : 'bg-slate-800/20 border-slate-700/20 opacity-60'
       }`}>
       <button onClick={() => setExpanded(!expanded)} className="w-full p-4 text-left">
         <div className="flex items-center gap-3">
@@ -459,12 +459,12 @@ export const FuelFinder: React.FC = () => {
                 key={key}
                 onClick={() => setActiveFuel(key)}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${activeFuel === key
-                    ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
-                    : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
+                  ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
+                  : 'bg-slate-800/60 text-slate-400 border border-slate-700/50'
                   }`}
               >
                 <FuelIcon size={12} className={activeFuel === key ? 'text-white' : meta.color} />
-                {t(meta.labelKey)}
+                {t('fuel.' + meta.labelKey)}
               </button>
             );
           })}
@@ -476,7 +476,7 @@ export const FuelFinder: React.FC = () => {
         {locationError && (
           <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
             <AlertCircle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
-            <p className="text-amber-300 text-xs">{locationError} Demo verileri gösteriliyor.</p>
+            <p className="text-amber-300 text-xs">{locationError} {t('fuel.demo_data')}</p>
           </div>
         )}
 
@@ -512,8 +512,8 @@ export const FuelFinder: React.FC = () => {
                 key={key}
                 onClick={() => setSortMode(key)}
                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${sortMode === key
-                    ? 'bg-slate-200 text-slate-900'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700/50'
+                  ? 'bg-slate-200 text-slate-900'
+                  : 'bg-slate-800 text-slate-400 border border-slate-700/50'
                   }`}
               >
                 {label}
@@ -522,8 +522,8 @@ export const FuelFinder: React.FC = () => {
             <button
               onClick={() => setShowOpenOnly(!showOpenOnly)}
               className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${showOpenOnly
-                  ? 'bg-green-600 text-white'
-                  : 'bg-slate-800 text-slate-400 border border-slate-700/50'
+                ? 'bg-green-600 text-white'
+                : 'bg-slate-800 text-slate-400 border border-slate-700/50'
                 }`}
             >
               <CheckCircle2 size={10} />

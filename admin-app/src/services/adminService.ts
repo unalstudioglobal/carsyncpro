@@ -233,3 +233,38 @@ export const fetchNotificationHistory = async (): Promise<NotificationHistory[]>
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NotificationHistory));
 };
+
+// Generic Config Handlers for Settings Pages
+export const getCollectionConfig = async <T>(collectionName: string, docId: string): Promise<T | null> => {
+    const docRef = doc(db, collectionName, docId);
+    const snap = await getDoc(docRef);
+    return snap.exists() ? snap.data() as T : null;
+};
+
+export const updateCollectionConfig = async (collectionName: string, docId: string, data: any): Promise<void> => {
+    const docRef = doc(db, collectionName, docId);
+    await setDoc(docRef, data, { merge: true });
+
+    // Log action
+    const currentAdmin = auth.currentUser;
+    await logAdminAction({
+        adminId: currentAdmin?.uid || 'system',
+        adminName: currentAdmin?.email || 'System',
+        action: 'CONFIG_UPDATE',
+        details: `${collectionName}/${docId} updated`
+    });
+};
+
+export const purgeSystemCache = async (): Promise<void> => {
+    // Mocking cache purge
+    console.log('Purging system cache...');
+
+    // Log action
+    const currentAdmin = auth.currentUser;
+    await logAdminAction({
+        adminId: currentAdmin?.uid || 'system',
+        adminName: currentAdmin?.email || 'System',
+        action: 'CACHE_PURGE',
+        details: 'System cache manual purge'
+    });
+};

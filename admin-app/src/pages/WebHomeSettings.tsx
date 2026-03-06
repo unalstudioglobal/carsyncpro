@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Save, Globe, Layout, Image as ImageIcon,
     Eye, EyeOff, ChevronRight, Info
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { WebHomeConfig, WebHomeSection } from '../types';
+import { getCollectionConfig, updateCollectionConfig } from '../services/adminService';
 
 export const WebHomeSettings: React.FC = () => {
+    const [loading, setLoading] = useState(true);
     const [selectedLanguage, setSelectedLanguage] = useState('en');
 
     const initialSection = (id: string): WebHomeSection => ({
@@ -26,15 +28,38 @@ export const WebHomeSettings: React.FC = () => {
         section3: initialSection('3')
     });
 
-    const handleSave = () => {
-        toast.promise(
-            new Promise(resolve => setTimeout(resolve, 1000)),
-            {
-                loading: 'Saving web settings...',
-                success: 'Web home settings updated successfully!',
-                error: 'Failed to save settings.',
+    useEffect(() => {
+        const loadWebHome = async () => {
+            try {
+                // We fetch the config for the selected language
+                const data = await getCollectionConfig<WebHomeConfig>('web_home', selectedLanguage);
+                if (data) {
+                    setConfig(data);
+                } else {
+                    // Reset to initial if no data found for this language
+                    setConfig({
+                        language: selectedLanguage,
+                        section1: initialSection('1'),
+                        section2: initialSection('2'),
+                        section3: initialSection('3')
+                    });
+                }
+            } catch (err) {
+                toast.error('Web ayarları yüklenemedi.');
+            } finally {
+                setLoading(false);
             }
-        );
+        };
+        loadWebHome();
+    }, [selectedLanguage]);
+
+    const handleSave = async () => {
+        try {
+            await updateCollectionConfig('web_home', selectedLanguage, config);
+            toast.success(`${selectedLanguage.toUpperCase()} ayarları başarıyla kaydedildi!`);
+        } catch (err) {
+            toast.error('Ayarlar kaydedilirken hata oluştu.');
+        }
     };
 
     const updateSection = (sectionKey: keyof Omit<WebHomeConfig, 'language'>, fields: Partial<WebHomeSection>) => {
@@ -53,7 +78,7 @@ export const WebHomeSettings: React.FC = () => {
                     </div>
                     <div>
                         <h2 className="text-sm font-black uppercase tracking-widest text-white">{title}</h2>
-                        <p className="text-[10px] text-white/40 font-medium">Configure content for this landing section</p>
+                        <p className="text-[10px] text-white/40 font-medium">Bu iniş bölümü için içeriği yapılandırın</p>
                     </div>
                 </div>
                 <button
@@ -61,7 +86,7 @@ export const WebHomeSettings: React.FC = () => {
                     className={`flex items-center gap-2 px-4 py-2 rounded-2xl transition-all border ${section.isEnabled ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-white/5 border-white/10 text-white/20'}`}
                 >
                     {section.isEnabled ? <Eye size={16} /> : <EyeOff size={16} />}
-                    <span className="text-[10px] font-black uppercase tracking-widest">{section.isEnabled ? 'Visible' : 'Hidden'}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">{section.isEnabled ? 'Görünür' : 'Gizli'}</span>
                 </button>
             </div>
 
@@ -69,38 +94,38 @@ export const WebHomeSettings: React.FC = () => {
                 {/* Heading & Titles */}
                 <div className="space-y-6">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gold mb-2">
-                        <Info size={12} /> Text Content
+                        <Info size={12} /> Metin İçeriği
                     </div>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Main Heading</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Ana Başlık</label>
                             <input
                                 type="text"
                                 value={section.heading}
                                 onChange={(e) => updateSection(sectionKey, { heading: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-gold/50 transition-all font-medium"
-                                placeholder="Section Heading..."
+                                placeholder="Bölüm Başlığı..."
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Title 1</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Başlık 1</label>
                                 <input
                                     type="text"
                                     value={section.title1}
                                     onChange={(e) => updateSection(sectionKey, { title1: e.target.value })}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-gold/50 transition-all font-medium"
-                                    placeholder="Mini Title..."
+                                    placeholder="Küçük Başlık..."
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Title 2</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Başlık 2</label>
                                 <input
                                     type="text"
                                     value={section.title2}
                                     onChange={(e) => updateSection(sectionKey, { title2: e.target.value })}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-gold/50 transition-all font-medium"
-                                    placeholder="Subtitle..."
+                                    placeholder="Alt Başlık..."
                                 />
                             </div>
                         </div>
@@ -110,25 +135,25 @@ export const WebHomeSettings: React.FC = () => {
                 {/* Descriptions */}
                 <div className="space-y-6 lg:border-x lg:border-white/5 lg:px-8">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gold mb-2">
-                        <Layout size={12} /> Detailed Description
+                        <Layout size={12} /> Detaylı Açıklama
                     </div>
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Description 1</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Açıklama 1</label>
                             <textarea
                                 value={section.description1}
                                 onChange={(e) => updateSection(sectionKey, { description1: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-gold/50 transition-all font-medium min-h-[100px] resize-none"
-                                placeholder="Primary description text..."
+                                placeholder="Birincil açıklama metni..."
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Description 2</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Açıklama 2</label>
                             <textarea
                                 value={section.description2}
                                 onChange={(e) => updateSection(sectionKey, { description2: e.target.value })}
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-gold/50 transition-all font-medium min-h-[100px] resize-none"
-                                placeholder="Secondary description text..."
+                                placeholder="İkincil açıklama metni..."
                             />
                         </div>
                     </div>
@@ -137,36 +162,36 @@ export const WebHomeSettings: React.FC = () => {
                 {/* Media */}
                 <div className="space-y-6">
                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gold mb-2">
-                        <ImageIcon size={12} /> Media Assets
+                        <ImageIcon size={12} /> Medya Varlıkları
                     </div>
                     <div className="space-y-4">
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Asset 1 (Banner)</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Varlık 1 (Banner)</label>
                             <div className="relative group">
                                 <input
                                     type="text"
                                     value={section.image1 || ''}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white/50 focus:outline-none focus:border-gold/50 transition-all pr-24"
-                                    placeholder="Image URL or path..."
+                                    placeholder="Resim URL veya yolu..."
                                     readOnly
                                 />
                                 <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/5 hover:bg-white/10 text-white/60 text-[9px] font-bold px-3 py-1.5 rounded-lg border border-white/10 transition-all uppercase tracking-widest">
-                                    Browse
+                                    Gözat
                                 </button>
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Asset 2 (Icon/Small)</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Varlık 2 (İkon/Küçük)</label>
                             <div className="relative group">
                                 <input
                                     type="text"
                                     value={section.image2 || ''}
                                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 px-4 text-sm text-white/50 focus:outline-none focus:border-gold/50 transition-all pr-24"
-                                    placeholder="Secondary asset..."
+                                    placeholder="İkincil varlık..."
                                     readOnly
                                 />
                                 <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/5 hover:bg-white/10 text-white/60 text-[9px] font-bold px-3 py-1.5 rounded-lg border border-white/10 transition-all uppercase tracking-widest">
-                                    Browse
+                                    Gözat
                                 </button>
                             </div>
                         </div>
@@ -176,20 +201,22 @@ export const WebHomeSettings: React.FC = () => {
         </div>
     );
 
+    if (loading) return <div className="p-8 animate-pulse text-gold uppercase font-black tracking-widest">Yükleniyor...</div>;
+
     return (
         <div className="p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-700">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div className="space-y-1">
                     <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-gold uppercase opacity-80 mb-1">
-                        <Globe size={12} /> Web Application CMS
+                        <Globe size={12} /> Web Uygulaması CMS
                     </div>
-                    <h1 className="text-4xl font-black text-white tracking-tight leading-none">WEB HOME SETTINGS</h1>
-                    <p className="text-white/30 text-sm font-medium">Customize your landing page experience for every language.</p>
+                    <h1 className="text-4xl font-black text-white tracking-tight leading-none">WEB ANA SAYFA AYARLARI</h1>
+                    <p className="text-white/30 text-sm font-medium">Her dil için açılış sayfası deneyiminizi özelleştirin.</p>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="glass px-4 py-2.5 rounded-2xl border-white/10 flex items-center gap-3">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Active Language</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Aktif Dil</span>
                         <div className="h-4 w-[1px] bg-white/10" />
                         <select
                             value={selectedLanguage}
@@ -197,8 +224,8 @@ export const WebHomeSettings: React.FC = () => {
                             className="bg-transparent text-sm font-bold text-white focus:outline-none appearance-none cursor-pointer pr-6 relative"
                         >
                             <option value="en" className="bg-[#1a1a1a]">English (EN)</option>
-                            <option value="tr" className="bg-[#1a1a1a]">Turkish (TR)</option>
-                            <option value="de" className="bg-[#1a1a1a]">German (DE)</option>
+                            <option value="tr" className="bg-[#1a1a1a]">Türkçe (TR)</option>
+                            <option value="de" className="bg-[#1a1a1a]">Deutsch (DE)</option>
                         </select>
                         <ChevronRight className="rotate-90 text-white/20 -ml-5 pointer-events-none" size={14} />
                     </div>
@@ -206,15 +233,15 @@ export const WebHomeSettings: React.FC = () => {
                         onClick={handleSave}
                         className="bg-gold hover:bg-gold-light text-black font-black uppercase tracking-widest px-8 py-3.5 rounded-2xl transition-all shadow-xl shadow-gold/5 flex items-center gap-2 group"
                     >
-                        <Save size={18} className="group-hover:scale-110 transition-transform" /> Save Changes
+                        <Save size={18} className="group-hover:scale-110 transition-transform" /> Değişiklikleri Kaydet
                     </button>
                 </div>
             </header>
 
             <div className="space-y-8 pb-12">
-                <SectionForm title="Section 1: Hero & Vision" sectionKey="section1" section={config.section1} />
-                <SectionForm title="Section 2: Key Features" sectionKey="section2" section={config.section2} />
-                <SectionForm title="Section 3: Call to Action" sectionKey="section3" section={config.section3} />
+                <SectionForm title="Bölüm 1: Giriş ve Vizyon" sectionKey="section1" section={config.section1} />
+                <SectionForm title="Bölüm 2: Temel Özellikler" sectionKey="section2" section={config.section2} />
+                <SectionForm title="Bölüm 3: Harekete Geçici Mesaj" sectionKey="section3" section={config.section3} />
             </div>
 
             {/* Note Area */}
@@ -224,11 +251,11 @@ export const WebHomeSettings: React.FC = () => {
                         <Info size={20} />
                     </div>
                     <div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-widest mb-1">CMS Guidelines</h4>
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest mb-1">CMS Rehberi</h4>
                         <p className="text-xs text-white/40 leading-relaxed font-medium">
-                            All changes made here will be reflected on the main web application instantly upon save.
-                            Ensure high-resolution assets are used for Section 1 (Hero) to maintain premium visual quality.
-                            Language-specific content is managed independently.
+                            Burada yapılan tüm değişiklikler, kaydedildiğinde ana web uygulamasına anında yansıtılacaktır.
+                            Giriş bölümü (Bölüm 1) için yüksek çözünürlüklü varlıklar kullanıldığından emin olun.
+                            Dile özel içerikler bağımsız olarak yönetilir.
                         </p>
                     </div>
                 </div>

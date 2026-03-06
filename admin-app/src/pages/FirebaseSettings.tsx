@@ -104,9 +104,9 @@ export const FirebaseSettings: React.FC = () => {
                         <div className="w-12 h-12 rounded-2xl bg-gold/10 text-gold flex items-center justify-center border border-gold/20 shadow-[0_0_20px_rgba(234,179,8,0.1)]">
                             <Shield size={24} />
                         </div>
-                        <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Firebase Settings for Web</h1>
+                        <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Web Firebase Ayarları</h1>
                     </div>
-                    <p className="text-white/40 text-sm ml-1">Note that this will directly reflect the changes in Web application config.</p>
+                    <p className="text-white/40 text-sm ml-1">Bu ayarların doğrudan Web uygulaması yapılandırmasına yansıyacağını unutmayın.</p>
                 </div>
 
                 <button
@@ -115,56 +115,56 @@ export const FirebaseSettings: React.FC = () => {
                     className="px-10 py-4 rounded-2xl bg-gold text-black font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50 shadow-xl shadow-gold/20"
                 >
                     {saving ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save size={20} />}
-                    {saving ? 'Kaydediliyor...' : 'Save Settings'}
+                    {saving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
                 </button>
             </header>
 
             <div className="glass-card p-10 border border-white/5 bg-gradient-to-br from-white/[0.02] to-transparent rounded-[32px] space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                     <InputGroup
-                        label="apiKey"
+                        label="API Anahtarı (apiKey)"
                         value={config.firebase?.apiKey}
                         onChange={(v: string) => setConfig({ ...config, firebase: { ...config.firebase!, apiKey: v } })}
                         icon={Key}
                     />
                     <InputGroup
-                        label="authDomain"
+                        label="Kimlik Doğrulama Alanı (authDomain)"
                         value={config.firebase?.authDomain}
                         onChange={(v: string) => setConfig({ ...config, firebase: { ...config.firebase!, authDomain: v } })}
                         icon={Globe}
                     />
                     <InputGroup
-                        label="databaseURL"
+                        label="Veritabanı URL (databaseURL)"
                         value={config.firebase?.databaseURL}
                         onChange={(v: string) => setConfig({ ...config, firebase: { ...config.firebase!, databaseURL: v } })}
                         icon={Database}
                     />
                     <InputGroup
-                        label="projectId"
+                        label="Proje ID (projectId)"
                         value={config.firebase?.projectId}
                         onChange={(v: string) => setConfig({ ...config, firebase: { ...config.firebase!, projectId: v } })}
                         icon={Terminal}
                     />
                     <InputGroup
-                        label="storageBucket"
+                        label="Depolama Kovası (storageBucket)"
                         value={config.firebase?.storageBucket}
                         onChange={(v: string) => setConfig({ ...config, firebase: { ...config.firebase!, storageBucket: v } })}
                         icon={Box}
                     />
                     <InputGroup
-                        label="messagingSenderId"
+                        label="Mesajlaşma Gönderici ID (messagingSenderId)"
                         value={config.firebase?.messagingSenderId}
                         onChange={(v: string) => setConfig({ ...config, firebase: { ...config.firebase!, messagingSenderId: v } })}
                         icon={MessageSquare}
                     />
                     <InputGroup
-                        label="appId"
+                        label="Uygulama ID (appId)"
                         value={config.firebase?.appId}
                         onChange={(v: string) => setConfig({ ...config, firebase: { ...config.firebase!, appId: v } })}
                         icon={Terminal}
                     />
                     <InputGroup
-                        label="Facebook App Id"
+                        label="Facebook Uygulama ID"
                         value={config.auth?.facebookAppId}
                         onChange={(v: string) => setConfig({ ...config, auth: { ...config.auth!, facebookAppId: v } })}
                         icon={Facebook}
@@ -173,7 +173,7 @@ export const FirebaseSettings: React.FC = () => {
 
                 <div className="pt-4 border-t border-white/5">
                     <InputGroup
-                        label="Google Client Id"
+                        label="Google İstemci ID (Client Id)"
                         value={config.auth?.googleClientId}
                         onChange={(v: string) => setConfig({ ...config, auth: { ...config.auth!, googleClientId: v } })}
                         icon={Chrome}

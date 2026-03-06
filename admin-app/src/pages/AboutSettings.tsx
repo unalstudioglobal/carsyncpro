@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Save, Globe, Type, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getCollectionConfig, updateCollectionConfig } from '../services/adminService';
 
 export const AboutSettings: React.FC = () => {
+    const [loading, setLoading] = useState(true);
     const [content, setContent] = useState({
         title: 'About CarSync Pro',
         subtitle: 'The ultimate car management solution',
@@ -10,22 +12,43 @@ export const AboutSettings: React.FC = () => {
         vision: 'To redefine how people interact with their vehicles.'
     });
 
-    const handleSave = () => {
-        toast.success('About page content updated!');
+    useEffect(() => {
+        const loadAbout = async () => {
+            try {
+                const data = await getCollectionConfig<any>('content', 'about');
+                if (data) setContent(prev => ({ ...prev, ...data }));
+            } catch (err) {
+                toast.error('Hakkımızda içeriği yüklenemedi.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadAbout();
+    }, []);
+
+    const handleSave = async () => {
+        try {
+            await updateCollectionConfig('content', 'about', content);
+            toast.success('Hakkımızda içeriği güncellendi!');
+        } catch (err) {
+            toast.error('Kaydedilirken bir hata oluştu.');
+        }
     };
+
+    if (loading) return <div className="p-8 animate-pulse text-gold uppercase font-black tracking-widest">Yükleniyor...</div>;
 
     return (
         <div className="p-8 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-700">
             <header className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-4xl font-black text-white tracking-tight uppercase">About Us CMS</h1>
-                    <p className="text-white/30 text-sm font-medium">Manage company history, vision, and team details.</p>
+                    <h1 className="text-4xl font-black text-white tracking-tight uppercase">Hakkımızda CMS</h1>
+                    <p className="text-white/30 text-sm font-medium">Şirket tarihçesini, vizyonunu ve ekip detaylarını yönetin.</p>
                 </div>
                 <button
                     onClick={handleSave}
                     className="bg-gold hover:bg-gold-light text-black font-black uppercase tracking-widest px-8 py-3.5 rounded-2xl transition-all shadow-xl shadow-gold/5 flex items-center gap-2"
                 >
-                    <Save size={18} /> Update Content
+                    <Save size={18} /> İçeriği Güncelle
                 </button>
             </header>
 
@@ -34,11 +57,11 @@ export const AboutSettings: React.FC = () => {
                     <div className="glass p-8 rounded-[32px] border-white/5 space-y-6">
                         <div className="flex items-center gap-3 text-gold">
                             <Type size={20} />
-                            <h2 className="text-sm font-black uppercase tracking-widest">Main Content</h2>
+                            <h2 className="text-sm font-black uppercase tracking-widest">Ana İçerik</h2>
                         </div>
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Main Title</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Ana Başlık</label>
                                 <input
                                     type="text"
                                     value={content.title}
@@ -47,7 +70,7 @@ export const AboutSettings: React.FC = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Description Body</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-1">Açıklama Metni</label>
                                 <textarea
                                     value={content.description}
                                     onChange={(e) => setContent({ ...content, description: e.target.value })}
@@ -62,7 +85,7 @@ export const AboutSettings: React.FC = () => {
                     <div className="glass p-8 rounded-[32px] border-white/5 space-y-6">
                         <div className="flex items-center gap-3 text-gold">
                             <Globe size={20} />
-                            <h2 className="text-sm font-black uppercase tracking-widest">Vision Statement</h2>
+                            <h2 className="text-sm font-black uppercase tracking-widest">Vizyon Bildirimi</h2>
                         </div>
                         <textarea
                             value={content.vision}
@@ -76,10 +99,10 @@ export const AboutSettings: React.FC = () => {
                             <ImageIcon size={32} />
                         </div>
                         <div>
-                            <h4 className="text-xs font-black text-white uppercase tracking-widest">Cover Image</h4>
-                            <p className="text-[10px] text-white/20 font-medium">Resolution: 1920x1080px</p>
+                            <h4 className="text-xs font-black text-white uppercase tracking-widest">Kapak Görseli</h4>
+                            <p className="text-[10px] text-white/20 font-medium">Çözünürlük: 1920x1080px</p>
                         </div>
-                        <button className="text-[10px] font-black uppercase tracking-widest text-gold hover:text-white transition-colors">Change Image</button>
+                        <button className="text-[10px] font-black uppercase tracking-widest text-gold hover:text-white transition-colors">Görseli Değiştir</button>
                     </div>
                 </div>
             </div>
