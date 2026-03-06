@@ -170,3 +170,17 @@ export const fetchAllTireSets = async (): Promise<TireSet[]> => {
     const snapshot = await getDocs(col);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TireSet));
 };
+
+export const createAdminUser = async (userData: any): Promise<{ success: boolean; uid?: string; error?: string }> => {
+    const idToken = await auth.currentUser?.getIdToken();
+    const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(userData)
+    });
+
+    return response.json();
+};

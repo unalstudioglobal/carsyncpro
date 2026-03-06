@@ -3,9 +3,10 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
     Shield, Car, Activity, LogOut,
     Settings as SettingsIcon,
-    TrendingUp, ClipboardList, Crown
+    TrendingUp, ClipboardList, Crown, UserCheck
 } from 'lucide-react';
 import { auth } from '../firebaseConfig';
+import { Toaster } from 'react-hot-toast';
 
 export const AdminLayout: React.FC = () => {
     const navigate = useNavigate();
@@ -23,6 +24,7 @@ export const AdminLayout: React.FC = () => {
         { path: '/subscriptions', label: 'Abonelikler', icon: Crown },
         { path: '/vehicles', label: 'Sistemdeki Araçlar', icon: Car },
         { path: '/audit-logs', label: 'Denetim Kayıtları', icon: ClipboardList },
+        { path: '/users', label: 'Kullanıcı Hesapları', icon: UserCheck },
         { path: '/settings', label: 'Sistem Ayarları', icon: SettingsIcon },
     ];
 
@@ -66,6 +68,7 @@ export const AdminLayout: React.FC = () => {
             <main className="flex-1 overflow-auto">
                 <Outlet />
             </main>
+            <Toaster position="bottom-right" toastOptions={{ style: { background: '#0a0a0a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
         </div>
     );
 };

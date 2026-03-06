@@ -6,6 +6,7 @@ import { Settings } from './pages/Settings';
 import { Analytics } from './pages/Analytics';
 import { AuditLogs } from './pages/AuditLogs';
 import { Subscriptions } from './pages/Subscriptions';
+import { UsersManagement } from './pages/UsersManagement';
 import { AdminGuard } from './components/AdminGuard';
 import { AdminLayout } from './layouts/AdminLayout';
 
@@ -24,6 +25,7 @@ function App() {
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/vehicles" element={<Vehicles />} />
             <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/users" element={<UsersManagement />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>

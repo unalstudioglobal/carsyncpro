@@ -6,7 +6,8 @@ import {
     deleteUser as deleteUserSvc,
     bulkDeleteUsers as bulkDeleteUsersSvc,
     deleteVehicle as deleteVehicleSvc,
-    fetchGlobalAuditLogs
+    fetchGlobalAuditLogs,
+    createAdminUser as createAdminUserSvc
 } from '../services/adminService';
 import { collection, onSnapshot, query, collectionGroup, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -32,6 +33,7 @@ interface AdminState {
     deleteUser: (uid: string) => Promise<void>;
     bulkDeleteUsers: (uids: string[]) => Promise<void>;
     deleteVehicle: (userId: string, vehicleId: string) => Promise<void>;
+    createAdminUser: (userData: any) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useAdminStore = create<AdminState>((set) => ({
@@ -157,6 +159,15 @@ export const useAdminStore = create<AdminState>((set) => ({
             await deleteVehicleSvc(userId, vehicleId);
         } catch (err: any) {
             set({ error: err.message });
+        }
+    },
+
+    createAdminUser: async (userData: any) => {
+        try {
+            const result = await createAdminUserSvc(userData);
+            return result;
+        } catch (err: any) {
+            return { success: false, error: err.message };
         }
     },
 }));
