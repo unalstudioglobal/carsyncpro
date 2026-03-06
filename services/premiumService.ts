@@ -172,6 +172,32 @@ export const activatePremium = async (
 };
 
 /**
+ * Iyzico ödeme oturumunu başlatır.
+ * Backend'den gelen script içeriğini döndürür.
+ */
+export const initializeIyzicoPayment = async (plan: 'monthly' | 'yearly'): Promise<{ checkoutFormContent: string, token: string }> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Oturum açmalısınız');
+
+  const token = await user.getIdToken();
+  const res = await fetch('/api/payment/initialize', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ plan })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Ödeme başlatılamadı');
+  }
+
+  return res.json();
+};
+
+/**
  * Premium'u iptal eder.
  * Production'da ödeme sağlayıcısı webhook'u bu işlemi yapmalı.
  */

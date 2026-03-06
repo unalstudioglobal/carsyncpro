@@ -31,6 +31,7 @@ export const Dashboard: React.FC = () => {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [lastLog, setLastLog] = useState<ServiceLog | null>(null);
     const [loading, setLoading] = useState(true);
+    const [announcement, setAnnouncement] = useState<string | null>(null);
 
     const [insight, setInsight] = useState<string>(t('dashboard.analyzing_history'));
 
@@ -203,6 +204,17 @@ export const Dashboard: React.FC = () => {
                     ];
                     const savedWidgets = getSetting<WidgetConfig[]>('dashboard_widgets', defaultWidgets);
                     setWidgets(savedWidgets.sort((a, b) => a.order - b.order));
+                }
+
+                // Fetch System Announcement
+                try {
+                    const configRef = doc(db, 'system', 'config');
+                    const configSnap = await getDoc(configRef);
+                    if (configSnap.exists()) {
+                        setAnnouncement(configSnap.data().announcement || null);
+                    }
+                } catch (err) {
+                    console.error('Error fetching announcement:', err);
                 }
             } catch (error) {
                 console.error(t('dashboard.data_load_error'), error);
@@ -379,6 +391,16 @@ export const Dashboard: React.FC = () => {
     return (
         <div className="space-y-5 pb-24 relative">
             <OnboardingGuide tourKey="tour_dashboard_v1" steps={onboardingSteps} />
+
+            {/* Announcement Banner */}
+            {announcement && (
+                <div className="mx-4 mt-4 p-4 rounded-2xl bg-gradient-to-r from-gold/20 to-gold/5 border border-gold/20 flex items-center gap-3 animate-in slide-in-from-top duration-500">
+                    <div className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center text-gold">
+                        <Sparkles size={16} />
+                    </div>
+                    <p className="text-sm font-medium text-black dark:text-white/90">{announcement}</p>
+                </div>
+            )}
 
             {/* ── HERO SECTION ─────────────────────────────────────── */}
             <div className="relative w-full overflow-hidden" style={{ height: 'min(58vh, 420px)' }}>

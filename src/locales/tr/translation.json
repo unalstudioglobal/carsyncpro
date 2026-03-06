@@ -1279,7 +1279,11 @@
     "seq_1": "Kullanıcı Doğrulanıyor...",
     "seq_2": "Garaj Verileri Senkronize Ediliyor...",
     "seq_3": "Araç Sağlık Analizi Başlatılıyor...",
-    "seq_4": "Sistemler Online. Hoş Geldiniz."
+    "seq_4": "Sistemler Online. Hoş Geldiniz.",
+    "forgot_password": "Şifremi Unuttum",
+    "reset_link_sent": "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.",
+    "sending_link": "Bağlantı gönderiliyor...",
+    "err_reset": "Şifre sıfırlama bağlantısı gönderilirken bir hata oluştu."
   },
   "onboarding": {
     "w_tag": "YENİ NESIL ARAÇ YÖNETİMİ",

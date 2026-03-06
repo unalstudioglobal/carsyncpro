@@ -2,6 +2,8 @@ import express from "express";
 import admin from "firebase-admin";
 import fs from "fs";
 import path from "path";
+import Iyzipay from 'iyzipay';
+import crypto from "crypto";
 
 // ── Helpers ───────────────────────────────────────────────
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.API_KEY || "";
@@ -39,6 +41,14 @@ async function startServer() {
   const PORT = parseInt(process.env.PORT || "3000");
 
   app.use(express.json({ limit: "10mb" }));   // base64 image'lar için
+  app.use(express.urlencoded({ extended: true })); // Iyzico callback için
+
+  // ── Iyzico Configuration ────────────────────────────────
+  const iyzipay = new Iyzipay({
+    apiKey: process.env.IYZICO_API_KEY || 'sandbox-api-key',
+    secretKey: process.env.IYZICO_SECRET_KEY || 'sandbox-secret-key',
+    uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
+  });
 
   // ── Firebase Admin ──────────────────────────────────────
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -525,6 +535,123 @@ Sadece JSON. Türkçe.` }
       console.error("Places API proxy hatası:", err);
       res.status(500).json({ error: "Places API isteği başarısız oldu." });
     }
+  });
+
+  // ── 8. Iyzico Ödeme Sistemi ──────────────────────────────
+
+  /** Ödeme sayfası başlatma */
+  app.post("/api/payment/initialize", optionalAuth, async (req, res) => {
+    const uid = (req as any).uid;
+    if (!uid) return res.status(401).json({ error: "Oturum açmalısınız" });
+
+    // Kullanıcı bilgisini çek (İsim/Soyisim gerekebilir)
+    let user: any = { name: 'Kullanıcı', email: 'user@example.com' };
+    if (admin.apps.length > 0) {
+      const userDoc = await admin.firestore().collection("users").doc(uid).get();
+      if (userDoc.exists()) user = userDoc.data();
+    }
+
+    const basketId = `B_${crypto.randomUUID().substring(0, 8)}`;
+    const paymentId = crypto.randomUUID();
+
+    const request = {
+      locale: Iyzipay.LOCALE.TR,
+      conversationId: paymentId,
+      price: '125.0',
+      paidPrice: '125.0',
+      currency: Iyzipay.CURRENCY.TRY,
+      basketId: basketId,
+      paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
+      callbackUrl: `${process.env.APP_URL || 'http://localhost:3000'}/api/payment/callback?uid=${uid}`,
+      enabledInstallments: [1, 2, 3, 6, 9],
+      buyer: {
+        id: uid,
+        name: user.name || 'İsimsiz',
+        surname: user.surname || 'Kullanıcı',
+        gsmNumber: user.phoneNumber || '+905000000000',
+        email: user.email,
+        identityNumber: '11111111111',
+        lastLoginDate: '2023-01-01 00:00:00',
+        registrationDate: '2023-01-01 00:00:00',
+        registrationAddress: 'Istanbul',
+        ip: req.ip || '127.0.0.1',
+        city: 'Istanbul',
+        country: 'Turkey',
+        zipCode: '34000'
+      },
+      shippingAddress: {
+        contactName: user.name || 'Kullanıcı',
+        city: 'Istanbul',
+        country: 'Turkey',
+        address: 'Istanbul',
+        zipCode: '34000'
+      },
+      billingAddress: {
+        contactName: user.name || 'Kullanıcı',
+        city: 'Istanbul',
+        country: 'Turkey',
+        address: 'Istanbul',
+        zipCode: '34000'
+      },
+      basketItems: [
+        {
+          id: 'PRM_001',
+          name: 'CarSync Pro Premium (1 Yıllık)',
+          category1: 'Subscription',
+          itemType: Iyzipay.BASKET_ITEM_TYPE.VIRTUAL,
+          price: '125.0'
+        }
+      ]
+    };
+
+    iyzipay.checkoutFormInitialize.create(request, (err, result) => {
+      if (err || result.status !== 'success') {
+        console.error("Iyzico Init Hata:", err || result);
+        return res.status(500).json({ error: "Ödeme başlatılamadı" });
+      }
+      res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
+    });
+  });
+
+  /** Ödeme Callback (Iyzico'dan dönüş) */
+  app.post("/api/payment/callback", async (req, res) => {
+    const { token } = req.body;
+    const uid = req.query.uid as string;
+
+    if (!token || !uid) {
+      return res.redirect('/#/premium?status=error');
+    }
+
+    iyzipay.checkoutForm.retrieve({ token }, async (err, result) => {
+      if (err || result.paymentStatus !== 'SUCCESS') {
+        console.error("Iyzico Callback Hata:", err || result);
+        return res.redirect('/#/premium?status=failed');
+      }
+
+      // Ödeme başarılı! Firestore'da kullanıcıyı Premium yap
+      if (admin.apps.length > 0) {
+        try {
+          await admin.firestore().collection("users").doc(uid).set({
+            isPremium: true,
+            premiumSince: admin.firestore.FieldValue.serverTimestamp(),
+            lastPaymentId: result.paymentId
+          }, { merge: true });
+
+          // Ödeme kaydı oluştur
+          await admin.firestore().collection("payments").add({
+            uid,
+            amount: 125.0,
+            status: 'success',
+            paymentId: result.paymentId,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (fsErr) {
+          console.error("Firestore Update Error:", fsErr);
+        }
+      }
+
+      res.redirect('/#/premium?status=success');
+    });
   });
 
   // ── Vite / Static ──────────────────────────────────────

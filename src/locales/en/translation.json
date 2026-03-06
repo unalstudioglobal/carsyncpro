@@ -1348,7 +1348,11 @@
     "seq_1": "Authenticating User...",
     "seq_2": "Synchronizing Garage Data...",
     "seq_3": "Starting Vehicle Health Analysis...",
-    "seq_4": "Systems Online. Welcome."
+    "seq_4": "Systems Online. Welcome.",
+    "forgot_password": "Forgot Password?",
+    "reset_link_sent": "A password reset link has been sent to your email address.",
+    "sending_link": "Sending reset link...",
+    "err_reset": "An error occurred while sending the reset link."
   },
   "onboarding": {
     "w_tag": "NEXT GEN VEHICLE MANAGEMENT",

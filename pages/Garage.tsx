@@ -23,6 +23,7 @@ export const Garage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'brand' | 'model'>('all');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Premium Check
@@ -434,13 +435,19 @@ export const Garage: React.FC = () => {
                 {/* Hero Specific Content (Larger image, more details) */}
                 <div style={{ height: 260, position: 'relative', overflow: 'hidden', borderRadius: '24px 24px 0 0' }}>
                   {filteredVehicles[0].image ? (
-                    <img src={filteredVehicles[0].image} alt={filteredVehicles[0].model} style={{ width: '100%', height: '100%', objectFit: 'cover' }} className="group-hover:scale-105 transition-transform duration-700" />
+                    <img
+                      src={filteredVehicles[0].image}
+                      alt={filteredVehicles[0].model}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'zoom-in' }}
+                      className="group-hover:scale-105 transition-transform duration-700"
+                      onClick={(e) => { e.stopPropagation(); setSelectedImage(filteredVehicles[0].image!); }}
+                    />
                   ) : (
                     <div className="w-full h-full bg-slate-800 flex items-center justify-center">
                       <Car size={64} color="var(--bg-surface)" strokeWidth={1} />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
 
                   {/* Floating badge */}
                   <div className="absolute top-4 left-4 bg-gold/20 backdrop-blur-md border border-gold/30 rounded-full px-3 py-1 flex items-center gap-2">
@@ -510,11 +517,17 @@ export const Garage: React.FC = () => {
                     >
                       <div className="h-32 relative">
                         {vehicle.image ? (
-                          <img src={vehicle.image} alt={vehicle.model} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          <img
+                            src={vehicle.image}
+                            alt={vehicle.model}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            style={{ cursor: 'zoom-in' }}
+                            onClick={(e) => { e.stopPropagation(); setSelectedImage(vehicle.image!); }}
+                          />
                         ) : (
                           <div className="w-full h-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center"><Car size={32} className="text-slate-400 dark:text-slate-700" /></div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none" />
                         <div className="absolute bottom-3 left-3 flex items-center gap-2">
                           <span className="text-xs font-black text-white uppercase">{vehicle.brand}</span>
                           <span className="text-xs font-bold text-gold">{vehicle.model}</span>
@@ -729,13 +742,45 @@ export const Garage: React.FC = () => {
         )
       }
 
+      {/* ── IMAGE LIGHTBOX ─── */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-2xl animate-fadeIn"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button
+            className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-[110]"
+            onClick={() => setSelectedImage(null)}
+          >
+            <X size={24} />
+          </button>
+          <div
+            className="relative max-w-5xl w-full max-h-[85vh] flex items-center justify-center animate-scaleUp z-100"
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={selectedImage}
+              alt="Selected Vehicle"
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl border border-white/10"
+            />
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
+        @keyframes scaleUp {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
         .animate-fadeIn {
             animation: fadeIn 0.2s ease-out forwards;
+        }
+        .animate-scaleUp {
+            animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
       `}</style>
     </div >

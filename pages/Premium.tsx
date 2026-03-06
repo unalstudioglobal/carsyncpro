@@ -2,25 +2,54 @@ import React, { useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { usePremium } from '../context/PremiumContext';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Check, Crown, Zap, Shield, Car, BarChart2, Star, X, Users, Lock, ArrowRightLeft, FileDown, Sparkles } from 'lucide-react';
+import { ChevronLeft, Check, Crown, Zap, Shield, Car, BarChart2, Star, X, Users, Lock, ArrowRightLeft, FileDown, Sparkles, AlertCircle } from 'lucide-react';
 import { toast } from '../services/toast';
+import { initializeIyzicoPayment } from '../services/premiumService';
 
 export const Premium: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
   const [isLoading, setIsLoading] = useState(false);
-  const { isPremium, activate, cancel: cancelPremium } = usePremium();
+  const { isPremium, activate, refresh } = usePremium();
+  const [showIyzico, setShowIyzico] = useState(false);
+
+  // Callback durumlarını yakala
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.split('?')[1]);
+    const status = params.get('status');
+    if (status === 'success') {
+      toast.success(t('premium.success_msg') || 'Premium üyeliğiniz aktif edildi!');
+      refresh();
+      navigate('/');
+    } else if (status === 'failed') {
+      toast.error(t('premium.error_msg') || 'Ödeme işlemi başarısız oldu.');
+    }
+  }, [t, refresh, navigate]);
 
   const handleSubscribe = async () => {
     if (isPremium) { navigate(-1); return; }
     setIsLoading(true);
     try {
-      await activate(billingCycle);
-      navigate('/');
-    } catch (err) {
+      const { checkoutFormContent } = await initializeIyzicoPayment(billingCycle);
+
+      // Iyzico formunu inject et
+      const container = document.getElementById('iyzico-form-container');
+      if (container) {
+        setShowIyzico(true);
+        container.innerHTML = checkoutFormContent;
+
+        // Gelen script'leri elle çalıştır (dangerouslySetInnerHTML scriptleri çalıştırmaz)
+        const scripts = container.getElementsByTagName('script');
+        for (let i = 0; i < scripts.length; i++) {
+          const script = document.createElement('script');
+          script.text = scripts[i].text;
+          document.body.appendChild(script);
+        }
+      }
+    } catch (err: any) {
       console.error('Premium activation error:', err);
-      toast.error(t('dashboard.msg_err'));
+      toast.error(err.message || t('dashboard.msg_err'));
     } finally {
       setIsLoading(false);
     }
@@ -180,6 +209,34 @@ export const Premium: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Modal / Overlay for Iyzico */}
+        {showIyzico && (
+          <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col p-5 animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold flex items-center space-x-2">
+                <Shield className="text-amber-500" />
+                <span>Güvenli Ödeme</span>
+              </h2>
+              <button
+                onClick={() => {
+                  setShowIyzico(false);
+                  const container = document.getElementById('iyzico-form-container');
+                  if (container) container.innerHTML = '';
+                }}
+                className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center"
+              >
+                <X />
+              </button>
+            </div>
+            <div id="iyzico-form-container" className="flex-1 overflow-y-auto bg-white rounded-2xl p-2 min-h-[400px]">
+              {/* Iyzico Form Buraya Gelecek */}
+            </div>
+          </div>
+        )}
+
+        {/* Iyzico Hidden Container for Init */}
+        {!showIyzico && <div id="iyzico-form-container" className="hidden" />}
 
       </div>
 

@@ -20,6 +20,7 @@ export interface Vehicle {
   marketValueMin: number;
   marketValueMax: number;
   damageReport?: DamageReport;
+  userId?: string;
 }
 
 export interface ServiceLog {
@@ -56,6 +57,18 @@ export interface UserProfile {
   avatar?: string;
   isPremium?: boolean;
   role?: 'user' | 'admin';
+  createdAt?: any; // Firestore Timestamp
+}
+
+export interface AuditLog {
+  id: string;
+  adminId: string;
+  adminName: string;
+  action: string;
+  targetId?: string;
+  targetName?: string;
+  details: string;
+  timestamp: any; // Firestore Timestamp
 }
 
 export interface ChartData {

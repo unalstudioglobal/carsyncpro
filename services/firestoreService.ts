@@ -165,6 +165,7 @@ export const createUserDocument = async (user: any) => {
         email: user.email,
         createdAt: serverTimestamp(),
         lastLogin: serverTimestamp(),
+        role: 'user',
       });
     } else {
       // Kullanıcı varsa sadece son giriş zamanını güncelle
@@ -174,6 +175,35 @@ export const createUserDocument = async (user: any) => {
     }
   } catch (error) {
     console.error("Error creating/updating user document:", error);
+  }
+};
+
+/**
+ * ADMIN: Fetch all users.
+ */
+export const fetchAllUsers = async (): Promise<any[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const snap = await getDocs(collection(db, "users"));
+      return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+    }
+  }
+  return [];
+};
+
+/**
+ * ADMIN: Update a user's role.
+ */
+export const updateUserRole = async (uid: string, role: 'user' | 'admin'): Promise<void> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      await updateDoc(doc(db, "users", uid), { role, updatedAt: serverTimestamp() });
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      throw error;
+    }
   }
 };
 

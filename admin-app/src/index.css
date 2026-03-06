@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gold: #C9A84C;
+  --color-gold-light: #E8C96B;
+  --color-gold-dim: rgba(201, 168, 76, 0.15);
+
+  --font-display: "Bebas Neue", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+  --font-mono: "DM Mono", monospace;
+
+  --animate-shimmer: shimmerSlide 4s ease-in-out infinite;
+  --animate-float: float 3s ease-in-out infinite;
+}
+
+/* Base styles copied from main app but adapted for admin */
+:root {
+  --gold: #C9A84C;
+  --gold-light: #E8C96B;
+  --gold-dim: rgba(201, 168, 76, 0.15);
+  --gold-glow: rgba(201, 168, 76, 0.25);
+
+  --bg-void: #050508;
+  --bg-deep: #0A0A0F;
+  --bg-card: #0D0D16;
+  --bg-raised: #141420;
+  --bg-surface: #1A1A2A;
+
+  --border-dim: rgba(255, 255, 255, 0.05);
+  --border-mid: rgba(255, 255, 255, 0.09);
+  --border-gold: rgba(201, 168, 76, 0.3);
+
+  --text-primary: #F0EEE8;
+  --text-secondary: #8A8899;
+  --text-muted: #44445A;
+
+  --red: #FF3B3B;
+  --amber: #FF9A00;
+  --green: #00E878;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--bg-void)] text-[var(--text-primary)] antialiased;
+    font-family: "DM Sans", sans-serif;
+  }
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-mid);
+}
+
+.text-gold {
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 60%, #A67C30 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@keyframes shimmerSlide {
+  from {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+
+  to {
+    transform: translateX(300%) skewX(-15deg);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
