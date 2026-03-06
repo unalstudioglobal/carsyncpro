@@ -11,6 +11,10 @@ import { Notifications } from './pages/Notifications';
 import FirebaseSettings from './pages/FirebaseSettings';
 import { UsersList } from './pages/UsersList';
 import { Languages } from './pages/Languages';
+import { Categories } from './pages/Categories';
+import { SubCategories } from './pages/SubCategories';
+import { Questions } from './pages/Questions';
+import { DailyQuiz } from './pages/DailyQuiz';
 import { Leaderboard } from './pages/Leaderboard';
 import { AdminGuard } from './components/AdminGuard';
 import { AdminLayout } from './layouts/AdminLayout';
@@ -28,6 +32,10 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/users-list" element={<UsersList />} />
             <Route path="/languages" element={<Languages />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/sub-categories" element={<SubCategories />} />
+            <Route path="/questions" element={<Questions />} />
+            <Route path="/daily-quiz" element={<DailyQuiz />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/vehicles" element={<Vehicles />} />

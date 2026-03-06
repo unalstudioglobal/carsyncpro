@@ -188,3 +188,35 @@ export interface WidgetConfig {
   enabled: boolean;
   order: number;
 }
+
+export interface Category {
+  id: string;
+  name: string;
+  image?: string;
+  status: 'Enabled' | 'Disabled';
+  order?: number;
+}
+
+export interface SubCategory {
+  id: string;
+  categoryId: string;
+  name: string;
+  image?: string;
+  status: 'Enabled' | 'Disabled';
+  order?: number;
+}
+
+export interface Question {
+  id: string;
+  categoryId: string;
+  subCategoryId?: string;
+  question: string;
+  questionType: 'Options' | 'True/False';
+  optionA: string;
+  optionB: string;
+  optionC?: string;
+  optionD?: string;
+  correctAnswer: 'A' | 'B' | 'C' | 'D' | 'True' | 'False';
+  note?: string;
+  status: 'Enabled' | 'Disabled';
+}
