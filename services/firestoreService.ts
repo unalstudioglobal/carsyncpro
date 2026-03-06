@@ -149,8 +149,25 @@ export const updateUserProfile = async (data: any): Promise<void> => {
 };
 
 /**
+ * ADMIN: Fetch global system configuration.
+ */
+export const getGlobalConfig = async (): Promise<any> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const configRef = doc(db, "system", "config");
+      const configSnap = await getDoc(configRef);
+      if (configSnap.exists()) {
+        return configSnap.data();
+      }
+    } catch (error) {
+      console.error("Error fetching global config:", error);
+    }
+  }
+  return null;
+};
+
+/**
  * Kullanıcı kayıt olduğunda veya giriş yaptığında kullanıcı dokümanını oluşturur/günceller.
- * Koleksiyon adı: kullanıcılar
  */
 export const createUserDocument = async (user: any) => {
   if (!user) return;

@@ -8,6 +8,9 @@ import { AuditLogs } from './pages/AuditLogs';
 import { Subscriptions } from './pages/Subscriptions';
 import { UsersManagement } from './pages/UsersManagement';
 import { Notifications } from './pages/Notifications';
+import FirebaseSettings from './pages/FirebaseSettings';
+import { UsersList } from './pages/UsersList';
+import { Languages } from './pages/Languages';
 import { Leaderboard } from './pages/Leaderboard';
 import { AdminGuard } from './components/AdminGuard';
 import { AdminLayout } from './layouts/AdminLayout';
@@ -23,6 +26,8 @@ function App() {
         <Route element={<AdminGuard />}>
           <Route element={<AdminLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/users-list" element={<UsersList />} />
+            <Route path="/languages" element={<Languages />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/subscriptions" element={<Subscriptions />} />
             <Route path="/vehicles" element={<Vehicles />} />
@@ -31,6 +36,7 @@ function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/firebase-settings" element={<FirebaseSettings />} />
           </Route>
         </Route>
 

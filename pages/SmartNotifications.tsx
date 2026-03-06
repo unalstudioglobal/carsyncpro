@@ -641,26 +641,46 @@ export const SmartNotifications: React.FC = () => {
         )}
 
         {/* Push notification toggle */}
-        <button
-          onClick={handlePushPermission}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${pushEnabled
-            ? 'bg-violet-500/10 border-violet-500/20'
-            : 'bg-slate-800/40 border-slate-700/30'
-            }`}
-        >
-          <div className="flex items-center gap-3">
-            {pushEnabled ? <BellRing size={16} className="text-violet-400" /> : <BellOff size={16} className="text-slate-500" />}
-            <div className="text-left">
-              <p className={`text-sm font-medium ${pushEnabled ? 'text-white' : 'text-slate-400'}`}>
-                {pushEnabled ? t('smart_notifs.push_active') : t('smart_notifs.push_enable')}
-              </p>
-              <p className="text-slate-500 text-xs">{t('smart_notifs.push_desc')}</p>
+        <div className="space-y-2">
+          <button
+            onClick={handlePushPermission}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${pushEnabled
+              ? 'bg-violet-500/10 border-violet-500/20'
+              : 'bg-slate-800/40 border-slate-700/30'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              {pushEnabled ? <BellRing size={16} className="text-violet-400" /> : <BellOff size={16} className="text-slate-500" />}
+              <div className="text-left">
+                <p className={`text-sm font-medium ${pushEnabled ? 'text-white' : 'text-slate-400'}`}>
+                  {pushEnabled ? t('smart_notifs.push_active') : t('smart_notifs.push_enable')}
+                </p>
+                <p className="text-slate-500 text-xs">{t('smart_notifs.push_desc')}</p>
+              </div>
             </div>
-          </div>
-          <div className={`w-10 h-5 rounded-full transition-all relative ${pushEnabled ? 'bg-violet-600' : 'bg-slate-700'}`}>
-            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${pushEnabled ? 'left-5' : 'left-0.5'}`} />
-          </div>
-        </button>
+            <div className={`w-10 h-5 rounded-full transition-all relative ${pushEnabled ? 'bg-violet-600' : 'bg-slate-700'}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${pushEnabled ? 'left-5' : 'left-0.5'}`} />
+            </div>
+          </button>
+
+          {/* Diagnostic Button (Hidden unless error or manual check) */}
+          <button
+            onClick={async () => {
+              toast.info("Bildirim sistemi kontrol ediliyor...", { id: 'diag' });
+              try {
+                const { initNotifications } = await import('../services/notificationService');
+                await initNotifications();
+                toast.success("Bağlantı başarılı! Lütfen Admin panelinden tekrar deneyin.", { id: 'diag' });
+              } catch (err: any) {
+                toast.error(`Hata: ${err.message || 'Bilinmiyor'}`, { id: 'diag' });
+              }
+            }}
+            className="w-full py-2 text-[10px] uppercase font-black text-slate-600 hover:text-slate-400 transition-colors flex items-center justify-center gap-2"
+          >
+            <RefreshCw size={10} />
+            Bağlantıyı Yenile ve Sorun Gider
+          </button>
+        </div>
 
         {/* Action row */}
         {notifs.length > 0 && (

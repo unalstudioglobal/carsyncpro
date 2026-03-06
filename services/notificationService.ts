@@ -16,7 +16,7 @@
 import { getToken, onMessage } from "firebase/messaging";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { messaging, db } from "../firebaseConfig";
+import { getMessagingInstance, db } from "../firebaseConfig";
 import { toast } from "./toast";
 
 // ── VAPID key ────────────────────────────────────────────
@@ -45,6 +45,62 @@ export interface ScheduledReminder {
 
 // ── İzin & Token ─────────────────────────────────────────
 
+/** 
+ * Uygulama başladığında bildirimleri ilklendirir.
+ * Eğer izin zaten verilmişse token'ı yeniler ve dinleyiciyi başlatır.
+ */
+export async function initNotifications(): Promise<void> {
+  const messaging = await getMessagingInstance();
+  if (!messaging) return;
+
+  const status = getPushPermissionStatus();
+  if (status === "granted") {
+    try {
+      // Service worker kaydını al/yap
+      let swRegistration: ServiceWorkerRegistration | undefined;
+      if ("serviceWorker" in navigator) {
+        swRegistration = await navigator.serviceWorker.register(
+          "/firebase-messaging-sw.js",
+          { scope: "/" }
+        );
+        // SW'nin hazır olmasını bekle
+        await navigator.serviceWorker.ready;
+      }
+
+      console.log("FCM: Token alınıyor (VAPID Key:", VAPID_KEY ? "Mevcut" : "Eksik", ")");
+
+      // Auth kontrolü (Token kaydetmek için UID lazım)
+      const user = getAuth().currentUser;
+      if (!user) {
+        console.warn("FCM: Kullanıcı oturum açmamış, token alma ertelendi.");
+        return;
+      }
+
+      // Token'ı al
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY || undefined,
+        serviceWorkerRegistration: swRegistration,
+      });
+
+      if (token) {
+        console.log("FCM: Token başarıyla alındı.");
+        await saveFcmToken(token);
+      } else {
+        console.warn("FCM: Token boş döndü.");
+      }
+
+      // Foreground dinleyiciyi başlat
+      setupForegroundListener(messaging);
+    } catch (err: any) {
+      console.error("Notification init error:", err);
+      // Hataları toast ile göster (geçici olarak hata ayıkla)
+      if (err.message?.includes("messaging/invalid-vapid-key")) {
+        toast.error("Hata: Geçersiz VAPID Key! Lütfen .env dosyasındaki anahtarı kontrol edin.");
+      }
+    }
+  }
+}
+
 /** Bildirim iznini ister, FCM token'ı alır ve Firestore'a kaydeder */
 export async function requestPushPermission(): Promise<{
   granted: boolean;
@@ -56,6 +112,7 @@ export async function requestPushPermission(): Promise<{
     return { granted: false, error: "Tarayıcınız push bildirimlerini desteklemiyor." };
   }
 
+  const messaging = await getMessagingInstance();
   if (!messaging) {
     return { granted: false, error: "Firebase Messaging bu ortamda desteklenmiyor (Safari private mod?)." };
   }
@@ -68,35 +125,11 @@ export async function requestPushPermission(): Promise<{
       return { granted: false, error: "Bildirim izni reddedildi." };
     }
 
-    // Service worker'ın kayıtlı olduğundan emin ol
-    let swRegistration: ServiceWorkerRegistration | undefined;
-    if ("serviceWorker" in navigator) {
-      swRegistration = await navigator.serviceWorker.register(
-        "/firebase-messaging-sw.js",
-        { scope: "/" }
-      );
-      await navigator.serviceWorker.ready;
-    }
+    // Başarılıysa init'i çağır
+    await initNotifications();
 
-    if (!VAPID_KEY) {
-      console.warn("⚠️  VITE_VAPID_KEY tanımlı değil — token alınamayabilir");
-    }
-
-    // FCM token al
-    const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY || undefined,
-      serviceWorkerRegistration: swRegistration,
-    });
-
-    if (!token) {
-      return { granted: false, error: "FCM token alınamadı. VAPID key eksik olabilir." };
-    }
-
-    // Token'ı Firestore'a kaydet
-    await saveFcmToken(token);
-
-    // Foreground mesaj dinleyicisi başlat
-    setupForegroundListener();
+    // Token'ı tekrar alıp döndürmek için (opsiyonel)
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
 
     return { granted: true, token };
   } catch (err: any) {
@@ -110,21 +143,45 @@ export async function requestPushPermission(): Promise<{
   }
 }
 
-/** FCM token'ı kullanıcının Firestore kaydına yazar */
+/** FCM token'ı kullanıcının Firestore kaydına yazar ve topiclere abone eder */
 async function saveFcmToken(token: string): Promise<void> {
   const uid = getAuth().currentUser?.uid;
   if (!uid) return;
 
-  await setDoc(
-    doc(db, "users", uid, "fcmTokens", token.substring(0, 40)),
-    {
-      token,
-      platform: "web",
-      userAgent: navigator.userAgent.substring(0, 200),
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  try {
+    // 1. Firestore'a kaydet
+    await setDoc(
+      doc(db, "users", uid, "fcmTokens", token.substring(0, 40)),
+      {
+        token,
+        platform: "web",
+        userAgent: navigator.userAgent.substring(0, 200),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // 2. Genel duyuru topic'ine abone ol
+    await subscribeToTopic(token, "all_users");
+
+    // 3. Kişiye özel topic'e abone ol (Admin panelinden tekli gönderim için)
+    await subscribeToTopic(token, `user-${uid}`);
+  } catch (err) {
+    console.error("FCM token kaydetme/abone olma hatası:", err);
+  }
+}
+
+/** Server tarafında token'ı bir topic'e bağlar */
+async function subscribeToTopic(token: string, topic: string): Promise<void> {
+  try {
+    await fetch("/api/notifications/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, topic }),
+    });
+  } catch (err) {
+    console.warn(`Topic (${topic}) abonelik hatası:`, err);
+  }
 }
 
 /** Mevcut push iznini sorgular */
@@ -138,7 +195,7 @@ export function getPushPermissionStatus(): NotificationPermission | "unsupported
 let foregroundListenerActive = false;
 
 /** Uygulama açıkken gelen push mesajlarını toast olarak göster */
-function setupForegroundListener(): void {
+function setupForegroundListener(messaging: any): void {
   if (foregroundListenerActive || !messaging) return;
   foregroundListenerActive = true;
 

@@ -64,27 +64,29 @@ export const Notifications: React.FC = () => {
 
         setSending(true);
         try {
-            const data: any = {
-                payload: { title, body, type }
-            };
+            const payload = { title, body, type };
 
             if (targetType === 'all') {
-                data.topic = 'all_users';
+                await sendPush({ payload, topic: 'all_users' });
+                toast.success('Bildirim tüm kullanıcılara gönderildi!', { id: 'push-sending' });
             } else {
-                toast.loading('Bildirimler gönderiliyor...', { id: 'push-sending' });
-                data.topic = 'selected_users';
+                toast.loading(`${selectedUserIds.length} kullanıcıya gönderiliyor...`, { id: 'push-sending' });
+
+                // Seçili her kullanıcıya kendi topic'i üzerinden gönder
+                let successCount = 0;
+                for (const uid of selectedUserIds) {
+                    const res = await sendPush({ payload, topic: `user-${uid}` });
+                    if (res.success) successCount++;
+                }
+
+                toast.success(`${successCount} kullanıcıya başarıyla iletildi.`, { id: 'push-sending' });
             }
 
-            const result = await sendPush(data);
-            if (result.success) {
-                toast.success('Bildirim başarıyla gönderildi!', { id: 'push-sending' });
-                setTitle('');
-                setBody('');
-                setSelectedUserIds([]);
-            } else {
-                toast.error(`Hata: ${result.error || 'Gönderilemedi'}`, { id: 'push-sending' });
-            }
+            setTitle('');
+            setBody('');
+            setSelectedUserIds([]);
         } catch (err) {
+            console.error('Push error:', err);
             toast.error('Bir hata oluştu', { id: 'push-sending' });
         } finally {
             setSending(false);

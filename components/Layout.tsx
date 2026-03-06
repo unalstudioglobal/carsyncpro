@@ -9,8 +9,6 @@ import { GlobalSearch, useGlobalSearch } from './GlobalSearch';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 
-interface LayoutProps { children: React.ReactNode; }
-
 const MENU_ITEMS = [
   { route: '/vehicle-qr', icon: QrCode, label: 'QR Araç Kartı', color: '#6366f1' },
   { route: '/tires', icon: Disc, label: 'Lastik Oteli', color: '#f59e0b' },
@@ -19,7 +17,6 @@ const MENU_ITEMS = [
   { route: '/damage-detection', icon: Scan, label: 'Hasar Tespiti', color: '#ef4444' },
   { route: '/fuel-finder', icon: Navigation, label: 'İstasyon Bul', color: '#f59e0b' },
   { route: '/budget-goals', icon: Target, label: 'Bütçe Hedefleri', color: '#6366f1' },
-  { route: '/vehicle-comparison', icon: ArrowRightLeft, label: 'Araç Karşılaştırma', color: '#10b981' },
   { route: '/insurance-calendar', icon: Shield, label: 'Sigorta & Muayene', color: '#3b82f6' },
   { route: '/service-appointment', icon: Calendar, label: 'Servis Randevusu', color: '#8b5cf6' },
   { route: '/service-report', icon: FileText, label: 'PDF Raporu', color: '#06b6d4' },
@@ -29,7 +26,28 @@ const MENU_ITEMS = [
   { route: '/settings', icon: Settings, label: 'Ayarlar', color: '#64748b' },
 ];
 
-export const Layout: React.FC<LayoutProps> = ({ children }) => {
+interface LayoutProps {
+  children: React.ReactNode;
+  announcement?: string;
+}
+
+const AnnouncementBanner = ({ message, onClose }: { message: string, onClose: () => void }) => (
+  <div className="bg-gradient-to-r from-gold/90 to-gold-light/90 backdrop-blur-md py-2 px-4 shadow-lg flex items-center justify-between z-[100] relative">
+    <div className="flex items-center gap-3 overflow-hidden">
+      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+        <Sparkles size={12} className="text-white" />
+      </div>
+      <p className="text-[11px] md:text-xs font-bold text-slate-900 truncate tracking-tight uppercase">
+        {message}
+      </p>
+    </div>
+    <button onClick={onClose} className="p-1 hover:bg-black/10 rounded-full transition-colors ml-4 bg-white/10">
+      <X size={14} className="text-slate-900" />
+    </button>
+  </div>
+);
+
+export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,6 +56,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [navBounce, setNavBounce] = useState<string | null>(null);
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
+
+  useEffect(() => {
+    if (announcement) setShowAnnouncement(true);
+  }, [announcement]);
 
   const NAV = [
     { path: '/analytics', icon: BarChart2, label: t('nav.analytics') },
@@ -69,6 +92,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg-void)', color: 'var(--text-primary)', display: 'flex', flexDirection: 'column' }}>
       <GlobalSearch isOpen={isOpen} onClose={close} />
+      {showAnnouncement && announcement && (
+        <AnnouncementBanner message={announcement} onClose={() => setShowAnnouncement(false)} />
+      )}
 
       {!hideNav && (
         <aside className="web-sidebar">

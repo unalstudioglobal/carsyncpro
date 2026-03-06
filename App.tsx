@@ -9,6 +9,7 @@ import { Analytics } from './pages/Analytics';
 import { AddRecord } from './pages/AddRecord';
 import { TransferHistory, ScanImport } from './pages/ImportExport';
 import { Settings } from './pages/Settings';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { AddVehicle } from './pages/AddVehicle';
 import { SmartNotifications } from './pages/SmartNotifications';
 import { ThemeCustomizer } from './pages/ThemeCustomizer';
@@ -47,22 +48,33 @@ const ProtectedLayout = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
   return <Outlet />;
 };
 
+import { initNotifications } from './services/notificationService';
+
 const App: React.FC = () => {
   // Initialize state based on localStorage to avoid flash of login screen if already in demo mode
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
     const isDemo = getSetting('isDemoMode', false);
     return isDemo ? true : null;
   });
+  const [globalConfig, setGlobalConfig] = useState<any>(null);
 
   useEffect(() => {
+    // Fetch global config
+    import('./services/firestoreService').then(({ getGlobalConfig }) => {
+      getGlobalConfig().then(config => {
+        setGlobalConfig(config);
+      });
+    });
+
     // Firebase Auth Listener
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setIsAuthenticated(true);
         saveSetting('isAuthenticated', true);
         syncLocalToFirestore();
+        // Login olunca bildirimleri ilklendir
+        initNotifications().catch(console.error);
       } else {
-        // Fallback: Check if we are in demo mode (used when Firebase domain is unauthorized)
         const isDemo = getSetting('isDemoMode', false);
         if (isDemo) {
           setIsAuthenticated(true);
@@ -78,6 +90,24 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // Maintenance Mode Check
+  if (globalConfig?.maintenanceMode) {
+    return (
+      <div className="min-h-screen bg-[#050508] text-white flex flex-col items-center justify-center p-8 text-center">
+        <div className="w-24 h-24 bg-gold/10 rounded-[32px] flex items-center justify-center mb-8 border border-gold/20 shadow-[0_0_50px_rgba(212,175,55,0.1)]">
+          <SettingsIcon size={48} className="text-gold animate-spin-slow" />
+        </div>
+        <h1 className="text-4xl font-black mb-4 tracking-tight">Sistem Bakımda</h1>
+        <p className="text-slate-400 max-w-md leading-relaxed mb-8">
+          Sizlere daha iyi bir deneyim sunmak için kısa süreli bir bakım çalışması yapıyoruz. Lütfen daha sonra tekrar deneyin.
+        </p>
+        <div className="px-6 py-2 bg-white/5 rounded-full border border-white/10 text-xs font-bold uppercase tracking-widest text-slate-500">
+          CarSync Pro v2.0
+        </div>
+      </div>
+    );
+  }
+
   // Loading state while checking auth
   if (isAuthenticated === null) {
     return (
@@ -92,7 +122,7 @@ const App: React.FC = () => {
       <ThemeProvider>
         <PremiumProvider>
           <HashRouter>
-            <Layout>
+            <Layout announcement={globalConfig?.announcement}>
               <Routes>
                 {/* Public Route */}
                 <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />

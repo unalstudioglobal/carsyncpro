@@ -1,9 +1,51 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow everyone to read system config (needed for maintenance mode/announcement)
+    match /system/config {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Allow users to access their own data
     match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Admin access to all users and logs
+    match /users/{userId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /audit_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /notifications_history/{id} {
+        allow read, write: if isAdmin();
+    }
+
+    // Collection Group rules for Admin analytics
+    match /{path=**}/vehicles/{vehicleId} {
+      allow read, write: if isAdmin();
+    }
+    match /{path=**}/logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+    match /{path=**}/appointments/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /{path=**}/documents/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /{path=**}/tires/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

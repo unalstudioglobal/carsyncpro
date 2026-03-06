@@ -59,8 +59,8 @@ export const updateUserRole = async (uid: string, role: string): Promise<void> =
 export const checkAdminAccess = async (uid: string): Promise<boolean> => {
     const userRef = doc(db, 'users', uid);
     const userDoc = await getDoc(userRef);
-    if (!userDoc.exists()) return false;
-    return userDoc.data()?.role === 'admin';
+    const role = userDoc.data()?.role;
+    return role === 'admin' || role === 'editor';
 };
 
 export const getSystemConfig = async (): Promise<SystemConfig | null> => {
@@ -172,30 +172,59 @@ export const fetchAllTireSets = async (): Promise<TireSet[]> => {
 };
 
 export const createAdminUser = async (userData: any): Promise<{ success: boolean; uid?: string; error?: string }> => {
-    const idToken = await auth.currentUser?.getIdToken();
-    const response = await fetch('/api/admin/create-user', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify(userData)
-    });
+    try {
+        const idToken = await auth.currentUser?.getIdToken();
+        const response = await fetch('/api/admin/create-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(userData)
+        });
 
-    return response.json();
+        const contentType = response.headers.get("content-type");
+        if (!response.ok) {
+            if (contentType && contentType.includes("application/json")) {
+                const errorData = await response.json();
+                return { success: false, error: errorData.error || `Hata: ${response.status}` };
+            }
+            return { success: false, error: `Sunucu hatası: ${response.status}` };
+        }
+
+        return await response.json();
+    } catch (err: any) {
+        console.error("User creation error:", err);
+        return { success: false, error: "Sunucuya erişilemiyor. Lütfen bağlantınızı kontrol edin." };
+    }
 };
 
 export const sendPushNotification = async (data: { payload: any; tokens?: string[]; topic?: string }): Promise<any> => {
-    const idToken = await auth.currentUser?.getIdToken();
-    const response = await fetch('/api/notifications/send', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify(data)
-    });
-    return response.json();
+    try {
+        const idToken = await auth.currentUser?.getIdToken();
+        const response = await fetch('/api/notifications/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        const contentType = response.headers.get("content-type");
+        if (!response.ok) {
+            if (contentType && contentType.includes("application/json")) {
+                const errorData = await response.json();
+                return { success: false, error: errorData.error || `Hata: ${response.status}` };
+            }
+            return { success: false, error: `Sunucu hatası: ${response.status}` };
+        }
+
+        return await response.json();
+    } catch (err: any) {
+        console.error("Push notification error full detail:", err);
+        return { success: false, error: "Sunucuya erişilemiyor (Failed to fetch). Lütfen terminalde sunucunun çalıştığından ve CORS/Proxy ayarlarının güncel olduğundan emin olun." };
+    }
 };
 
 export const fetchNotificationHistory = async (): Promise<NotificationHistory[]> => {

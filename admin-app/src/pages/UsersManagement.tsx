@@ -3,7 +3,7 @@ import { useAdminStore } from '../store/adminStore';
 import {
     UserPlus, Mail, Lock,
     Trash2, Edit, Search, RefreshCw,
-    UserCog, User
+    UserCog, User, Shield
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

@@ -37,17 +37,29 @@ export const db = initializeFirestore(app, {
 });
 
 // Messaging — push notification desteği varsa başlat
-export let messaging: ReturnType<typeof getMessaging> | null = null;
-(async () => {
-  try {
-    const supported = await isMessagingSupported();
-    if (supported) {
-      messaging = getMessaging(app);
+let messagingPromise: Promise<ReturnType<typeof getMessaging> | null> | null = null;
+
+export async function getMessagingInstance(): Promise<ReturnType<typeof getMessaging> | null> {
+  if (messagingPromise) return messagingPromise;
+
+  messagingPromise = (async () => {
+    try {
+      const supported = await isMessagingSupported();
+      if (supported) {
+        return getMessaging(app);
+      }
+      return null;
+    } catch {
+      return null;
     }
-  } catch {
-    // Safari private mod, eski tarayıcılar
-  }
-})();
+  })();
+
+  return messagingPromise;
+}
+
+// Legacy export for backward compatibility
+export let messaging: ReturnType<typeof getMessaging> | null = null;
+getMessagingInstance().then(m => messaging = m);
 
 // Analytics — hata verirse sessizce geç
 let analytics: ReturnType<typeof getAnalytics> | undefined;

@@ -62,6 +62,9 @@ export interface UserProfile {
   totalPoints?: number;
   coins?: number;
   referralCode?: string;
+  fcmToken?: string;
+  ipAddress?: string;
+  status?: 'active' | 'inactive';
 }
 
 export interface SystemConfig {
@@ -112,6 +115,19 @@ export interface SystemConfig {
     showCategories: boolean;
     showLearningZone: boolean;
     showDailyQuiz: boolean;
+  };
+  firebase?: {
+    apiKey?: string;
+    authDomain?: string;
+    databaseURL?: string;
+    projectId?: string;
+    storageBucket?: string;
+    messagingSenderId?: string;
+    appId?: string;
+  };
+  auth?: {
+    facebookAppId?: string;
+    googleClientId?: string;
   };
 }
 

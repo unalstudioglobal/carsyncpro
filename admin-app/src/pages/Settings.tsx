@@ -42,7 +42,25 @@ export const Settings: React.FC = () => {
                 social: { instagram: '', facebook: '', youtube: '', website: '' },
                 features: { showCategories: true, showLearningZone: true, showDailyQuiz: true }
             };
-            setConfig(data || defaultConfig);
+
+            // Deep merge to handle missing fields in existing document
+            const mergedConfig = data ? {
+                ...defaultConfig,
+                ...data,
+                appVersion: { ...defaultConfig.appVersion, ...data.appVersion },
+                storeLinks: { ...defaultConfig.storeLinks, ...data.storeLinks },
+                rewards: { ...defaultConfig.rewards, ...data.rewards },
+                ads: {
+                    ...defaultConfig.ads,
+                    ...data.ads,
+                    android: { ...defaultConfig.ads.android, ...data.ads?.android },
+                    ios: { ...defaultConfig.ads.ios, ...data.ads?.ios }
+                },
+                social: { ...defaultConfig.social, ...data.social },
+                features: { ...defaultConfig.features, ...data.features }
+            } : defaultConfig;
+
+            setConfig(mergedConfig);
         } catch (err) {
             console.error('Error fetching config:', err);
             toast.error('Ayarlar yüklenirken hata oluştu');
@@ -198,9 +216,9 @@ export const Settings: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-3 gap-4">
-                            <InputGroup label="Referans Ödülü (Puan)" type="number" value={config.rewards.referralPoints} onChange={(v: string) => setConfig({ ...config, rewards: { ...config.rewards, referralPoints: parseInt(v) } })} />
-                            <InputGroup label="Günlük Giriş (Puan)" type="number" value={config.rewards.dailyLoginPoints} onChange={(v: string) => setConfig({ ...config, rewards: { ...config.rewards, dailyLoginPoints: parseInt(v) } })} />
-                            <InputGroup label="İpucu Bedeli (Coin)" type="number" value={config.rewards.hintCoinCost} onChange={(v: string) => setConfig({ ...config, rewards: { ...config.rewards, hintCoinCost: parseInt(v) } })} />
+                            <InputGroup label="Referans Ödülü (Puan)" type="number" value={config.rewards.referralPoints} onChange={(v: string) => setConfig({ ...config, rewards: { ...config.rewards, referralPoints: Number(v) || 0 } })} />
+                            <InputGroup label="Günlük Giriş (Puan)" type="number" value={config.rewards.dailyLoginPoints} onChange={(v: string) => setConfig({ ...config, rewards: { ...config.rewards, dailyLoginPoints: Number(v) || 0 } })} />
+                            <InputGroup label="İpucu Bedeli (Coin)" type="number" value={config.rewards.hintCoinCost} onChange={(v: string) => setConfig({ ...config, rewards: { ...config.rewards, hintCoinCost: Number(v) || 0 } })} />
                         </div>
                     </section>
                 </div>
