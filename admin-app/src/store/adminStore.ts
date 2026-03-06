@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet } from '../types';
+import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet, NotificationHistory } from '../types';
 import {
     fetchAllUsers,
     updateUserRole,
@@ -7,7 +7,8 @@ import {
     bulkDeleteUsers as bulkDeleteUsersSvc,
     deleteVehicle as deleteVehicleSvc,
     fetchGlobalAuditLogs,
-    createAdminUser as createAdminUserSvc
+    createAdminUser as createAdminUserSvc,
+    sendPushNotification as sendPushSvc
 } from '../services/adminService';
 import { collection, onSnapshot, query, collectionGroup, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -19,6 +20,7 @@ interface AdminState {
     appointments: Appointment[];
     tires: TireSet[];
     documents: Document[];
+    notificationHistory: NotificationHistory[];
     loading: boolean;
     error: string | null;
     loadUsers: () => Promise<void>;
@@ -29,11 +31,13 @@ interface AdminState {
     subscribeToAppointments: () => () => void;
     subscribeToTires: () => () => void;
     subscribeToDocuments: () => () => void;
+    subscribeToNotificationHistory: () => () => void;
     changeUserRole: (uid: string, role: string) => Promise<void>;
     deleteUser: (uid: string) => Promise<void>;
     bulkDeleteUsers: (uids: string[]) => Promise<void>;
     deleteVehicle: (userId: string, vehicleId: string) => Promise<void>;
     createAdminUser: (userData: any) => Promise<{ success: boolean; error?: string }>;
+    sendPush: (data: any) => Promise<any>;
 }
 
 export const useAdminStore = create<AdminState>((set) => ({
@@ -43,6 +47,7 @@ export const useAdminStore = create<AdminState>((set) => ({
     appointments: [],
     tires: [],
     documents: [],
+    notificationHistory: [],
     loading: false,
     error: null,
 
@@ -130,6 +135,14 @@ export const useAdminStore = create<AdminState>((set) => ({
         });
     },
 
+    subscribeToNotificationHistory: () => {
+        const q = query(collection(db, 'notifications_history'), orderBy('sentAt', 'desc'), limit(50));
+        return onSnapshot(q, (snapshot) => {
+            const notificationHistory = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NotificationHistory));
+            set({ notificationHistory });
+        });
+    },
+
     changeUserRole: async (uid: string, role: string) => {
         try {
             await updateUserRole(uid, role);
@@ -165,6 +178,15 @@ export const useAdminStore = create<AdminState>((set) => ({
     createAdminUser: async (userData: any) => {
         try {
             const result = await createAdminUserSvc(userData);
+            return result;
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    },
+
+    sendPush: async (data: any) => {
+        try {
+            const result = await sendPushSvc(data);
             return result;
         } catch (err: any) {
             return { success: false, error: err.message };

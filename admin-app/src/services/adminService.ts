@@ -15,7 +15,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { db, auth } from '../firebaseConfig';
-import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet } from '../types';
+import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet, NotificationHistory } from '../types';
 
 export const fetchAllUsers = async (): Promise<UserProfile[]> => {
     const usersCol = collection(db, 'users');
@@ -183,4 +183,24 @@ export const createAdminUser = async (userData: any): Promise<{ success: boolean
     });
 
     return response.json();
+};
+
+export const sendPushNotification = async (data: { payload: any; tokens?: string[]; topic?: string }): Promise<any> => {
+    const idToken = await auth.currentUser?.getIdToken();
+    const response = await fetch('/api/notifications/send', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(data)
+    });
+    return response.json();
+};
+
+export const fetchNotificationHistory = async (): Promise<NotificationHistory[]> => {
+    const col = collection(db, 'notifications_history');
+    const q = query(col, orderBy('sentAt', 'desc'), limit(50));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as NotificationHistory));
 };

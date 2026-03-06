@@ -56,8 +56,19 @@ export interface UserProfile {
   department?: string;
   avatar?: string;
   isPremium?: boolean;
-  role?: 'user' | 'admin';
+  role?: 'user' | 'admin' | 'editor';
   createdAt?: any; // Firestore Timestamp
+}
+
+export interface NotificationHistory {
+  id: string;
+  title: string;
+  body: string;
+  type: string;
+  topic?: string | null;
+  recipientCount: number | 'topic';
+  sentAt: any; // Firestore Timestamp
+  status: 'success' | 'failed';
 }
 
 export interface AuditLog {
