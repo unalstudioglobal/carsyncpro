@@ -6,13 +6,14 @@ import {
 } from 'recharts';
 import {
     TrendingUp, Users, Crown, Car,
-    DollarSign, ArrowUpRight, ArrowDownRight
+    DollarSign, ArrowUpRight, ArrowDownRight,
+    Disc, FileText, Activity
 } from 'lucide-react';
 
 const COLORS = ['#D4AF37', '#ffffff20', '#10b981', '#ef4444', '#8b5cf6'];
 
 export const Analytics: React.FC = () => {
-    const { users, vehicles } = useAdminStore();
+    const { users, vehicles, appointments, tires, documents } = useAdminStore();
 
     const premiumStats = useMemo(() => {
         const premiumCount = users.filter(u => u.isPremium).length;
@@ -33,6 +34,30 @@ export const Analytics: React.FC = () => {
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
     }, [vehicles]);
+
+    const featureUsageStats = useMemo(() => [
+        { name: 'Randevular', value: appointments.length },
+        { name: 'Lastik Kayıtları', value: tires.length },
+        { name: 'Belgeler', value: documents.length },
+    ], [appointments, tires, documents]);
+
+    const tireTypeStats = useMemo(() => {
+        const counts: Record<string, number> = { 'Yaz': 0, 'Kış': 0, '4 Mevsim': 0 };
+        tires.forEach(t => {
+            if (t.type === 'Summer') counts['Yaz']++;
+            else if (t.type === 'Winter') counts['Kış']++;
+            else counts['4 Mevsim']++;
+        });
+        return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    }, [tires]);
+
+    const documentTypeStats = useMemo(() => {
+        const counts: Record<string, number> = {};
+        documents.forEach(d => {
+            counts[d.type] = (counts[d.type] || 0) + 1;
+        });
+        return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    }, [documents]);
 
     // Mock trend data (since we don't have historical data in DB yet)
     const trendData = [
@@ -146,7 +171,7 @@ export const Analytics: React.FC = () => {
                 </div>
 
                 {/* Top Brands */}
-                <div className="glass p-8 rounded-[40px] border-white/5 col-span-full">
+                <div className="glass p-8 rounded-[40px] border-white/5">
                     <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
                         <Car size={20} className="text-gold" /> En Popüler Markalar
                     </h3>
@@ -162,6 +187,81 @@ export const Analytics: React.FC = () => {
                                 />
                                 <Bar dataKey="value" fill="#D4AF37" radius={[8, 8, 0, 0]} />
                             </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Feature Usage Distribution */}
+                <div className="glass p-8 rounded-[40px] border-white/5">
+                    <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
+                        <Activity size={20} className="text-gold" /> Özellik Kullanım Dağılımı
+                    </h3>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={featureUsageStats} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" horizontal={false} />
+                                <XAxis type="number" stroke="#ffffff40" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis type="category" dataKey="name" stroke="#ffffff40" fontSize={12} tickLine={false} axisLine={false} width={100} />
+                                <Tooltip
+                                    cursor={{ fill: '#ffffff05' }}
+                                    contentStyle={{ background: '#0a0a0a', border: '1px solid #ffffff10', borderRadius: '16px' }}
+                                />
+                                <Bar dataKey="value" fill="#3b82f6" radius={[0, 8, 8, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Tire Types Pie */}
+                <div className="glass p-8 rounded-[40px] border-white/5">
+                    <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
+                        <Disc size={20} className="text-gold" /> Lastik Tipleri
+                    </h3>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={tireTypeStats}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={50}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {tireTypeStats.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ background: '#0a0a0a', border: '1px solid #ffffff10', borderRadius: '16px' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Document Types Pie */}
+                <div className="glass p-8 rounded-[40px] border-white/5">
+                    <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-2">
+                        <FileText size={20} className="text-gold" /> Belge Dağılımı
+                    </h3>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={documentTypeStats}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={50}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {documentTypeStats.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip contentStyle={{ background: '#0a0a0a', border: '1px solid #ffffff10', borderRadius: '16px' }} />
+                            </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>

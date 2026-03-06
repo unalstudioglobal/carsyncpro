@@ -15,7 +15,7 @@ import {
     writeBatch
 } from 'firebase/firestore';
 import { db, auth } from '../firebaseConfig';
-import type { UserProfile, Vehicle, AuditLog } from '../types';
+import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet } from '../types';
 
 export const fetchAllUsers = async (): Promise<UserProfile[]> => {
     const usersCol = collection(db, 'users');
@@ -150,4 +150,23 @@ export const fetchGlobalAuditLogs = async (): Promise<AuditLog[]> => {
     const q = query(logsCol, orderBy('timestamp', 'desc'), limit(100));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
+};
+
+// Phase 8: Feature Usage Analytics
+export const fetchAllAppointments = async (): Promise<Appointment[]> => {
+    const col = collectionGroup(db, 'appointments');
+    const snapshot = await getDocs(col);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+};
+
+export const fetchAllDocuments = async (): Promise<Document[]> => {
+    const col = collectionGroup(db, 'documents');
+    const snapshot = await getDocs(col);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Document));
+};
+
+export const fetchAllTireSets = async (): Promise<TireSet[]> => {
+    const col = collectionGroup(db, 'tires');
+    const snapshot = await getDocs(col);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TireSet));
 };

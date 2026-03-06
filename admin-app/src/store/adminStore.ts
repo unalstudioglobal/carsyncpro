@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-import type { UserProfile, Vehicle, AuditLog } from '../types';
+import type { UserProfile, Vehicle, AuditLog, Appointment, Document, TireSet } from '../types';
 import {
     fetchAllUsers,
-    fetchAllVehicles,
     updateUserRole,
     deleteUser as deleteUserSvc,
     bulkDeleteUsers as bulkDeleteUsersSvc,
@@ -16,6 +15,9 @@ interface AdminState {
     users: UserProfile[];
     vehicles: Vehicle[];
     auditLogs: AuditLog[];
+    appointments: Appointment[];
+    tires: TireSet[];
+    documents: Document[];
     loading: boolean;
     error: string | null;
     loadUsers: () => Promise<void>;
@@ -23,6 +25,9 @@ interface AdminState {
     subscribeToUsers: () => () => void;
     subscribeToVehicles: () => () => void;
     subscribeToAuditLogs: () => () => void;
+    subscribeToAppointments: () => () => void;
+    subscribeToTires: () => () => void;
+    subscribeToDocuments: () => () => void;
     changeUserRole: (uid: string, role: string) => Promise<void>;
     deleteUser: (uid: string) => Promise<void>;
     bulkDeleteUsers: (uids: string[]) => Promise<void>;
@@ -33,6 +38,9 @@ export const useAdminStore = create<AdminState>((set) => ({
     users: [],
     vehicles: [],
     auditLogs: [],
+    appointments: [],
+    tires: [],
+    documents: [],
     loading: false,
     error: null,
 
@@ -94,6 +102,30 @@ export const useAdminStore = create<AdminState>((set) => ({
             set({ error: error.message, loading: false });
         });
         return unsubscribe;
+    },
+
+    subscribeToAppointments: () => {
+        const q = query(collectionGroup(db, 'appointments'));
+        return onSnapshot(q, (snapshot) => {
+            const appointments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+            set({ appointments });
+        });
+    },
+
+    subscribeToTires: () => {
+        const q = query(collectionGroup(db, 'tires'));
+        return onSnapshot(q, (snapshot) => {
+            const tires = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TireSet));
+            set({ tires });
+        });
+    },
+
+    subscribeToDocuments: () => {
+        const q = query(collectionGroup(db, 'documents'));
+        return onSnapshot(q, (snapshot) => {
+            const documents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Document));
+            set({ documents });
+        });
     },
 
     changeUserRole: async (uid: string, role: string) => {

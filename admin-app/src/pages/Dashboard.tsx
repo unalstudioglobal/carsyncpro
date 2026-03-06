@@ -6,7 +6,8 @@ import {
     Car, X,
     ShieldAlert, Trash2, Clock,
     ChevronRight, AlertCircle,
-    Download, CheckSquare, Square
+    Download, CheckSquare, Square,
+    Disc, Calendar, FileText
 } from 'lucide-react';
 import type { UserProfile, Vehicle } from '../types';
 import { fetchUserVehicles, fetchUserFullActivity } from '../services/adminService';
@@ -15,7 +16,9 @@ import { Skeleton } from '../components/Skeleton';
 export const Dashboard: React.FC = () => {
     const {
         users, loading, vehicles,
+        appointments, tires, documents,
         subscribeToUsers, subscribeToVehicles,
+        subscribeToAppointments, subscribeToTires, subscribeToDocuments,
         changeUserRole, deleteUser, bulkDeleteUsers
     } = useAdminStore();
     const [search, setSearch] = useState('');
@@ -31,11 +34,18 @@ export const Dashboard: React.FC = () => {
     useEffect(() => {
         const unsubUsers = subscribeToUsers();
         const unsubVehicles = subscribeToVehicles();
+        const unsubAppts = subscribeToAppointments();
+        const unsubTires = subscribeToTires();
+        const unsubDocs = subscribeToDocuments();
+
         return () => {
             unsubUsers();
             unsubVehicles();
+            unsubAppts();
+            unsubTires();
+            unsubDocs();
         };
-    }, [subscribeToUsers, subscribeToVehicles]);
+    }, [subscribeToUsers, subscribeToVehicles, subscribeToAppointments, subscribeToTires, subscribeToDocuments]);
 
     const handleUserSelect = async (user: UserProfile) => {
         setSelectedUser(user);
@@ -123,8 +133,11 @@ export const Dashboard: React.FC = () => {
     const stats = [
         { label: 'Toplam Kullanıcı', value: users.length, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10' },
         { label: 'Premium Üye', value: users.filter(u => u.isPremium).length, icon: Crown, color: 'text-gold', bg: 'bg-gold-dim' },
-        { label: 'Yöneticiler', value: users.filter(u => u.role === 'admin').length, icon: Shield, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
         { label: 'Kayıtlı Araç', value: vehicles.length, icon: Car, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+        { label: 'Aktif Randevu', value: appointments.filter(a => a.status === 'Pending').length, icon: Calendar, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+        { label: 'Lastik Takımı', value: tires.length, icon: Disc, color: 'text-orange-400', bg: 'bg-orange-400/10' },
+        { label: 'Kayıtlı Belge', value: documents.length, icon: FileText, color: 'text-pink-400', bg: 'bg-pink-400/10' },
+        { label: 'Yöneticiler', value: users.filter(u => u.role === 'admin').length, icon: Shield, color: 'text-slate-400', bg: 'bg-slate-400/10' },
     ];
 
     return (
@@ -144,9 +157,9 @@ export const Dashboard: React.FC = () => {
             </header>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-10">
                 {loading ? (
-                    [1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 rounded-[32px]" />)
+                    [1, 2, 3, 4, 5, 6, 7].map(i => <Skeleton key={i} className="h-32 rounded-[32px]" />)
                 ) : stats.map((stat, i) => (
                     <div
                         key={i}
