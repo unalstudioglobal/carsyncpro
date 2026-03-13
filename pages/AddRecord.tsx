@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Camera, Upload, X, Bell, Calendar as CalIcon, DollarSign, Fuel, Droplet, Disc, Wrench, ClipboardCheck, Sparkles, RotateCw, Battery, Scan, MousePointerClick } from 'lucide-react';
 import { analyzeInvoiceImage } from '../services/geminiService';
 import { addLog, addAppointment } from '../services/firestoreService';
+import { useData } from '../context/DataContext';
 import { OnboardingGuide } from '../components/OnboardingGuide';
 import { toast } from '../services/toast';
 
@@ -16,6 +17,7 @@ export const AddRecord: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { t, i18n } = useTranslation();
+    const { optimisticAddLog } = useData();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [loading, setLoading] = useState(false);
@@ -131,7 +133,7 @@ export const AddRecord: React.FC = () => {
         }
         setSaving(true);
         try {
-            await addLog({
+            const newLogData = {
                 vehicleId: formData.vehicleId || 'unknown',
                 type: formData.serviceType,
                 date: format(formData.date, 'yyyy-MM-dd'),
@@ -140,9 +142,12 @@ export const AddRecord: React.FC = () => {
                 notes: formData.notes,
                 icon: formData.serviceType.includes('Yakıt') ? 'fuel' : 'maintenance',
                 imageUrl: imagePreview || undefined,
-                paymentStatus: formData.isPaid ? 'Paid' : 'Pending',
+                paymentStatus: (formData.isPaid ? 'Paid' : 'Pending') as "Paid" | "Pending",
                 paymentMethod: formData.isPaid ? formData.paymentMethod as any : undefined
-            });
+            };
+
+            optimisticAddLog({ id: 'temp-' + Date.now(), ...newLogData } as any);
+            await addLog(newLogData);
 
             if (formData.reminder) {
                 const reminderDate = new Date(formData.date);
@@ -439,7 +444,7 @@ export const AddRecord: React.FC = () => {
                                 onClick={() => setFormData({ ...formData, customReminder: true })}
                                 className={`flex-1 text-xs px-2 py-3 rounded-lg font-medium border transition-colors ${formData.customReminder ? 'bg-blue-900/50 border-blue-700 text-blue-300' : 'bg-slate-700 border-slate-600 text-slate-400 hover:bg-slate-600'}`}
                             >
-                                Özel
+                                {t('add_record.reminder_custom')}
                             </button>
                         </div>
 

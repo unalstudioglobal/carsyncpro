@@ -8,16 +8,16 @@ import { EmptyState } from '../components/EmptyState';
 import { Vehicle } from '../types';
 import { AdBanner } from '../components/AdBanner';
 import { toast } from '../services/toast';
-import { fetchVehicles, deleteVehicle, updateVehicle, archiveVehicle, fetchLogs } from '../services/firestoreService';
+import { deleteVehicle, updateVehicle, archiveVehicle } from '../services/firestoreService';
 import { getSetting } from '../services/settingsService';
+import { useData } from '../context/DataContext';
 
 export const Garage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [vehiclesLoading, setVehiclesLoading] = useState(true);
-  const [logCosts, setLogCosts] = useState<Record<string, number>>({});
+  // ── DataContext'ten veri çekme ──
+  const { vehicles: allVehicles, logs: allLogs, loading: vehiclesLoading } = useData();
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,33 +38,18 @@ export const Garage: React.FC = () => {
   const [transferModal, setTransferModal] = useState<{ vehicle: Vehicle, code: string } | null>(null);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
-  // İlk yüklemede Firestore'dan araçları çek
-  useEffect(() => {
-    const loadData = async () => {
-      setVehiclesLoading(true);
-      try {
-        const [loadedVehicles, allLogs] = await Promise.all([
-          fetchVehicles(),
-          fetchLogs(),
-        ]);
-        // Arşivlenmiş araçları filtrele
-        const archivedIds = getSetting<string[]>('archivedVehicles', []);
-        setVehicles(loadedVehicles.filter(v => !archivedIds.includes(v.id)));
+  // Arşivlenmiş araçları filtrele ve maliyetleri hesapla (useMemo ile performanslı)
+  const { vehicles, logCosts } = useMemo(() => {
+    const archivedIds = getSetting<string[]>('archivedVehicles', []);
+    const filtered = allVehicles.filter(v => !archivedIds.includes(v.id));
 
-        // Her araç için toplam maliyeti hesapla
-        const costs: Record<string, number> = {};
-        allLogs.forEach(log => {
-          costs[log.vehicleId] = (costs[log.vehicleId] || 0) + log.cost;
-        });
-        setLogCosts(costs);
-      } catch (err) {
-        console.error('Garaj yükleme hatası:', err);
-      } finally {
-        setVehiclesLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+    const costs: Record<string, number> = {};
+    allLogs.forEach(log => {
+      costs[log.vehicleId] = (costs[log.vehicleId] || 0) + log.cost;
+    });
+
+    return { vehicles: filtered, logCosts: costs };
+  }, [allVehicles, allLogs]);
 
   // Click outside to close suggestions
   useEffect(() => {
@@ -97,6 +82,7 @@ export const Garage: React.FC = () => {
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'Sorun Yok':
+      case t('dashboard.vehicle_status.no_issue'):
         return {
           icon: CheckCircle,
           badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 backdrop-blur-md',
@@ -106,25 +92,27 @@ export const Garage: React.FC = () => {
           iconAnim: ''
         };
       case 'Servis Gerekli':
+      case t('dashboard.vehicle_status.service_required'):
         return {
           icon: AlertTriangle,
           badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30 backdrop-blur-md',
           cardBorder: 'border-amber-500/60',
           shadow: 'shadow-[0_0_20px_-5px_rgba(245,158,11,0.25)]',
           glow: 'ring-1 ring-amber-500/20',
-          iconAnim: 'animate-bounce' // Bouncing icon for attention
+          iconAnim: 'animate-bounce'
         };
       case 'Acil':
+      case t('dashboard.vehicle_status.urgent'):
         return {
           icon: AlertCircle,
-          // Solid red background for maximum urgency visibility
           badgeClass: 'bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-900/50 backdrop-blur-md',
           cardBorder: 'border-rose-500',
           shadow: 'shadow-[0_0_30px_-5px_rgba(244,63,94,0.5)]',
           glow: 'animate-pulse',
-          iconAnim: 'animate-pulse' // Pulsing icon
+          iconAnim: 'animate-pulse'
         };
       case 'Satıldı':
+      case t('garage.status_sold'):
         return {
           icon: Tag,
           badgeClass: 'bg-slate-700/50 text-slate-400 border-slate-600',
@@ -206,9 +194,9 @@ export const Garage: React.FC = () => {
 
   const handleArchiveConfirm = async () => {
     if (vehicleToArchive) {
-      setVehicles(prev => prev.filter(v => v.id !== vehicleToArchive.id));
       try {
         await archiveVehicle(vehicleToArchive.id);
+        // Artık setVehicles Manuel yapılmıyor, Firestore tetikleyecek veya useMemo ile güncellenecek
       } catch (err) {
         console.error('Arşivleme hatası:', err);
       }
@@ -220,10 +208,8 @@ export const Garage: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (vehicleToDelete) {
-      const id = vehicleToDelete.id;
-      setVehicles(prev => prev.filter(v => v.id !== id));
       try {
-        await deleteVehicle(id);
+        await deleteVehicle(vehicleToDelete.id);
       } catch (err) {
         console.error('Silme hatası:', err);
       }
@@ -232,9 +218,6 @@ export const Garage: React.FC = () => {
   };
 
   const handleSellVehicle = async (id: string) => {
-    setVehicles(prev => prev.map(v =>
-      v.id === id ? { ...v, status: 'Satıldı' } : v
-    ));
     try {
       await updateVehicle(id, { status: 'Satıldı' });
     } catch (err) {
@@ -275,23 +258,23 @@ export const Garage: React.FC = () => {
 
   const onboardingSteps = [
     {
-      title: 'Garajınıza Hoş Geldiniz',
-      description: 'Tüm araçlarınızı tek bir yerden yönetin. Durumlarını, maliyetlerini ve bakım zamanlarını takip edin.',
+      title: t('garage.onboarding.step1_title'),
+      description: t('garage.onboarding.step1_desc'),
       icon: Car
     },
     {
-      title: 'Hızlı İşlemler',
-      description: 'Her aracın altındaki butonları kullanarak "Detaylar"a gidebilir, "Kayıt Ekle"yebilir veya aracı "Sil"ebilirsiniz.',
+      title: t('garage.onboarding.step2_title'),
+      description: t('garage.onboarding.step2_desc'),
       icon: LayoutGrid
     },
     {
-      title: 'Transfer & Paylaşım',
-      description: 'Sağ üstteki menüden (•••) aracın transfer kodunu oluşturabilir ve paylaşabilirsiniz.',
+      title: t('garage.onboarding.step3_title'),
+      description: t('garage.onboarding.step3_desc'),
       icon: QrCode
     },
     {
-      title: 'Yeni Araç Ekle',
-      description: 'Listenin en altındaki "Araç Ekle" butonu ile yeni bir araç tanımlayarak takibe başlayın.',
+      title: t('garage.onboarding.step4_title'),
+      description: t('garage.onboarding.step4_desc'),
       icon: PlusCircle
     }
   ];
@@ -301,10 +284,18 @@ export const Garage: React.FC = () => {
 
   const getStatusMeta = (status: string) => {
     switch (status) {
-      case 'Sorun Yok': return { cardClass: 'card-ok', dot: 'var(--green)', label: 'Sorun Yok', labelColor: '#00E878' };
-      case 'Servis Gerekli': return { cardClass: 'card-warning', dot: 'var(--amber)', label: 'Servis Gerekli', labelColor: '#FF9A00' };
-      case 'Acil': return { cardClass: 'card-critical', dot: 'var(--red)', label: 'ACİL', labelColor: '#FF3B3B' };
-      case 'Satıldı': return { cardClass: 'card-sold', dot: '#555', label: 'Satıldı', labelColor: '#555' };
+      case 'Sorun Yok':
+      case t('dashboard.vehicle_status.no_issue'):
+        return { cardClass: 'card-ok', dot: 'var(--green)', label: t('garage.status_ok'), labelColor: '#00E878' };
+      case 'Servis Gerekli':
+      case t('dashboard.vehicle_status.service_required'):
+        return { cardClass: 'card-warning', dot: 'var(--amber)', label: t('garage.status_warn'), labelColor: '#FF9A00' };
+      case 'Acil':
+      case t('dashboard.vehicle_status.urgent'):
+        return { cardClass: 'card-critical', dot: 'var(--red)', label: t('garage.status_urgent'), labelColor: '#FF3B3B' };
+      case 'Satıldı':
+      case t('garage.status_sold'):
+        return { cardClass: 'card-sold', dot: '#555', label: t('garage.status_sold'), labelColor: '#555' };
       default: return { cardClass: '', dot: '#555', label: status, labelColor: '#8A8899' };
     }
   };
@@ -322,7 +313,7 @@ export const Garage: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative' }}>
           <div>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 500, color: 'var(--gold)', letterSpacing: 2.5, marginBottom: 6, textTransform: 'uppercase' }}>
-              {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {new Date().toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 40, letterSpacing: 1.5, lineHeight: 0.92, color: 'var(--text-primary)', margin: 0 }}>
               {t('garage.title')}
@@ -330,7 +321,7 @@ export const Garage: React.FC = () => {
             <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 24, height: 1, background: 'var(--gold)', opacity: 0.5 }} />
               <span style={{ color: 'var(--text-muted)', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
-                {vehicles.length} {t('nav.vehicle_management').toLowerCase().split(' ')[1]}
+                {vehicles.length} {t('nav.vehicles')}
               </span>
             </div>
           </div>
@@ -471,28 +462,24 @@ export const Garage: React.FC = () => {
                 <div className="p-5">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h2 className="text-3xl font-display font-black text-black dark:text-white leading-none mb-1">
-                        {filteredVehicles[0].brand.toUpperCase()}
-                      </h2>
-                      <p className="text-gold font-bold text-lg">{filteredVehicles[0].model}</p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-2 mb-1">
+                               <div className="flex items-center gap-2 mb-1">
                         <Activity size={14} className="text-green-400" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SAĞLIK SKORU</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('garage.health_title')}</span>
                       </div>
                       <span className="text-3xl font-mono font-black text-black dark:text-white">{filteredVehicles[0].healthScore}</span>
                     </div>
                   </div>
-
+ 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-3">
-                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">Kilometre</p>
+                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">{t('garage.odometer_title')}</p>
                       <p className="text-lg font-mono font-bold text-black dark:text-white">{filteredVehicles[0].mileage.toLocaleString()} km</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-3">
-                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">Bakım Durumu</p>
-                      <p className="text-lg font-bold text-green-500 dark:text-green-400">SORUN YOK</p>
+                      <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">{t('garage.maint_title')}</p>
+                      <p className={`text-lg font-bold ${getStatusMeta(filteredVehicles[0].status).labelColor === '#FF3B3B' ? 'text-red-500' : getStatusMeta(filteredVehicles[0].status).labelColor === '#FF9A00' ? 'text-amber-500' : 'text-green-500'}`}>
+                        {getStatusMeta(filteredVehicles[0].status).label.toUpperCase()}
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import {
   Plus, Filter, Car, TrendingDown, Wallet, Calendar
 } from 'lucide-react';
 import { fetchVehicles, fetchLogs, deleteLog } from '../services/firestoreService';
+import { useData } from '../context/DataContext';
 import { Vehicle, ServiceLog } from '../types';
 import { toast } from '../services/toast';
 import { EmptyState } from '../components/EmptyState';
@@ -60,35 +61,17 @@ const formatDate = (dateStr: string) => {
 
 export const Logs: React.FC = () => {
   const navigate = useNavigate();
+  const { vehicles, logs, loading } = useData();
+
   const { t } = useTranslation();
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [logs, setLogs] = useState<ServiceLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Veriyi Firestore'dan çek
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        const [v, l] = await Promise.all([fetchVehicles(), fetchLogs()]);
-        setVehicles(v);
-        // Tarihe göre sırala (yeniden eskiye)
-        setLogs(l.sort((a, b) => {
-          if (/^\d{4}-\d{2}-\d{2}$/.test(a.date) && /^\d{4}-\d{2}-\d{2}$/.test(b.date))
-            return b.date.localeCompare(a.date);
-          return 0;
-        }));
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+    // [DataContext] fetch kaldırıldı — useData() kullanıyor
 
   // Araç adı yardımcısı
   const vehicleName = (id: string, t: any) => {
@@ -130,7 +113,7 @@ export const Logs: React.FC = () => {
     setDeletingId(id);
     try {
       await deleteLog(id);
-      setLogs(prev => prev.filter(l => l.id !== id));
+      // setLogs(prev => prev.filter(l => l.id !== id)); -> Artık Manuel yapılmıyor
     } catch (err) {
       console.error('Silme hatası:', err);
       toast.error(t('logs.err_delete'));

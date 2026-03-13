@@ -15,12 +15,28 @@ const COLORS = ['#D4AF37', '#ffffff20', '#10b981', '#ef4444', '#8b5cf6'];
 export const Analytics: React.FC = () => {
     const { users, vehicles, appointments, tires, documents } = useAdminStore();
 
+    // ── Tier fiyatları (Subscriptions sayfasıyla senkron) ──────
+    const TIER_MRR: Record<string, number> = {
+        individual: 49,  // aylık bireysel
+        family:     99,  // aylık aile
+        fleet:      699, // aylık filo
+    };
+    const userMRR = (u: typeof users[0]) => {
+        if (!u.isPremium) return 0;
+        const base = TIER_MRR[u.premiumTier ?? 'individual'] ?? 49;
+        return u.premiumPlan === 'yearly' ? Math.round(base * 0.85) : base; // yıllıkta indirim
+    };
+
+    const totalMRR = useMemo(() => users.reduce((s, u) => s + userMRR(u), 0), [users]);
+
     const premiumStats = useMemo(() => {
-        const premiumCount = users.filter(u => u.isPremium).length;
-        const standardCount = users.length - premiumCount;
+        const tiers = ['individual', 'family', 'fleet'] as const;
         return [
-            { name: 'Premium', value: premiumCount },
-            { name: 'Standart', value: standardCount },
+            ...tiers.map(t => ({
+                name: t === 'individual' ? 'Bireysel' : t === 'family' ? 'Aile' : 'Filo',
+                value: users.filter(u => u.isPremium && (u.premiumTier ?? 'individual') === t).length,
+            })),
+            { name: 'Standart', value: users.filter(u => !u.isPremium).length },
         ];
     }, [users]);
 
@@ -68,7 +84,7 @@ export const Analytics: React.FC = () => {
     ];
 
     const stats = [
-        { label: 'Aylık Tahmini Gelir', value: '₺4.800', trend: '+12%', icon: DollarSign, color: 'text-gold' },
+        { label: 'Gerçek MRR', value: `₺${totalMRR.toLocaleString('tr')}`, trend: `${users.filter(u=>u.isPremium).length} abonelik`, icon: DollarSign, color: 'text-gold' },
         { label: 'Aktif Kullanıcılar', value: users.length, trend: '+5%', icon: Users, color: 'text-blue-400' },
         { label: 'Premium Oranı', value: `%${((users.filter(u => u.isPremium).length / users.length) * 100 || 0).toFixed(1)}`, trend: '+2%', icon: Crown, color: 'text-emerald-400' },
         { label: 'Araç Başı Ortalama', value: (vehicles.length / users.length || 0).toFixed(1), trend: '-1%', icon: Car, color: 'text-purple-400' },

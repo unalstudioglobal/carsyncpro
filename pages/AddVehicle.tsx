@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, Car, Calendar, Hash, Gauge, Camera, Check, ChevronRight, AlertCircle, Save, LayoutGrid } from 'lucide-react';
 import { Vehicle } from '../types';
 import { addVehicle, updateVehicle } from '../services/firestoreService';
+import { useData } from '../context/DataContext';
 import { toast } from '../services/toast';
 
 export const AddVehicle: React.FC = () => {
@@ -14,6 +15,7 @@ export const AddVehicle: React.FC = () => {
   const editVehicle = location.state?.vehicle as Vehicle | undefined;
   const { id } = useParams();
   const { t } = useTranslation();
+  const { optimisticAddVehicle, optimisticUpdateVehicle } = useData();
   const isEditMode = !!id;
 
   const [step, setStep] = useState(1);
@@ -103,7 +105,7 @@ export const AddVehicle: React.FC = () => {
         setIsSaving(true);
         try {
           if (isEditMode && editVehicle) {
-            await updateVehicle(editVehicle.id, {
+            const updateData = {
               brand: formData.brand,
               model: formData.model,
               year: parseInt(formData.year),
@@ -112,9 +114,11 @@ export const AddVehicle: React.FC = () => {
               status: formData.status,
               image: formData.images[0] || formData.image || editVehicle.image,
               images: formData.images,
-            });
+            };
+            optimisticUpdateVehicle(editVehicle.id, updateData);
+            await updateVehicle(editVehicle.id, updateData);
           } else {
-            await addVehicle({
+            const newVehicleData = {
               brand: formData.brand,
               model: formData.model,
               year: parseInt(formData.year),
@@ -127,7 +131,10 @@ export const AddVehicle: React.FC = () => {
               marketValueMin: 0,
               marketValueMax: 0,
               lastLogDate: new Date().toLocaleDateString('tr-TR'),
-            });
+            };
+            // Optimistik ekleme için geçici bir ID oluştur (Firestore gelince güncellenecek)
+            optimisticAddVehicle({ id: 'temp-' + Date.now(), ...newVehicleData } as Vehicle);
+            await addVehicle(newVehicleData);
           }
           toast.success(isEditMode ? t('add_vehicle.toast_edit_success') : t('add_vehicle.toast_add_success'));
           navigate('/');

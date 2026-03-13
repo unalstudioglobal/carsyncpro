@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, Calendar, Fuel, CreditCard, Route, ArrowRightLeft, X, TrendingUp, Download, FileText, Wrench, Shield, MoreHorizontal, Lock, Crown, Droplet, FileCheck } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, CartesianGrid, LineChart, Line, TooltipProps } from 'recharts';
 import { fetchVehicles, fetchLogs } from '../services/firestoreService';
+import { useData } from '../context/DataContext';
 import { Vehicle, ServiceLog } from '../types';
 import { OnboardingGuide } from '../components/OnboardingGuide';
 import { AdBanner } from '../components/AdBanner';
@@ -81,23 +82,15 @@ const CustomFuelTooltip = ({ active, payload, label }: any) => {
 
 export const Analytics: React.FC = () => {
     const navigate = useNavigate();
+  const { vehicles, logs, loading } = useData();
+
     const { t } = useTranslation();
     const [isComparing, setIsComparing] = useState(false);
 
     // Firestore verisi
-    const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-    const [logs, setLogs] = useState<ServiceLog[]>([]);
     const [dataLoading, setDataLoading] = useState(true);
 
-    useEffect(() => {
-        Promise.all([fetchVehicles(), fetchLogs()]).then(([v, l]) => {
-            if (v.length > 0) setVehicles(v);
-            setLogs(l);
-            // v1/v2 başlangıç değerlerini gerçek araçlara ayarla
-            if (v.length > 0) setV1Id(v[0].id);
-            if (v.length > 1) setV2Id(v[1].id);
-        }).finally(() => setDataLoading(false));
-    }, []);
+    // [DataContext] fetch kaldırıldı — useData() kullanıyor
 
     const [v1Id, setV1Id] = useState('');
     const [v2Id, setV2Id] = useState('');

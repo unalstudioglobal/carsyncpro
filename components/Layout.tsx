@@ -8,20 +8,28 @@ import {
 import { GlobalSearch, useGlobalSearch } from './GlobalSearch';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { SyncIndicator } from './SyncIndicator';
 
 const MENU_ITEMS = [
+  // ── AI & Akıllı ──────────────────────────────────────
+  { route: '/ai-insights', icon: Brain, label: 'AI İçgörüler', color: '#a855f7', badge: 'YENİ' },
+  { route: '/predictive-maintenance', icon: Zap, label: 'AI Bakım Tahmini', color: '#8b5cf6' },
+  { route: '/damage-detection', icon: Scan, label: 'Hasar Tespiti', color: '#ef4444' },
+  { route: '/car-chat', icon: Sparkles, label: 'AI Asistan', color: '#a855f7' },
+  // ── Araç & Yönetim ───────────────────────────────────
   { route: '/vehicle-qr', icon: QrCode, label: 'QR Araç Kartı', color: '#6366f1' },
   { route: '/tires', icon: Disc, label: 'Lastik Oteli', color: '#f59e0b' },
+  { route: '/family-garage', icon: Users, label: 'Aile Garajı', color: '#6366f1' },
+  { route: '/vehicle-comparison', icon: ArrowRightLeft, label: 'Araç Karşılaştır', color: '#06b6d4' },
+  // ── Planlama & Finans ─────────────────────────────────
   { route: '/trip-planner', icon: Map, label: 'Rota Planlayıcı', color: '#10b981' },
-  { route: '/predictive-maintenance', icon: Brain, label: 'AI Bakım Tahmini', color: '#8b5cf6' },
-  { route: '/damage-detection', icon: Scan, label: 'Hasar Tespiti', color: '#ef4444' },
-  { route: '/fuel-finder', icon: Navigation, label: 'İstasyon Bul', color: '#f59e0b' },
   { route: '/budget-goals', icon: Target, label: 'Bütçe Hedefleri', color: '#6366f1' },
   { route: '/insurance-calendar', icon: Shield, label: 'Sigorta & Muayene', color: '#3b82f6' },
   { route: '/service-appointment', icon: Calendar, label: 'Servis Randevusu', color: '#8b5cf6' },
+  // ── Araçlar ───────────────────────────────────────────
+  { route: '/fuel-finder', icon: Navigation, label: 'İstasyon Bul', color: '#f59e0b' },
   { route: '/service-report', icon: FileText, label: 'PDF Raporu', color: '#06b6d4' },
-  { route: '/family-garage', icon: Users, label: 'Aile Garajı', color: '#6366f1' },
-  { route: '/car-chat', icon: Sparkles, label: 'AI Asistan', color: '#a855f7' },
   { route: '/notifications', icon: Bell, label: 'Bildirimler', color: '#f59e0b' },
   { route: '/settings', icon: Settings, label: 'Ayarlar', color: '#64748b' },
 ];
@@ -109,6 +117,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
               >
                 CARSYNC PRO
               </p>
+              <SyncIndicator variant="compact" className="ml-auto" />
             </div>
           </div>
 
@@ -221,7 +230,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
             </div>
           </div>
 
-          <div className="mt-auto p-4 border-t border-slate-800/40 bg-slate-900/20">
+          <div className="mt-auto p-4 border-t border-slate-800/40 bg-slate-900/20 space-y-2">
+            {/* Dil değiştirici */}
+            <LanguageSwitcher variant="compact" className="w-full justify-center" />
+
             <button
               onClick={toggleDarkMode}
               className="w-full p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between group overflow-hidden relative"
@@ -297,6 +309,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                 <p style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: 2, background: 'linear-gradient(135deg, #F0E6C8, #C9A84C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   CARSYNC PRO
                 </p>
+                <SyncIndicator variant="compact" className="ml-2" />
               </div>
             </div>
             <button
@@ -384,6 +397,55 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                       <div>
                         <p style={{ color: active ? color : '#E8E6E0', fontSize: 13, fontWeight: 700, marginBottom: 3, fontFamily: 'var(--font-body)', lineHeight: 1.2 }}>{label}</p>
                         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 500 }}>{sub}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Section: AI & Akıllı Özellikler ── */}
+            <div style={{ marginBottom: 10, animation: 'fadeSlideUp 0.4s 0.08s ease both', opacity: 0, animationFillMode: 'forwards' }}>
+              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 9, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>
+                Yapay Zeka
+              </p>
+              {/* AI Insights Hero Card */}
+              <button
+                onClick={() => go('/ai-insights')}
+                style={{
+                  width: '100%', background: isActive('/ai-insights') ? 'rgba(168,85,247,0.18)' : 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(99,102,241,0.06))',
+                  border: `1px solid ${isActive('/ai-insights') ? 'rgba(168,85,247,0.5)' : 'rgba(168,85,247,0.22)'}`,
+                  borderRadius: 22, padding: '18px 20px', marginBottom: 9,
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  cursor: 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden', transition: 'all 0.22s',
+                }}
+              >
+                <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.15), transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(99,102,241,0.15))', border: '1px solid rgba(168,85,247,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(168,85,247,0.25)', flexShrink: 0 }}>
+                  <Brain size={24} color="#a855f7" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <p style={{ color: '#d8b4fe', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>AI İçgörüler</p>
+                    <span style={{ background: 'rgba(168,85,247,0.25)', color: '#d8b4fe', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, letterSpacing: 1, textTransform: 'uppercase', border: '1px solid rgba(168,85,247,0.35)' }}>YENİ</span>
+                  </div>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 500, lineHeight: 1.4 }}>Proaktif uyarılar, sağlık analizi, 12 aylık bakım takvimi</p>
+                </div>
+              </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+                {[
+                  { route: '/predictive-maintenance', icon: Zap, label: t('nav.predictive_maintenance') || 'AI Bakım', sub: 'Tahmine dayalı', color: '#8b5cf6', grad: 'rgba(139,92,246,' },
+                  { route: '/car-chat', icon: Sparkles, label: t('nav.car_chat') || 'AI Asistan', sub: 'Araçla sohbet', color: '#a855f7', grad: 'rgba(168,85,247,' },
+                ].map(({ route, icon: Icon, label, sub, color, grad }) => {
+                  const active = isActive(route);
+                  return (
+                    <button key={route} onClick={() => go(route)} style={{ background: active ? `linear-gradient(135deg, ${grad}0.18), ${grad}0.07))` : `linear-gradient(135deg, ${grad}0.08), ${grad}0.03))`, border: `1px solid ${active ? `${color}50` : `${color}22`}`, borderRadius: 18, padding: '15px 14px', display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer', textAlign: 'left', transition: 'all 0.22s' }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 12, flexShrink: 0, background: `linear-gradient(135deg, ${grad}0.22), ${grad}0.08))`, border: `1px solid ${grad}0.28)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon size={17} color={color} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ color: active ? color : '#D4D2CC', fontSize: 12, fontWeight: 700, marginBottom: 2, fontFamily: 'var(--font-body)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.27)', fontSize: 10, fontWeight: 500 }}>{sub}</p>
                       </div>
                     </button>
                   );
@@ -580,6 +642,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                     <div style={{ position: 'absolute', top: 2, left: isDarkMode ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s cubic-bezier(0.34,1.56,0.64,1)' }} />
                   </div>
                 </button>
+              </div>
+
+              {/* Dil değiştirici */}
+              <div style={{ marginTop: 8 }}>
+                <LanguageSwitcher variant="compact" className="justify-center" />
               </div>
             </div>
 

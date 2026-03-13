@@ -367,6 +367,22 @@ export const FuelFinder: React.FC = () => {
   const [reportingStation, setReportingStation] = useState<string | null>(null);
   const [showOpenOnly, setShowOpenOnly] = useState(false);
 
+  // ── Ulusal Yakıt Fiyatları ────────────────────────────
+  const [nationalPrices, setNationalPrices] = useState<{
+    gasoline95?: number; gasoline97?: number; diesel?: number; lpg?: number;
+    updatedAt?: string; source?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/fuel/national-prices')
+      .then(r => r.json())
+      .then(setNationalPrices)
+      .catch(() => {});
+  }, []);
+  const [radiusKm, setRadiusKm] = useState(5);
+  const [reportingStation, setReportingStation] = useState<string | null>(null);
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+
   const getLocation = useCallback(() => {
     setLoading(true);
     setLocationError(null);
@@ -477,6 +493,45 @@ export const FuelFinder: React.FC = () => {
           <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
             <AlertCircle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
             <p className="text-amber-300 text-xs">{locationError} {t('fuel.demo_data')}</p>
+          </div>
+        )}
+
+        {/* Ulusal Güncel Yakıt Fiyatları Bandı */}
+        {nationalPrices && (
+          <div className="bg-slate-800/60 border border-slate-700/40 rounded-xl p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <TrendingDown size={12} className="text-emerald-400" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Türkiye Ulusal Ortalama</span>
+              </div>
+              {nationalPrices.updatedAt && (
+                <span className="text-[9px] text-slate-600">
+                  {new Date(nationalPrices.updatedAt).toLocaleDateString('tr-TR')}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-1.5">
+              {([
+                { key: 'gasoline95', label: '95' , color: 'text-green-400'  },
+                { key: 'gasoline97', label: '97' , color: 'text-emerald-400'},
+                { key: 'diesel',     label: 'Dizel', color: 'text-amber-400'},
+                { key: 'lpg',        label: 'LPG', color: 'text-blue-400'  },
+              ] as const).map(({ key, label, color }) => {
+                const price = nationalPrices[key];
+                const isActive = activeFuel === key;
+                return (
+                  <div
+                    key={key}
+                    className={`rounded-lg p-2 text-center transition ${isActive ? 'bg-white/10 ring-1 ring-white/20' : 'bg-slate-900/40'}`}
+                  >
+                    <p className={`text-xs font-black ${price ? color : 'text-slate-600'}`}>
+                      {price ? `₺${price.toFixed(2)}` : '—'}
+                    </p>
+                    <p className="text-[9px] text-slate-500 mt-0.5">{label}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

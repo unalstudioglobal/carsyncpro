@@ -22,6 +22,7 @@ import { CarChat } from './pages/CarChat';
 import { Logs } from './pages/Logs';
 import { ThemeProvider } from './context/ThemeContext';
 import { PremiumProvider } from './context/PremiumContext';
+import { DataProvider } from './context/DataContext';
 import { getSetting, saveSetting } from './services/settingsService';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -39,6 +40,7 @@ import { VehicleQRCard } from './pages/VehicleQRCard';
 import { ServiceHistoryReport } from './pages/ServiceHistoryReport';
 import { FamilyGarage } from './pages/FamilyGarage';
 import { FuelFinder } from './pages/FuelFinder';
+import { AIInsights } from './pages/AIInsights';
 import { NotFound } from './pages/NotFound';
 
 // Protected Route Layout
@@ -121,6 +123,7 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <ThemeProvider>
         <PremiumProvider>
+          <DataProvider>
           <HashRouter>
             <Layout announcement={globalConfig?.announcement}>
               <Routes>
@@ -160,6 +163,8 @@ const App: React.FC = () => {
                   <Route path="/service-report" element={<ServiceHistoryReport />} />
                   <Route path="/family-garage" element={<FamilyGarage />} />
                   <Route path="/fuel-finder" element={<FuelFinder />} />
+                  <Route path="/ai-insights" element={<AIInsights />} />
+                  <Route path="/ai-insights/:id" element={<AIInsights />} />
                 </Route>
 
                 {/* Fallback */}
@@ -167,6 +172,7 @@ const App: React.FC = () => {
               </Routes>
             </Layout>
           </HashRouter>
+          </DataProvider>
         </PremiumProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -25,7 +25,9 @@ import { getSetting, saveSetting, removeSetting } from './settingsService';
 
 export interface PremiumProfile {
   isPremium: boolean;
-  plan: 'free' | 'monthly' | 'yearly';
+  plan: 'free' | 'monthly' | 'yearly' | 'individual-monthly' | 'individual-yearly' | 'family-monthly' | 'family-yearly' | 'fleet-monthly' | 'fleet-yearly';
+  tier: 'free' | 'individual' | 'family' | 'fleet';
+  billing: 'monthly' | 'yearly' | null;
   /** Yenileme tarihi (ISO string) */
   expiresAt: string | null;
   /** Ödeme referansı — backend'den gelir */
@@ -37,6 +39,8 @@ export interface PremiumProfile {
 const DEFAULT_PROFILE: PremiumProfile = {
   isPremium: false,
   plan: 'free',
+  tier: 'free',
+  billing: null,
   expiresAt: null,
   subscriptionId: null,
   verifiedAt: null,
@@ -175,7 +179,14 @@ export const activatePremium = async (
  * Iyzico ödeme oturumunu başlatır.
  * Backend'den gelen script içeriğini döndürür.
  */
-export const initializeIyzicoPayment = async (plan: 'monthly' | 'yearly'): Promise<{ checkoutFormContent: string, token: string }> => {
+export type PlanKey =
+  | 'individual-monthly' | 'individual-yearly'
+  | 'family-monthly'     | 'family-yearly'
+  | 'fleet-monthly'      | 'fleet-yearly';
+
+export const initializeIyzicoPayment = async (
+  plan: PlanKey | 'monthly' | 'yearly'
+): Promise<{ checkoutFormContent: string; token: string; plan: string }> => {
   const user = auth.currentUser;
   if (!user) throw new Error('Oturum açmalısınız');
 
@@ -184,9 +195,9 @@ export const initializeIyzicoPayment = async (plan: 'monthly' | 'yearly'): Promi
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ plan })
+    body: JSON.stringify({ plan }),
   });
 
   if (!res.ok) {

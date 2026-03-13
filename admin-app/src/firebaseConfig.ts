@@ -3,17 +3,17 @@ import { getAuth } from "firebase/auth";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
-import { getMessaging, isSupported as isMessagingSupported } from "firebase/messaging";
+
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB4Yoni2gKfDudbkIJa0b5OT7QlUhzODW4",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "car-sync-pro.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://car-sync-pro-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "car-sync-pro",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "car-sync-pro.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "893696369365",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:893696369365:web:1a460e80ef6997e6eeb85c",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-PZ06Q7LDVC",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -35,19 +35,6 @@ export const db = initializeFirestore(app, {
     tabManager: persistentMultipleTabManager(),
   }),
 });
-
-// Messaging — push notification desteği varsa başlat
-export let messaging: ReturnType<typeof getMessaging> | null = null;
-(async () => {
-  try {
-    const supported = await isMessagingSupported();
-    if (supported) {
-      messaging = getMessaging(app);
-    }
-  } catch {
-    // Safari private mod, eski tarayıcılar
-  }
-})();
 
 // Analytics — hata verirse sessizce geç
 let analytics: ReturnType<typeof getAnalytics> | undefined;

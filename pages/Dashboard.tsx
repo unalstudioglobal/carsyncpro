@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Bell, Settings, Fuel, Wrench, Wallet, Calendar, ChevronRight, AlertCircle, RefreshCw, TrendingUp, Activity, Search, ShieldAlert, Sparkles, CheckCircle2, Receipt, MessageCircle, AlertTriangle, Info, XCircle, Gauge, Droplet, RotateCw, Battery, Camera, Car, GripVertical, Eye, EyeOff, ChevronUp, ChevronDown, Sliders } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip } from 'recharts';
-import { fetchVehicles, fetchLogs, fetchAppointments, addAppointment, deleteAppointment, updateLog, updateVehicle } from '../services/firestoreService';
+import { addAppointment, deleteAppointment, updateLog, updateVehicle } from '../services/firestoreService';
 import { getHealthInsight, explainTroubleCodes, getMaintenanceRecommendations } from '../services/geminiService';
 import { OnboardingGuide } from '../components/OnboardingGuide';
 import { AdBanner } from '../components/AdBanner';
@@ -12,6 +12,7 @@ import { Vehicle, ServiceLog, Appointment, WidgetConfig } from '../types';
 import { toast } from '../services/toast';
 import { getSetting, saveSetting } from '../services/settingsService';
 import { triggerConfetti } from '../services/confetti';
+import { useData } from '../context/DataContext';
 
 interface DtcResult {
     code: string;
@@ -25,6 +26,16 @@ export const Dashboard: React.FC = () => {
     const { id } = useParams();
     const { t, i18n } = useTranslation();
     const navigate = useNavigate();
+
+    // ── DataContext'ten gerçek zamanlı veri ──────────────────────────────────
+    const {
+      vehicles: allVehicles,
+      logs: allLogs,
+      appointments: allAppointments,
+      loading: dataLoading,
+      optimisticUpdateVehicle,
+      optimisticUpdateLog,
+    } = useData();
 
     const [vehicle, setVehicle] = useState<Vehicle | null>(null);
     const [logs, setLogs] = useState<ServiceLog[]>([]);
@@ -142,89 +153,73 @@ export const Dashboard: React.FC = () => {
     };
 
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const [vehicles, allLogs, allAppointments] = await Promise.all([
-                    fetchVehicles(),
-                    fetchLogs(),
-                    fetchAppointments()
-                ]);
+        // DataContext'ten gelen veriler değişince (onSnapshot) Dashboard'u güncelle
+        if (dataLoading) return;
 
-                const foundVehicle = id ? vehicles.find(v => v.id === id) : vehicles[0];
+        const foundVehicle = id ? allVehicles.find(v => v.id === id) : allVehicles[0];
 
-                if (foundVehicle) {
-                    setVehicle(foundVehicle);
+        if (foundVehicle) {
+            setVehicle(foundVehicle);
 
-                    // Filter logs for this vehicle
-                    const vehicleLogs = allLogs.filter(log => log.vehicleId === foundVehicle.id);
-                    setLogs(vehicleLogs);
+            const vehicleLogs = allLogs.filter(log => log.vehicleId === foundVehicle.id);
+            setLogs(vehicleLogs);
 
-                    // Filter appointments
-                    const vehicleAppointments = allAppointments.filter(appt => appt.vehicleId === foundVehicle.id && appt.status !== 'Cancelled');
-                    setAppointments(vehicleAppointments);
+            const vehicleAppointments = allAppointments.filter(
+                appt => appt.vehicleId === foundVehicle.id && appt.status !== 'Cancelled'
+            );
+            setAppointments(vehicleAppointments);
 
-                    // Set last log
-                    if (vehicleLogs.length > 0) {
-                        const sortedLogs = [...vehicleLogs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                        setLastLog(sortedLogs[0]);
-                    }
-
-                    // Calculate Fuel Stats (Last 6 Months)
-                    calculateFuelStats(vehicleLogs);
-
-                    // AI Insights
-                    getHealthInsight(foundVehicle.model, foundVehicle.mileage, foundVehicle.lastLogDate).then(setInsight);
-
-                    setTipsLoading(true);
-                    getMaintenanceRecommendations(`${foundVehicle.year} ${foundVehicle.brand} ${foundVehicle.model}`, foundVehicle.mileage)
-                        .then((tips) => {
-                            setMaintenanceTips(tips);
-                            setTipsLoading(false);
-                        });
-
-                    // Animate Health Score
-                    setAnimatedHealthScore(0);
-                    setTimeout(() => {
-                        setAnimatedHealthScore(foundVehicle.healthScore);
-                    }, 300);
-
-                    // Load Dashboard Widgets
-                    const defaultWidgets: WidgetConfig[] = [
-                        { id: 'health', enabled: true, order: 0 },
-                        { id: 'dtc', enabled: true, order: 1 },
-                        { id: 'stats', enabled: true, order: 2 },
-                        { id: 'fuel_analysis', enabled: true, order: 3 },
-                        { id: 'expense_chart', enabled: true, order: 4 },
-                        { id: 'market_value', enabled: true, order: 5 },
-                        { id: 'maintenance', enabled: true, order: 6 },
-                        { id: 'last_log', enabled: true, order: 7 },
-                        { id: 'appointments', enabled: true, order: 8 },
-                        { id: 'recent_logs', enabled: true, order: 9 }
-                    ];
-                    const savedWidgets = getSetting<WidgetConfig[]>('dashboard_widgets', defaultWidgets);
-                    setWidgets(savedWidgets.sort((a, b) => a.order - b.order));
-                }
-
-                // Fetch System Announcement
-                try {
-                    const configRef = doc(db, 'system', 'config');
-                    const configSnap = await getDoc(configRef);
-                    if (configSnap.exists()) {
-                        setAnnouncement(configSnap.data().announcement || null);
-                    }
-                } catch (err) {
-                    console.error('Error fetching announcement:', err);
-                }
-            } catch (error) {
-                console.error(t('dashboard.data_load_error'), error);
-            } finally {
-                setLoading(false);
+            if (vehicleLogs.length > 0) {
+                const sortedLogs = [...vehicleLogs].sort(
+                    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+                );
+                setLastLog(sortedLogs[0]);
             }
-        };
 
-        loadData();
-    }, [id]);
+            calculateFuelStats(vehicleLogs);
+
+            getHealthInsight(foundVehicle.model, foundVehicle.mileage, foundVehicle.lastLogDate).then(setInsight);
+
+            setTipsLoading(true);
+            getMaintenanceRecommendations(
+                `${foundVehicle.year} ${foundVehicle.brand} ${foundVehicle.model}`,
+                foundVehicle.mileage
+            ).then((tips) => { setMaintenanceTips(tips); setTipsLoading(false); });
+
+            setAnimatedHealthScore(0);
+            setTimeout(() => { setAnimatedHealthScore(foundVehicle.healthScore); }, 300);
+
+            const defaultWidgets: WidgetConfig[] = [
+                { id: 'health',         enabled: true, order: 0 },
+                { id: 'dtc',            enabled: true, order: 1 },
+                { id: 'stats',          enabled: true, order: 2 },
+                { id: 'fuel_analysis',  enabled: true, order: 3 },
+                { id: 'expense_chart',  enabled: true, order: 4 },
+                { id: 'market_value',   enabled: true, order: 5 },
+                { id: 'maintenance',    enabled: true, order: 6 },
+                { id: 'last_log',       enabled: true, order: 7 },
+                { id: 'appointments',   enabled: true, order: 8 },
+                { id: 'recent_logs',    enabled: true, order: 9 },
+            ];
+            const savedWidgets = getSetting<WidgetConfig[]>('dashboard_widgets', defaultWidgets);
+            setWidgets(savedWidgets.sort((a, b) => a.order - b.order));
+        }
+
+        // Sistem duyurusunu yalnızca bir kez çek
+        try {
+            import('../firebaseConfig').then(({ db }) => {
+                import('firebase/firestore').then(({ doc: fsDoc, getDoc }) => {
+                    getDoc(fsDoc(db, 'system', 'config')).then(snap => {
+                        if (snap.exists()) setAnnouncement(snap.data().announcement ?? null);
+                    }).catch(() => {});
+                });
+            });
+        } catch { /* ignore */ }
+
+        setLoading(false);
+    }, [id, allVehicles, allLogs, allAppointments, dataLoading]);
+
+
 
     const handleAddAppointment = async () => {
         if (!vehicle || !appointmentForm.date) return;
@@ -489,6 +484,13 @@ export const Dashboard: React.FC = () => {
                             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-white/10 hover:bg-white/15 backdrop-blur-sm border border-white/20 text-black dark:text-white font-bold text-sm active:scale-95 transition"
                         >
                             <Wrench size={16} />{t('dashboard.maintenance')}
+                        </button>
+                        <button
+                            onClick={() => navigate(`/ai-insights/${vehicle.id}`)}
+                            className="w-14 btn-premium-3d bg-gradient-to-br from-purple-600 to-violet-700 !shadow-purple-900/40"
+                            title="AI İçgörüler"
+                        >
+                            <Sparkles size={18} className="text-white" />
                         </button>
                         <button
                             onClick={() => navigate(`/chat/${vehicle.id}`)}

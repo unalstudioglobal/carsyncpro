@@ -56,6 +56,11 @@ export interface UserProfile {
   department?: string;
   avatar?: string;
   isPremium?: boolean;
+  premiumTier?: 'individual' | 'family' | 'fleet';
+  premiumPlan?: 'monthly' | 'yearly';
+  premiumSince?: string;
+  premiumExpiresAt?: string;
+  lastPaymentId?: string;
   role: 'user' | 'admin' | 'editor';
   createdAt: any;
   lastLogin?: any;

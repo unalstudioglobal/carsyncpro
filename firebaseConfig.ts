@@ -6,14 +6,14 @@ import { getAnalytics } from "firebase/analytics";
 import { getMessaging, isSupported as isMessagingSupported } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB4Yoni2gKfDudbkIJa0b5OT7QlUhzODW4",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "car-sync-pro.firebaseapp.com",
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || "https://car-sync-pro-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "car-sync-pro",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "car-sync-pro.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "893696369365",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:893696369365:web:1a460e80ef6997e6eeb85c",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-PZ06Q7LDVC",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -56,10 +56,6 @@ export async function getMessagingInstance(): Promise<ReturnType<typeof getMessa
 
   return messagingPromise;
 }
-
-// Legacy export for backward compatibility
-export let messaging: ReturnType<typeof getMessaging> | null = null;
-getMessagingInstance().then(m => messaging = m);
 
 // Analytics — hata verirse sessizce geç
 let analytics: ReturnType<typeof getAnalytics> | undefined;

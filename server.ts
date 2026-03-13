@@ -45,9 +45,9 @@ async function startServer() {
 
   // ── Iyzico Configuration ────────────────────────────────
   const iyzipay = new Iyzipay({
-    apiKey: process.env.IYZICO_API_KEY || 'sandbox-api-key',
-    secretKey: process.env.IYZICO_SECRET_KEY || 'sandbox-secret-key',
-    uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
+    apiKey: process.env.IYZICO_API_KEY,
+    secretKey: process.env.IYZICO_SECRET_KEY,
+    uri: process.env.IYZICO_BASE_URL
   });
 
   // ── CORS ───────────────────────────────────────────────
@@ -78,7 +78,7 @@ async function startServer() {
       const sa = JSON.parse(serviceAccount);
       admin.initializeApp({
         credential: admin.credential.cert(sa),
-        databaseURL: "https://car-sync-pro-default-rtdb.europe-west1.firebasedatabase.app",
+        databaseURL: process.env.FIREBASE_DATABASE_URL || "https://car-sync-pro-default-rtdb.europe-west1.firebasedatabase.app",
       });
       console.log("✅ Firebase Admin başlatıldı");
     } catch (e: any) {
@@ -756,3 +756,396 @@ Sadece JSON. Türkçe.` }
 }
 
 startServer();
+  // ── 7. Proaktif AI Uyarıları ──────────────────────────
+  /**
+   * POST /api/gemini/proactive-alerts
+   * Araç geçmişini (loglar + randevular) bütünsel olarak analiz eder.
+   * Önceliklendirilmiş, aksiyona dönüştürülebilir uyarı listesi döndürür.
+   */
+  app.post("/api/gemini/proactive-alerts", requireApiKey, async (req, res) => {
+    const { vehicle, logs = [], appointments = [] } = req.body;
+    if (!vehicle) return res.status(400).json({ error: "vehicle gerekli" });
+
+    // Servis geçmişini prompt için özetleyelim
+    const logSummary = logs.length > 0
+      ? logs.map((l: any) =>
+          `- ${l.date}: ${l.type}, ${l.mileage} km, ${l.cost} TL${l.liters ? `, ${l.liters}L` : ''}${l.notes ? `, not: ${l.notes}` : ''}`
+        ).join('\n')
+      : 'Kayıt bulunmuyor.';
+
+    const apptSummary = appointments.length > 0
+      ? appointments.map((a: any) => `- ${a.date}: ${a.serviceType} (${a.status})`).join('\n')
+      : 'Randevu bulunmuyor.';
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [{
+            text: `Sen bir uzman araç bakım danışmanısın. Aşağıdaki araç verilerini analiz et ve sahibe proaktif uyarılar ver.
+
+ARAÇ: ${vehicle.year} ${vehicle.brand} ${vehicle.model}
+KILOMETRE: ${vehicle.mileage} km
+SAĞLIK SKORU: ${vehicle.healthScore}/100
+DURUM: ${vehicle.status}
+SON İŞLEM TARİHİ: ${vehicle.lastLogDate}
+
+SERVİS GEÇMİŞİ (son 30 kayıt):
+${logSummary}
+
+RANDEVULAR:
+${apptSummary}
+
+BUGÜNÜN TARİHİ: ${new Date().toISOString().split('T')[0]}
+
+Bu verilere bakarak sahip için en önemli 3-6 uyarı/öneri üret.
+Her uyarı gerçekten bu araca ve geçmişe özel olsun — genel klişe olmasın.
+Örneğin: "Son yağ değişimi 8 ay önce ve 12.000 km geçmiş, değiştirme zamanı."
+
+Şu JSON formatında döndür:
+{
+  "alerts": [
+    {
+      "id": "alert_1",
+      "type": "urgent|warning|info|tip",
+      "category": "maintenance|fuel|safety|cost|document",
+      "title": "kısa başlık (max 6 kelime)",
+      "message": "detaylı açıklama (1-2 cümle, bu araca özel)",
+      "actionLabel": "Butona yazılacak metin (opsiyonel)",
+      "actionRoute": "/uygun-rota (opsiyonel)",
+      "estimatedCost": 500,
+      "daysLeft": 30
+    }
+  ]
+}
+Sadece JSON. Türkçe.`
+          }]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      const parsed = JSON.parse(text || '{"alerts":[]}');
+      res.json(parsed);
+    } catch (err: any) {
+      if (err.code === "QUOTA") return res.status(429).json({ alerts: [] });
+      console.error("proactive-alerts hatası:", err);
+      res.status(500).json({ alerts: [] });
+    }
+  });
+
+  // ── 8. Detaylı Sağlık Skoru ────────────────────────────
+  /**
+   * POST /api/gemini/detailed-health
+   * Motor, yakıt, güvenlik, kasa, belgeler kategorilerinde
+   * ayrıntılı sağlık skoru ve trend analizi döndürür.
+   */
+  app.post("/api/gemini/detailed-health", requireApiKey, async (req, res) => {
+    const { vehicle, logs = [] } = req.body;
+    if (!vehicle) return res.status(400).json({ error: "vehicle gerekli" });
+
+    const logSummary = logs.length > 0
+      ? logs.map((l: any) => `- ${l.date}: ${l.type}, ${l.mileage} km, ${l.cost} TL`).join('\n')
+      : 'Kayıt bulunmuyor.';
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [{
+            text: `Sen bir araç sağlığı analistsin. Verilen araç ve servis geçmişini analiz ederek kategorik sağlık skoru üret.
+
+ARAÇ: ${vehicle.year} ${vehicle.brand} ${vehicle.model}
+KILOMETRE: ${vehicle.mileage} km
+MEVCUT SAĞLIK SKORU: ${vehicle.healthScore}/100
+DURUM: ${vehicle.status}
+SON İŞLEM: ${vehicle.lastLogDate}
+${vehicle.damageReport ? `HASAR RAPORU: ${JSON.stringify(vehicle.damageReport)}` : ''}
+
+SERVİS GEÇMİŞİ:
+${logSummary}
+
+BUGÜN: ${new Date().toISOString().split('T')[0]}
+
+Her kategoriyi 0-100 arasında puan ver. Geçmişteki bakım kayıtlarını, kilometre bilgisini ve araç yaşını dikkate al. Gerçekçi ve bu araca özel ol.
+
+Şu yapıda JSON döndür:
+{
+  "overall": 78,
+  "categories": {
+    "engine": { "score": 85, "label": "İyi", "note": "1 cümle not (bu araca özel)" },
+    "fuel": { "score": 72, "label": "Orta", "note": "1 cümle not" },
+    "safety": { "score": 90, "label": "Mükemmel", "note": "1 cümle not" },
+    "body": { "score": 65, "label": "Dikkat", "note": "1 cümle not" },
+    "documents": { "score": 95, "label": "Güncel", "note": "1 cümle not" }
+  },
+  "trend": "improving|stable|declining",
+  "summary": "2-3 cümle genel değerlendirme, bu araca özel",
+  "topRisk": "En kritik risk 1 cümlede"
+}
+Sadece JSON. Türkçe.`
+          }]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json(JSON.parse(text || '{}'));
+    } catch (err: any) {
+      if (err.code === "QUOTA") return res.status(429).json({ error: "Kota doldu." });
+      console.error("detailed-health hatası:", err);
+      res.status(500).json({ error: "Sağlık skoru hesaplanamadı." });
+    }
+  });
+
+  // ── 9. Kişisel Bakım Takvimi ───────────────────────────
+  /**
+   * POST /api/gemini/maintenance-schedule
+   * Geçmiş servis kayıtlarına bakarak önümüzdeki 12 ay için
+   * kişiselleştirilmiş, maliyet tahminli bakım takvimi oluşturur.
+   */
+  app.post("/api/gemini/maintenance-schedule", requireApiKey, async (req, res) => {
+    const { vehicle, logs = [] } = req.body;
+    if (!vehicle) return res.status(400).json({ error: "vehicle gerekli" });
+
+    const logSummary = logs.length > 0
+      ? logs.map((l: any) => `- ${l.date}: ${l.type}, ${l.mileage} km`).join('\n')
+      : 'Geçmiş kayıt yok.';
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [{
+            text: `Sen bir araç bakım uzmanısın. Aşağıdaki araca özel 12 aylık bakım takvimi oluştur.
+
+ARAÇ: ${vehicle.year} ${vehicle.brand} ${vehicle.model}
+MEVCUT KİLOMETRE: ${vehicle.mileage} km
+BUGÜN: ${currentYear}-${String(currentMonth).padStart(2,'0')}-01
+
+GEÇMİŞ SERVİS KAYITLARI:
+${logSummary}
+
+Geçmiş kayıtlara bakarak hangi bakımların ne zaman yapıldığını çıkar.
+Türkiye şartlarına uygun bakım aralıkları ve Türkiye fiyatları kullan (TL).
+Sadece gerçekten gerekli ayları listele (her ayı doldurma).
+
+Şu yapıda JSON döndür (YYYY-MM formatında başlayan aydan itibaren 12 ay):
+{
+  "schedule": [
+    {
+      "month": 3,
+      "year": ${currentYear},
+      "label": "Mart ${currentYear}",
+      "tasks": ["Yağ filtresi değişimi", "Motor yağı (5W-30)", "Hava filtresi kontrolü"],
+      "estimatedCost": 1200,
+      "priority": "critical|recommended|optional"
+    }
+  ]
+}
+Sadece JSON. Türkçe. Fiyatlar Türkiye piyasasına uygun olsun.`
+          }]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json(JSON.parse(text || '{"schedule":[]}'));
+    } catch (err: any) {
+      if (err.code === "QUOTA") return res.status(429).json({ schedule: [] });
+      console.error("maintenance-schedule hatası:", err);
+      res.status(500).json({ schedule: [] });
+  // ── 7. Türkiye Ulusal Yakıt Fiyatları ─────────────────
+  /**
+   * GET /api/fuel/national-prices
+   * EPDK referans fiyatlarını döndürür (önce cache, sonra fetch).
+   * Kaynak: akaryakitfiyatlari.net benzeri publik kaynak.
+   */
+  app.get("/api/fuel/national-prices", async (_req, res) => {
+    // 1 saatlik TTL cache
+    const CACHE_KEY = 'fuel_national_prices';
+    const CACHE_TTL = 60 * 60 * 1000;
+
+    const cached = (app as any)[CACHE_KEY];
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      return res.json(cached.data);
+    }
+
+    try {
+      // EPDK günlük referans fiyatları (https://www.epdk.gov.tr/Detay/Icerik/3-0-24-14225)
+      // Birincil kaynak erişilemezse sabit fallback kullan
+      const response = await fetch(
+        'https://api.collectapi.com/gasPrice/allCities?state=istanbul',
+        { headers: { 'content-type': 'application/json', authorization: `apikey ${process.env.COLLECT_API_KEY || ''}` }, signal: AbortSignal.timeout(5000) }
+      ).catch(() => null);
+
+      let prices: Record<string, number>;
+
+      if (response?.ok) {
+        const json = await response.json();
+        const data = json?.result?.[0];
+        prices = {
+          gasoline95: parseFloat(data?.sp95 || '0') || 0,
+          diesel: parseFloat(data?.diesel || '0') || 0,
+          lpg: parseFloat(data?.lpg || '0') || 0,
+          gasoline97: 0,
+          updatedAt: new Date().toISOString(),
+        };
+      } else {
+        // EPDK / Petder standart güncel fiyatları (elle güncellenen fallback)
+        // Bu değerler admin panelinden de güncellenebilir
+        const adminSnap = admin.apps.length > 0
+          ? await admin.firestore().collection('config').doc('fuelPrices').get().catch(() => null)
+          : null;
+
+        if (adminSnap?.exists) {
+          prices = adminSnap.data() as Record<string, number>;
+        } else {
+          // Hardcoded fallback — yaklaşık Mart 2026 Türkiye ortalaması
+          prices = {
+            gasoline95: 47.30,
+            gasoline97: 50.10,
+            diesel: 46.80,
+            lpg: 20.40,
+            updatedAt: new Date().toISOString(),
+            source: 'fallback',
+          };
+        }
+      }
+
+      (app as any)[CACHE_KEY] = { data: prices, ts: Date.now() };
+      res.json(prices);
+  app.post("/api/payment/initialize", optionalAuth, async (req, res) => {
+    const uid = (req as any).uid;
+    if (!uid) return res.status(401).json({ error: "Oturum açmalısınız" });
+
+    // ── Plan fiyat tablosu ─────────────────────────────
+    type PlanKey = 'individual-monthly' | 'individual-yearly' | 'family-monthly' | 'family-yearly' | 'fleet-monthly' | 'fleet-yearly';
+    const PLANS: Record<PlanKey, { price: number; name: string; itemId: string; tier: string; billing: string }> = {
+      'individual-monthly': { price: 49,    name: 'CarSync Pro Bireysel (Aylık)',        itemId: 'IND_M', tier: 'individual', billing: 'monthly' },
+      'individual-yearly':  { price: 499,   name: 'CarSync Pro Bireysel (Yıllık)',       itemId: 'IND_Y', tier: 'individual', billing: 'yearly'  },
+      'family-monthly':     { price: 99,    name: 'CarSync Pro Aile Paketi (Aylık)',     itemId: 'FAM_M', tier: 'family',     billing: 'monthly' },
+      'family-yearly':      { price: 999,   name: 'CarSync Pro Aile Paketi (Yıllık)',    itemId: 'FAM_Y', tier: 'family',     billing: 'yearly'  },
+      'fleet-monthly':      { price: 699,   name: 'CarSync Pro Filo Yönetimi (Aylık)',   itemId: 'FLT_M', tier: 'fleet',      billing: 'monthly' },
+      'fleet-yearly':       { price: 6999,  name: 'CarSync Pro Filo Yönetimi (Yıllık)', itemId: 'FLT_Y', tier: 'fleet',      billing: 'yearly'  },
+    };
+
+    // Geriye dönük uyumluluk: eski 'monthly'/'yearly' → 'individual-*'
+    let planKey = req.body.plan as string;
+    if (planKey === 'monthly')  planKey = 'individual-monthly';
+    if (planKey === 'yearly')   planKey = 'individual-yearly';
+
+    const plan = PLANS[planKey as PlanKey];
+    if (!plan) return res.status(400).json({ error: `Geçersiz plan: ${planKey}` });
+
+    let user: any = { name: 'Kullanıcı', email: 'user@example.com' };
+    if (admin.apps.length > 0) {
+      const userDoc = await admin.firestore().collection("users").doc(uid).get();
+      if (userDoc.exists) user = userDoc.data();
+    }
+
+    const basketId  = `B_${crypto.randomUUID().substring(0, 8)}`;
+    const paymentId = crypto.randomUUID();
+    const priceStr  = plan.price.toFixed(2);
+
+    const request = {
+      locale: Iyzipay.LOCALE.TR,
+      conversationId: paymentId,
+      price: priceStr,
+      paidPrice: priceStr,
+      currency: Iyzipay.CURRENCY.TRY,
+      basketId,
+      paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
+      callbackUrl: `${process.env.APP_URL || 'http://localhost:3000'}/api/payment/callback?uid=${uid}&plan=${planKey}`,
+      enabledInstallments: plan.price >= 500 ? [1, 2, 3, 6, 9, 12] : [1, 2, 3],
+      buyer: {
+        id: uid,
+        name: user.name || 'İsimsiz',
+        surname: user.surname || 'Kullanıcı',
+        gsmNumber: user.phoneNumber || '+905000000000',
+        email: user.email || 'user@example.com',
+        identityNumber: '11111111111',
+        lastLoginDate: '2023-01-01 00:00:00',
+        registrationDate: '2023-01-01 00:00:00',
+        registrationAddress: 'Istanbul',
+        ip: req.ip || '127.0.0.1',
+        city: 'Istanbul',
+        country: 'Turkey',
+        zipCode: '34000',
+      },
+      shippingAddress: { contactName: user.name || 'Kullanıcı', city: 'Istanbul', country: 'Turkey', address: 'Istanbul', zipCode: '34000' },
+      billingAddress:  { contactName: user.name || 'Kullanıcı', city: 'Istanbul', country: 'Turkey', address: 'Istanbul', zipCode: '34000' },
+      basketItems: [{
+        id: plan.itemId,
+        name: plan.name,
+        category1: 'Subscription',
+        itemType: Iyzipay.BASKET_ITEM_TYPE.VIRTUAL,
+        price: priceStr,
+      }],
+    };
+
+    iyzipay.checkoutFormInitialize.create(request, (err: any, result: any) => {
+      if (err || result.status !== 'success') {
+        console.error("Iyzico Init Hata:", err || result);
+        return res.status(500).json({ error: "Ödeme başlatılamadı" });
+      }
+      res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token, plan: planKey });
+    });
+  });
+
+  /** Ödeme Callback (Iyzico'dan dönüş) */
+  app.post("/api/payment/callback", async (req, res) => {
+    const { token } = req.body;
+    const uid     = req.query.uid  as string;
+    const planKey = req.query.plan as string || 'individual-yearly';
+
+    if (!token || !uid) return res.redirect('/#/premium?status=error');
+
+    // Plan bilgisinden tier ve billing çıkar
+    const [tier = 'individual', billing = 'yearly'] = planKey.split('-');
+    const PRICES: Record<string, number> = {
+      'individual-monthly': 49,   'individual-yearly': 499,
+      'family-monthly':     99,   'family-yearly':     999,
+      'fleet-monthly':      699,  'fleet-yearly':      6999,
+    };
+    const amount = PRICES[planKey] ?? 499;
+
+    iyzipay.checkoutForm.retrieve({ token }, async (err: any, result: any) => {
+      if (err || result.paymentStatus !== 'SUCCESS') {
+        console.error("Iyzico Callback Hata:", err || result);
+        return res.redirect('/#/premium?status=failed');
+      }
+
+      if (admin.apps.length > 0) {
+        try {
+          const expiresAt = new Date();
+          if (billing === 'yearly') {
+            expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+          } else {
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+          }
+
+          // users/{uid} ana doc
+          await admin.firestore().collection("users").doc(uid).set({
+            isPremium:  true,
+            premiumTier: tier,            // 'individual' | 'family' | 'fleet'
+            premiumPlan: billing,         // 'monthly' | 'yearly'
+            premiumSince: admin.firestore.FieldValue.serverTimestamp(),
+            premiumExpiresAt: expiresAt.toISOString(),
+            lastPaymentId: result.paymentId,
+          }, { merge: true });
+
+          // users/{uid}/profile/premium sub-doc (PremiumContext okur)
+          await admin.firestore()
+            .collection("users").doc(uid)
+            .collection("profile").doc("premium")
+            .set({
+              isPremium: true,
+              plan: `${tier}-${billing}`,
+              tier,
+              billing,
+              expiresAt: expiresAt.toISOString(),
+              subscriptionId: result.paymentId,
+              verifiedAt: new Date().toISOString(),
+            }, { merge: true });

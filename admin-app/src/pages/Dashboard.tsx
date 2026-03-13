@@ -220,6 +220,7 @@ export const Dashboard: React.FC = () => {
                                 </th>
                                 <th className="px-8 py-5 font-black">Kullanıcı Bilgisi</th>
                                 <th className="px-8 py-5 font-black">Rol</th>
+                                <th className="px-8 py-5 font-black">Plan</th>
                                 <th className="px-8 py-5 font-black">Durum</th>
                                 <th className="px-8 py-5 font-black text-right">Eylemler</th>
                             </tr>
@@ -261,6 +262,19 @@ export const Dashboard: React.FC = () => {
                                         <span className={`text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-lg border ${user.role === 'admin' ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400' : 'bg-white/5 border-white/10 text-[var(--text-secondary)]'}`}>
                                             {user.role || 'user'}
                                         </span>
+                                    </td>
+                                    <td className="px-8 py-5">
+                                        {user.isPremium ? (
+                                            <span className={`text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-lg border ${
+                                                user.premiumTier === 'fleet'  ? 'bg-cyan-500/10   border-cyan-500/20   text-cyan-400'   :
+                                                user.premiumTier === 'family' ? 'bg-violet-500/10 border-violet-500/20 text-violet-400' :
+                                                                                'bg-amber-500/10  border-amber-500/20  text-amber-400'
+                                            }`}>
+                                                {user.premiumTier === 'fleet' ? 'Filo' : user.premiumTier === 'family' ? 'Aile' : 'Bireysel'}
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] text-[var(--text-muted)] font-medium">Ücretsiz</span>
+                                        )}
                                     </td>
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-2">

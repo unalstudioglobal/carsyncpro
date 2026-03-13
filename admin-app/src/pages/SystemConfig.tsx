@@ -10,7 +10,18 @@ export const SystemConfig: React.FC = () => {
         appVersion: '2.4.0',
         maintenanceMode: false,
         debugMode: true,
-        supportEmail: 'support@carsyncpro.com'
+        supportEmail: 'support@carsyncpro.com',
+        announcement: '',
+        // ── AI Kota Kontrolleri ──────────────────────────
+        aiEnabled: true,
+        aiQuotaFree: 3,
+        aiQuotaIndividual: 100,
+        aiQuotaFamily: 300,
+        aiQuotaFleet: -1,         // -1 = sınırsız
+        aiDamageDetection: true,
+        aiChatEnabled: true,
+        aiPredictiveEnabled: true,
+        aiInsightsEnabled: true,
     });
 
     useEffect(() => {
@@ -134,6 +145,72 @@ export const SystemConfig: React.FC = () => {
                         >
                             <RefreshCw size={14} /> Sistem Önbelleğini Temizle
                         </button>
+                    </div>
+                </div>
+
+                {/* ── AI Kota Kontrolü ──────────────────────── */}
+                <div className="glass rounded-[40px] border-white/5 p-8 space-y-6">
+                    <div>
+                        <h2 className="text-xl font-black text-white uppercase tracking-widest">Yapay Zeka Kotaları</h2>
+                        <p className="text-white/30 text-xs font-medium mt-1">Plan bazlı aylık AI çağrısı limitleri. -1 = Sınırsız</p>
+                    </div>
+
+                    {/* Master switch */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <div>
+                            <h4 className="text-sm font-bold text-white">AI Modülü</h4>
+                            <p className="text-[10px] text-white/30 uppercase tracking-widest font-black">Tüm AI özelliklerini etkinleştirir/devre dışı bırakır</p>
+                        </div>
+                        <button
+                            onClick={() => setConfig({ ...config, aiEnabled: !config.aiEnabled })}
+                            className={`w-12 h-6 rounded-full transition-all relative ${config.aiEnabled ? 'bg-violet-500' : 'bg-white/10'}`}
+                        >
+                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${config.aiEnabled ? 'left-7' : 'left-1'}`} />
+                        </button>
+                    </div>
+
+                    {/* Kota giriş alanları */}
+                    <div className="grid grid-cols-2 gap-4">
+                        {([
+                            { key: 'aiQuotaFree',       label: 'Ücretsiz Plan',     color: 'text-slate-400'   },
+                            { key: 'aiQuotaIndividual',  label: 'Bireysel Premium',  color: 'text-amber-400'   },
+                            { key: 'aiQuotaFamily',      label: 'Aile Paketi',       color: 'text-violet-400'  },
+                            { key: 'aiQuotaFleet',       label: 'Filo (-1=∞)',       color: 'text-cyan-400'    },
+                        ] as const).map(({ key, label, color }) => (
+                            <div key={key} className="bg-white/5 rounded-2xl border border-white/5 p-4">
+                                <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${color}`}>{label}</p>
+                                <input
+                                    type="number"
+                                    value={(config as any)[key]}
+                                    onChange={e => setConfig({ ...config, [key]: parseInt(e.target.value) || 0 })}
+                                    className="w-full bg-transparent text-white font-bold text-xl outline-none border-b border-white/10 focus:border-gold/50 transition-colors pb-1"
+                                />
+                                <p className="text-[10px] text-white/20 mt-1">çağrı / ay</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* AI Feature toggles */}
+                    <div className="space-y-2">
+                        {([
+                            { key: 'aiDamageDetection',  label: 'Hasar Tespiti',       desc: 'AI fotoğraf analizi' },
+                            { key: 'aiChatEnabled',       label: 'Araç Sohbet Botu',    desc: 'CarChat modülü'      },
+                            { key: 'aiPredictiveEnabled', label: 'Tahmine Dayalı Bakım',desc: 'PredictiveMaintenance'},
+                            { key: 'aiInsightsEnabled',   label: 'AI İçgörüler',        desc: 'Proaktif uyarı sistemi'},
+                        ] as const).map(({ key, label, desc }) => (
+                            <div key={key} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <div>
+                                    <h4 className="text-sm font-bold text-white">{label}</h4>
+                                    <p className="text-[10px] text-white/30 uppercase tracking-widest font-black">{desc}</p>
+                                </div>
+                                <button
+                                    onClick={() => setConfig({ ...config, [key]: !(config as any)[key] })}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${(config as any)[key] ? 'bg-violet-500' : 'bg-white/10'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${(config as any)[key] ? 'left-7' : 'left-1'}`} />
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
