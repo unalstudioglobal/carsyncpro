@@ -12,9 +12,22 @@ import {
   deleteDoc, serverTimestamp, query, where, arrayUnion, arrayRemove
 } from 'firebase/firestore';
 import { db, auth } from '../firebaseConfig';
-import { addVehicle, fetchVehicles, updateVehicle, fetchLogs } from '../services/firestoreService';
+import {
+  addVehicle,
+  fetchVehicles,
+  updateVehicle,
+  fetchLogs,
+  fetchGarageGroups,
+  createGarageGroup,
+  joinGarageGroup,
+  addVehicleToGroup,
+  removeVehicleFromGroup,
+  fetchGroupVehicles,
+  leaveGarageGroup,
+  getUserProfile
+} from '../services/firestoreService';
 import { getSetting, saveSetting, removeSetting } from '../services/settingsService';
-import { Vehicle, ServiceLog } from '../types';
+import { Vehicle, ServiceLog, GarageGroup, UserProfile } from '../types';
 import { toast } from '../services/toast';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -41,14 +54,8 @@ interface GarageInvite {
   inviteCode: string;
 }
 
-interface SharedGarage {
-  id: string;
-  name: string;
-  ownerId: string;
-  members: GarageMember[];
-  invites: GarageInvite[];
-  sharedVehicleIds: string[];
-  createdAt: string;
+interface SharedGarage extends GarageGroup {
+  resolvedMembers?: GarageMember[];
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -69,8 +76,8 @@ const loadGarage = (): SharedGarage | null => {
 const saveGarage = (g: SharedGarage) =>
   saveSetting('familyGroup', g);
 
-const getInitials = (name: string) =>
-  name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+const getInitials = (name?: string) =>
+  name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??';
 
 const getAvatarColor = (uid: string) => {
   const colors = ['bg-indigo-500', 'bg-violet-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500'];
@@ -396,116 +403,162 @@ export const FamilyGarage: React.FC = () => {
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [logs, setLogs] = useState<ServiceLog[]>([]);
-  const [garage, setGarage] = useState<SharedGarage | null>(null);
+  const [groups, setGroups] = useState<GarageGroup[]>([]);
+  const [activeGroup, setActiveGroup] = useState<SharedGarage | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'members' | 'vehicles' | 'invites'>('members');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
 
-  // Simulate current user
+  // Current user info
   const currentUser = useMemo(() => ({
-    uid: auth.currentUser?.uid || 'demo-user',
-    email: auth.currentUser?.email || 'demo@carsync.app',
-    name: auth.currentUser?.displayName || 'Demo Kullanıcı',
-  }), []);
+    uid: auth.currentUser?.uid || 'anonymous',
+    email: auth.currentUser?.email || '',
+    name: auth.currentUser?.displayName || t('garage.user_anon'),
+  }), [t]);
 
   useEffect(() => {
     const load = async () => {
-      const [v, l] = await Promise.all([fetchVehicles(), fetchLogs()]);
-      setVehicles(v);
-      setLogs(l);
-      setGarage(loadGarage());
-      setLoading(false);
+      setLoading(true);
+      try {
+        const [v, l, gs] = await Promise.all([
+          fetchVehicles(),
+          fetchLogs(),
+          fetchGarageGroups()
+        ]);
+        setVehicles(v);
+        setLogs(l);
+        setGroups(gs);
+        
+        if (gs.length > 0) {
+          // Bir grup seç veya ilkini al
+          await loadGroupDetails(gs[0]);
+        }
+      } catch (err) {
+        console.error("Load error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, []);
 
-  const isOwner = garage?.ownerId === currentUser.uid;
-  const currentMember = garage?.members.find(m => m.uid === currentUser.uid);
-
-  const handleCreate = (name: string) => {
-    const newGarage: SharedGarage = {
-      id: Date.now().toString(),
-      name,
-      ownerId: currentUser.uid,
-      members: [{
-        uid: currentUser.uid,
-        email: currentUser.email,
-        name: currentUser.name,
-        role: 'owner',
-        joinedAt: new Date().toISOString(),
-      }],
-      invites: [],
-      sharedVehicleIds: [],
-      createdAt: new Date().toISOString(),
-    };
-    setGarage(newGarage);
-    saveGarage(newGarage);
+  const loadGroupDetails = async (baseGroup: GarageGroup) => {
+    // Üye bilgilerini çöz
+    const members: GarageMember[] = [];
+    for (const uid of baseGroup.memberUids) {
+      const profile = await getUserProfileManual(uid);
+      members.push({
+        uid: profile.uid,
+        email: profile.email,
+        name: profile.name || profile.email.split('@')[0],
+        role: uid === baseGroup.ownerId ? 'owner' : 'member', // Basit rol ataması
+        joinedAt: new Date().toISOString() // Gerçek DB'de saklanabilir
+      });
+    }
+    setActiveGroup({ ...baseGroup, resolvedMembers: members });
   };
 
-  const handleJoin = (code: string) => {
-    // In production: look up garage by code via Firestore
-    // For demo: show success message
-    toast.info(t('garage.join_req_sent', { c: code }));
+  // Profile cache/fetch helper
+  const getUserProfileManual = async (uid: string): Promise<any> => {
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+    return snap.exists() ? snap.data() : { uid, email: 'unknown@user.com' };
+  };
+
+  const isOwner = activeGroup?.ownerId === currentUser.uid;
+
+  const handleCreate = async (name: string) => {
+    try {
+      const gid = await createGarageGroup(name);
+      if (gid) {
+        toast.success(t('garage.group_created'));
+        const gs = await fetchGarageGroups();
+        setGroups(gs);
+        const newGroup = gs.find(g => g.id === gid);
+        if (newGroup) await loadGroupDetails(newGroup);
+      }
+    } catch (err) {
+      toast.error(t('common.error'));
+    }
+  };
+
+  const handleJoin = async (code: string) => {
+    try {
+      const success = await joinGarageGroup(code);
+      if (success) {
+        toast.success(t('garage.join_success'));
+        const gs = await fetchGarageGroups();
+        setGroups(gs);
+        if (gs.length > 0) await loadGroupDetails(gs[gs.length - 1]);
+      } else {
+        toast.error(t('garage.invalid_code'));
+      }
+    } catch (err) {
+      toast.error(t('common.error'));
+    }
+  };
+
+  const handleInviteToCode = () => {
+     // Invite code is already generated in Firestore service (inviteCode field)
+     setShowInviteModal(true);
   };
 
   const handleInviteByEmail = (email: string, role: MemberRole) => {
-    if (!garage) return;
-    const invite: GarageInvite = {
-      id: Date.now().toString(),
-      email, role,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
-      inviteCode: generateCode(),
-    };
-    const updated = { ...garage, invites: [...garage.invites, invite] };
-    setGarage(updated); saveGarage(updated);
-    // In production: send email via Firebase Cloud Functions
-    toast.success(t('garage.email_inv_sent', { e: email }));
+    // In this MVP, we use invite codes. Email sending requires Cloud Functions.
+    toast.info(t('garage.email_inv_not_ready'));
   };
 
   const handleRoleChange = (uid: string, role: MemberRole) => {
-    if (!garage) return;
-    const updated = { ...garage, members: garage.members.map(m => m.uid === uid ? { ...m, role } : m) };
-    setGarage(updated); saveGarage(updated);
+    // Roles are currently fixed (Owner / Member) via UID check
+    toast.info(t('garage.role_locked'));
   };
 
   const handleRemoveMember = (uid: string) => {
-    if (!garage) return;
-    const updated = { ...garage, members: garage.members.filter(m => m.uid !== uid) };
-    setGarage(updated); saveGarage(updated);
+    // Firestore'da memberUids array'inden çıkar
+    toast.info("Gelecek sürümde aktif edilecek.");
   };
 
-  const handleToggleVehicle = (vehicleId: string) => {
-    if (!garage) return;
-    const shared = garage.sharedVehicleIds.includes(vehicleId)
-      ? garage.sharedVehicleIds.filter(id => id !== vehicleId)
-      : [...garage.sharedVehicleIds, vehicleId];
-    const updated = { ...garage, sharedVehicleIds: shared };
-    setGarage(updated); saveGarage(updated);
+  const handleToggleVehicle = async (vehicleId: string) => {
+    if (!activeGroup) return;
+    const isShared = activeGroup.vehicleIds.includes(vehicleId);
+    
+    try {
+      if (isShared) {
+        await removeVehicleFromGroup(activeGroup.id, vehicleId);
+      } else {
+        await addVehicleToGroup(activeGroup.id, vehicleId);
+      }
+      // Reload details
+      const gs = await fetchGarageGroups();
+      const current = gs.find(g => g.id === activeGroup.id);
+      if (current) await loadGroupDetails(current);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleLeave = () => {
-    if (!garage) return;
+  const handleLeave = async () => {
+    if (!activeGroup) return;
     if (!window.confirm(t('garage.leave_confirm'))) return;
-    if (isOwner) {
-      removeSetting('familyGroup');
-      setGarage(null);
-    } else {
-      const updated = { ...garage, members: garage.members.filter(m => m.uid !== currentUser.uid) };
-      setGarage(updated); saveGarage(updated);
+    
+    try {
+      await leaveGarageGroup(activeGroup.id);
+      setActiveGroup(null);
+      const gs = await fetchGarageGroups();
+      setGroups(gs);
+      toast.success(t('garage.left_group'));
+    } catch (err) {
+      toast.error(t('common.error'));
     }
   };
 
   const handleCancelInvite = (inviteId: string) => {
-    if (!garage) return;
-    const updated = { ...garage, invites: garage.invites.filter(i => i.id !== inviteId) };
-    setGarage(updated); saveGarage(updated);
+    // Invite logic is code-based şimdilik
   };
 
-  const inviteCode = garage?.invites[0]?.inviteCode || generateCode();
+  const inviteCode = activeGroup?.inviteCode || '...';
   const pendingInvites = garage?.invites.filter(i => i.status === 'pending') || [];
 
   if (loading) {
@@ -523,7 +576,7 @@ export const FamilyGarage: React.FC = () => {
 
   // ── No Garage State ──────────────────────────────────────────────────────
 
-  if (!garage) {
+  if (!activeGroup) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col">
         <div className="sticky top-0 z-20 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800/50 px-4 pt-12 pb-4">
@@ -591,8 +644,8 @@ export const FamilyGarage: React.FC = () => {
             <ChevronLeft size={20} className="text-slate-300" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-white truncate">{garage.name}</h1>
-            <p className="text-slate-500 text-xs">{t('garage.counts', { m: garage.members.length, v: garage.sharedVehicleIds.length })}</p>
+            <h1 className="text-lg font-bold text-white truncate">{activeGroup.name}</h1>
+            <p className="text-slate-500 text-xs">{t('garage.counts', { m: activeGroup.memberUids.length, v: activeGroup.vehicleIds.length })}</p>
           </div>
           {isOwner && (
             <button
@@ -607,9 +660,9 @@ export const FamilyGarage: React.FC = () => {
         {/* Tab bar */}
         <div className="flex bg-slate-800/40 rounded-2xl p-1 border border-slate-700/30">
           {([
-            { key: 'members', label: t('garage.tab_m', { c: garage.members.length }) },
-            { key: 'vehicles', label: t('garage.tab_v', { c: garage.sharedVehicleIds.length }) },
-            { key: 'invites', label: t('garage.tab_i', { c: pendingInvites.length }) },
+            { key: 'members', label: t('garage.tab_m', { c: activeGroup.memberUids.length }) },
+            { key: 'vehicles', label: t('garage.tab_v', { c: activeGroup.vehicleIds.length }) },
+            { key: 'invites', label: t('garage.tab_i', { c: 0 }) },
           ] as const).map(({ key, label }) => (
             <button
               key={key}
@@ -629,19 +682,19 @@ export const FamilyGarage: React.FC = () => {
             {/* Member stack preview */}
             <div className="flex items-center gap-2 mb-2">
               <div className="flex -space-x-2">
-                {garage.members.slice(0, 5).map(m => (
+                {activeGroup.resolvedMembers?.slice(0, 5).map(m => (
                   <div key={m.uid} className={`w-8 h-8 rounded-full ${getAvatarColor(m.uid)} border-2 border-slate-950 flex items-center justify-center text-white text-xs font-bold`}>
                     {getInitials(m.name)}
                   </div>
                 ))}
               </div>
-              {garage.members.length > 5 && (
-                <span className="text-slate-500 text-xs">{t('garage.more_m', { c: garage.members.length - 5 })}</span>
+              {(activeGroup.resolvedMembers?.length || 0) > 5 && (
+                <span className="text-slate-500 text-xs">{t('garage.more_m', { c: (activeGroup.resolvedMembers?.length || 0) - 5 })}</span>
               )}
             </div>
 
             <div className="bg-slate-800/30 border border-slate-700/30 rounded-2xl px-4">
-              {garage.members.map(member => (
+              {activeGroup.resolvedMembers?.map(member => (
                 <MemberCard
                   key={member.uid}
                   member={member}
@@ -682,7 +735,7 @@ export const FamilyGarage: React.FC = () => {
             <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
               <Info size={13} className="text-blue-400 flex-shrink-0 mt-0.5" />
               <p className="text-blue-300/80 text-xs leading-relaxed">
-                {t('garage.info_v')}
+                {t('garage.info_v_real')}
               </p>
             </div>
             <div className="space-y-3">
@@ -691,7 +744,7 @@ export const FamilyGarage: React.FC = () => {
                   key={v.id}
                   vehicle={v}
                   logs={logs}
-                  isShared={garage.sharedVehicleIds.includes(v.id)}
+                  isShared={activeGroup.vehicleIds.includes(v.id)}
                   onToggle={() => handleToggleVehicle(v.id)}
                   t={t}
                 />
@@ -707,63 +760,17 @@ export const FamilyGarage: React.FC = () => {
 
         {/* Invites tab */}
         {activeTab === 'invites' && (
-          <>
-            {pendingInvites.length > 0 ? (
-              <div className="space-y-3">
-                {pendingInvites.map(invite => {
-                  const cfg = {
-                    color: invite.role === 'owner' ? 'text-amber-400' : invite.role === 'admin' ? 'text-indigo-400' : invite.role === 'member' ? 'text-blue-400' : 'text-slate-400',
-                    bg: invite.role === 'owner' ? 'bg-amber-500/10' : invite.role === 'admin' ? 'bg-indigo-500/10' : invite.role === 'member' ? 'bg-blue-500/10' : 'bg-slate-500/10',
-                    border: invite.role === 'owner' ? 'border-amber-500/20' : invite.role === 'admin' ? 'border-indigo-500/20' : invite.role === 'member' ? 'border-blue-500/20' : 'border-slate-500/20',
-                  };
-                  const expiry = new Date(invite.expiresAt);
-                  const daysLeft = Math.ceil((expiry.getTime() - Date.now()) / 86400000);
-                  return (
-                    <div key={invite.id} className="bg-slate-800/40 border border-slate-700/30 rounded-2xl p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-white text-sm font-semibold">{invite.email}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color} border ${cfg.border} font-medium`}>
-                              {t('garage.role_' + invite.role)}
-                            </span>
-                            <span className="text-xs text-amber-400 flex items-center gap-1">
-                              <Clock size={10} />
-                              {daysLeft > 0 ? t('garage.days_left', { d: daysLeft }) : t('garage.expired')}
-                            </span>
-                          </div>
-                        </div>
-                        {isOwner && (
-                          <button onClick={() => handleCancelInvite(invite.id)} className="w-7 h-7 rounded-lg bg-slate-700 flex items-center justify-center hover:bg-red-500/20 transition-all">
-                            <X size={13} className="text-slate-400" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 bg-slate-700/40 rounded-xl px-3 py-2">
-                        <span className="text-slate-500 text-xs">{t('garage.code_lbl')}</span>
-                        <span className="font-mono font-bold text-white text-sm tracking-widest">{invite.inviteCode}</span>
-                        <button onClick={() => navigator.clipboard.writeText(invite.inviteCode)} className="ml-auto">
-                          <Copy size={12} className="text-slate-500" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-10">
-                <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3">
-                  <Mail size={24} className="text-slate-600" />
-                </div>
-                <p className="text-slate-500 text-sm">{t('garage.no_inv')}</p>
-                {isOwner && (
-                  <button onClick={() => setShowInviteModal(true)} className="mt-4 px-5 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">
-                    {t('garage.send_inv')}
-                  </button>
-                )}
-              </div>
+          <div className="text-center py-10">
+            <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center mx-auto mb-3">
+              <Mail size={24} className="text-slate-600" />
+            </div>
+            <p className="text-slate-500 text-sm">{t('garage.no_inv')}</p>
+            {isOwner && (
+              <button onClick={() => setShowInviteModal(true)} className="mt-4 px-5 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">
+                {t('garage.send_inv')}
+              </button>
             )}
-          </>
+          </div>
         )}
       </div>
 

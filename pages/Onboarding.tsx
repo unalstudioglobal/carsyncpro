@@ -6,6 +6,7 @@ import {
   Check, Sparkles, Zap, Users, QrCode, Fuel,
   ArrowRight, Star, Lock, ChevronLeft
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { addVehicle } from '../services/firestoreService';
 import { getSetting, saveSetting } from '../services/settingsService';
 
@@ -110,29 +111,26 @@ const WelcomeStep: React.FC<{ onNext: () => void; t: any }> = ({ onNext, t }) =>
         className="anim-scale relative mb-8"
         style={{ animationDelay: '0.1s', opacity: visible ? undefined : 0 }}
       >
-        <div style={{
-          width: 100, height: 100,
-          borderRadius: 28,
-          background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 60px rgba(99,102,241,0.4), 0 20px 40px rgba(0,0,0,0.4)',
-          position: 'relative', overflow: 'hidden',
-        }}>
+        <div 
+          className="logo-3d"
+          style={{
+            width: 100, height: 100,
+            borderRadius: 28,
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', overflow: 'hidden',
+          }}
+        >
           <Car size={48} color="white" />
           {/* Shimmer */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%)',
-            animation: 'shimmerSlide 2.5s ease-in-out infinite',
-          }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer" />
         </div>
         {/* Pulse rings */}
         {[1, 2, 3].map(i => (
-          <div key={i} style={{
+          <div key={i} className="animate-float" style={{
             position: 'absolute', inset: -i * 14,
             borderRadius: 28 + i * 4,
             border: `1px solid rgba(99,102,241,${0.15 - i * 0.04})`,
-            animation: `float ${2 + i * 0.4}s ease-in-out infinite`,
             animationDelay: `${i * 0.3}s`,
           }} />
         ))}
@@ -170,24 +168,11 @@ const WelcomeStep: React.FC<{ onNext: () => void; t: any }> = ({ onNext, t }) =>
       <div className="anim-fade-up relative w-full max-w-xs" style={{ animationDelay: '0.5s' }}>
         <button
           onClick={onNext}
-          style={{
-            width: '100%', padding: '16px 24px',
-            borderRadius: 20,
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            color: 'white', fontWeight: 800, fontSize: 16,
-            border: 'none', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            boxShadow: '0 8px 32px rgba(99,102,241,0.4)',
-            position: 'relative', overflow: 'hidden',
-          }}
+          className="btn-premium-3d w-full"
         >
           <span>{t('onboarding.w_btn')}</span>
           <ArrowRight size={18} />
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%)',
-            animation: 'shimmerSlide 2s ease-in-out infinite',
-          }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-shimmer" />
         </button>
 
         <p style={{ color: '#475569', fontSize: 11, marginTop: 14, textAlign: 'center' }}>
@@ -488,6 +473,15 @@ const NotificationsStep: React.FC<{
 
   const requestPermission = async () => {
     setPermState('requesting');
+    
+    // Native platform kontrolü
+    if (Capacitor.isNativePlatform()) {
+      // Native'de şu an eklenti kurulu değil, bu yüzden sadece bilgilendirme yapıyoruz.
+      // Gelecekte @capacitor/push-notifications eklendiğinde burası güncellenecek.
+      setPermState('denied');
+      return;
+    }
+
     if ('Notification' in window) {
       const result = await Notification.requestPermission();
       setPermState(result === 'granted' ? 'granted' : 'denied');
@@ -516,33 +510,28 @@ const NotificationsStep: React.FC<{
       </div>
 
       {/* Notification preview cards */}
-      <div className="flex-1 space-y-3">
+      <div className="flex-1 space-y-4">
         {[
-          { icon: Wrench, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', title: 'Yağ Değişimi Zamanı', body: 'Son değişimden 9.800 km geçti — yakında servis gerekiyor.' },
-          { icon: Shield, color: '#10b981', bg: 'rgba(16,185,129,0.12)', title: 'Sigorta Yenileme', body: 'Trafik sigortanızın bitimine 14 gün kaldı.' },
-          { icon: Bell, color: '#6366f1', bg: 'rgba(99,102,241,0.12)', title: 'Servis Randevusu', body: 'Yarın saat 10:00 — Oto Servis Kurumsal randevunuz var.' },
+          { icon: Wrench, color: '#f59e0b', title: 'Yağ Değişimi Zamanı', body: 'Son değişimden 9.800 km geçti.' },
+          { icon: Shield, color: '#10b981', title: 'Sigorta Yenileme', body: 'Trafik sigortanızın bitimine 14 gün kaldı.' },
+          { icon: Bell, color: '#6366f1', title: 'Servis Randevusu', body: 'Yarın saat 10:00 randevunuz var.' },
         ].map((n, i) => {
           const NIcon = n.icon;
           return (
             <div
               key={i}
-              className="anim-fade-up"
-              style={{
-                animationDelay: `${i * 0.15}s`,
-                background: n.bg,
-                border: `1px solid ${n.color}25`,
-                borderRadius: 18, padding: 14,
-                display: 'flex', gap: 12, alignItems: 'flex-start',
-              }}
+              className={`glass-panel-premium p-4 flex gap-4 items-center anim-fade-up shimmer-card`}
+              style={{ animationDelay: `${i * 0.15}s` }}
             >
               <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: `${n.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                width: 44, height: 44, borderRadius: 14,
+                background: `${n.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                border: `1px solid ${n.color}30`
               }}>
-                <NIcon size={16} color={n.color} />
+                <NIcon size={20} color={n.color} />
               </div>
               <div>
-                <p style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 13, marginBottom: 3 }}>{n.title}</p>
+                <p style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{n.title}</p>
                 <p style={{ color: '#64748b', fontSize: 12, lineHeight: 1.4 }}>{n.body}</p>
               </div>
             </div>
@@ -745,12 +734,15 @@ export const Onboarding: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div style={{
-      minHeight: '100dvh', background: '#0a0f1e',
-      display: 'flex', flexDirection: 'column',
-      position: 'fixed', inset: 0, zIndex: 100,
-      overflowY: 'hidden',
-    }}>
+    <div 
+      className="pt-safe pb-safe"
+      style={{
+        minHeight: '100dvh', background: '#0a0f1e',
+        display: 'flex', flexDirection: 'column',
+        position: 'fixed', inset: 0, zIndex: 100,
+        overflowY: 'hidden',
+      }}
+    >
       {/* Progress */}
       <ProgressBar step={step} />
 

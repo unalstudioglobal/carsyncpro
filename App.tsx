@@ -51,6 +51,7 @@ const ProtectedLayout = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
 };
 
 import { initNotifications } from './services/notificationService';
+import { App as CapApp } from '@capacitor/app';
 
 const App: React.FC = () => {
   // Initialize state based on localStorage to avoid flash of login screen if already in demo mode
@@ -89,7 +90,23 @@ const App: React.FC = () => {
       }
     });
 
-    return () => unsubscribe();
+    // Deep Linking Listener
+    CapApp.addListener('appUrlOpen', (data: any) => {
+      const url = new URL(data.url);
+      const path = url.pathname || url.hostname;
+      if (path.includes('dashboard')) {
+        const parts = path.split('/');
+        const id = parts[parts.length - 1];
+        if (id) window.location.hash = `#/dashboard/${id}`;
+      } else if (path.includes('add-record')) {
+        window.location.hash = `#/add-record`;
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      CapApp.removeAllListeners();
+    };
   }, []);
 
   // Maintenance Mode Check

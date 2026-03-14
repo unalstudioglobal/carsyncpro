@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, indexedDBLocalPersistence, setPersistence } from "firebase/auth";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
@@ -18,7 +18,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// Standart getAuth kullanımı ve manuel persistence ayarı
 export const auth = getAuth(app);
+setPersistence(auth, indexedDBLocalPersistence).catch(err => {
+  console.error("Firebase persistence error:", err);
+});
+
 export const storage = getStorage(app);
 
 /**

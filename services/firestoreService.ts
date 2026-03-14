@@ -22,11 +22,12 @@ import {
   deleteDoc,
   serverTimestamp,
   query,
+  where,
   orderBy,
   Timestamp,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-import { Vehicle, ServiceLog, Appointment, Document, TireSet } from "../types";
+import { Vehicle, ServiceLog, Appointment, Document, TireSet, GarageGroup, BudgetGoal } from "../types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,8 @@ const getUid = (): string =>
 const vehiclesCol = () => collection(db, "users", getUid(), "vehicles");
 const logsCol = () => collection(db, "users", getUid(), "logs");
 const appointmentsCol = () => collection(db, "users", getUid(), "appointments");
+const groupsCol = () => collection(db, "groups");
+const budgetGoalsCol = () => collection(db, "users", getUid(), "budgetGoals");
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const LS_VEHICLES = "ls_vehicles";
@@ -725,4 +728,209 @@ export const syncLocalToFirestore = async () => {
     }
   }
   lsSet(LS_TIRES, localTires);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GARAGE GROUPS (Aile Garajı)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Kullanıcının dahil olduğu grupları getirir. */
+export const fetchGarageGroups = async (): Promise<GarageGroup[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const q = query(groupsCol(), where("memberUids", "array-contains", getUid()));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as GarageGroup));
+    } catch (err) {
+      console.error("Error fetching garage groups:", err);
+    }
+  }
+  return [];
+};
+
+/** Yeni bir aile grubu oluşturur. */
+export const createGarageGroup = async (name: string): Promise<string> => {
+  const uid = getUid();
+  const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+  
+  if (await isFirestoreAvailable()) {
+    const groupData: Omit<GarageGroup, 'id'> = {
+      name,
+      ownerId: uid,
+      inviteCode,
+      memberUids: [uid],
+      vehicleIds: [],
+      createdAt: serverTimestamp()
+    };
+    const ref = await addDoc(groupsCol(), groupData);
+    return ref.id;
+  }
+  return "";
+};
+
+/** Davet kodu ile gruba katılır. */
+export const joinGarageGroup = async (inviteCode: string): Promise<boolean> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const q = query(groupsCol(), where("inviteCode", "==", inviteCode.toUpperCase()));
+      const snap = await getDocs(q);
+      if (snap.empty) return false;
+
+      const groupDoc = snap.docs[0];
+      const groupData = groupDoc.data() as GarageGroup;
+      const uid = getUid();
+
+      if (!groupData.memberUids.includes(uid)) {
+        await updateDoc(groupDoc.ref, {
+          memberUids: [...groupData.memberUids, uid]
+        });
+      }
+      return true;
+    } catch (err) {
+      console.error("Error joining group:", err);
+    }
+  }
+  return false;
+};
+
+/** Gruba araç ekler (paylaşır). */
+export const addVehicleToGroup = async (groupId: string, vehicleId: string): Promise<void> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const groupRef = doc(db, "groups", groupId);
+      const groupSnap = await getDoc(groupRef);
+      if (groupSnap.exists()) {
+        const groupData = groupSnap.data() as GarageGroup;
+        if (!groupData.vehicleIds.includes(vehicleId)) {
+          await updateDoc(groupRef, {
+            vehicleIds: [...groupData.vehicleIds, vehicleId]
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error adding vehicle to group:", err);
+    }
+  }
+};
+
+/** Gruptan araç çıkarır (paylaşımı durdurur). */
+export const removeVehicleFromGroup = async (groupId: string, vehicleId: string): Promise<void> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const groupRef = doc(db, "groups", groupId);
+      const groupSnap = await getDoc(groupRef);
+      if (groupSnap.exists()) {
+        const groupData = groupSnap.data() as GarageGroup;
+        await updateDoc(groupRef, {
+          vehicleIds: groupData.vehicleIds.filter(id => id !== vehicleId)
+        });
+      }
+    } catch (err) {
+      console.error("Error removing vehicle from group:", err);
+    }
+  }
+};
+
+/** Gruptaki tüm araçları (ve sahibi bilgilerini) getirir. */
+export const fetchGroupVehicles = async (groupId: string): Promise<Vehicle[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const groupRef = doc(db, "groups", groupId);
+      const groupSnap = await getDoc(groupRef);
+      if (!groupSnap.exists()) return [];
+
+      const groupData = groupSnap.data() as GarageGroup;
+      const vehicles: Vehicle[] = [];
+
+      // Not: Bu işlem biraz maliyetli (her üye için araçları çekmek gerekebilir)
+      // Şimdilik sadece gruptaki spesifik vehicleId'leri çekiyoruz.
+      for (const uid of groupData.memberUids) {
+         const userVehiclesCol = collection(db, "users", uid, "vehicles");
+         const vSnap = await getDocs(userVehiclesCol);
+         vSnap.docs.forEach(d => {
+           if (groupData.vehicleIds.includes(d.id)) {
+             vehicles.push({ id: d.id, ...d.data() } as Vehicle);
+           }
+         });
+      }
+      return vehicles;
+    } catch (err) {
+      console.error("Error fetching group vehicles:", err);
+    }
+  }
+  return [];
+};
+
+/** Gruptan ayrılır. */
+export const leaveGarageGroup = async (groupId: string): Promise<void> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const groupRef = doc(db, "groups", groupId);
+      const groupSnap = await getDoc(groupRef);
+      if (groupSnap.exists()) {
+        const groupData = groupSnap.data() as GarageGroup;
+        const uid = getUid();
+        await updateDoc(groupRef, {
+          memberUids: groupData.memberUids.filter(id => id !== uid)
+        });
+      }
+    } catch (err) {
+      console.error("Error leaving group:", err);
+    }
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  BUDGET GOALS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Kullanıcının bütçe hedeflerini getirir. */
+export const fetchBudgetGoals = async (): Promise<BudgetGoal[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const snap = await getDocs(query(budgetGoalsCol(), orderBy("createdAt", "desc")));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as BudgetGoal));
+    } catch (err) {
+      console.error("Error fetching budget goals:", err);
+    }
+  }
+  return [];
+};
+
+/** Yeni bütçe hedefi ekler. */
+export const addBudgetGoal = async (goal: Omit<BudgetGoal, "id">): Promise<string> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const ref = await addDoc(budgetGoalsCol(), {
+        ...goal,
+        createdAt: serverTimestamp(),
+      });
+      return ref.id;
+    } catch (err) {
+      console.error("Error adding budget goal:", err);
+    }
+  }
+  return "";
+};
+
+/** Bütçe hedefini günceller. */
+export const updateBudgetGoal = async (id: string, data: Partial<BudgetGoal>): Promise<void> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      await updateDoc(doc(budgetGoalsCol(), id), { ...data, updatedAt: serverTimestamp() });
+    } catch (err) {
+      console.error("Error updating budget goal:", err);
+    }
+  }
+};
+
+/** Bütçe hedefini siler. */
+export const deleteBudgetGoal = async (id: string): Promise<void> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      await deleteDoc(doc(budgetGoalsCol(), id));
+    } catch (err) {
+      console.error("Error deleting budget goal:", err);
+    }
+  }
 };

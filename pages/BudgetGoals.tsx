@@ -8,21 +8,12 @@ import {
   Calendar, ChevronDown, Info, Trash2, Sparkles, Lock
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip, XAxis } from 'recharts';
-import { fetchVehicles, fetchLogs } from '../services/firestoreService';
-import { Vehicle, ServiceLog } from '../types';
-import { getSetting, saveSetting } from '../services/settingsService';
+import { fetchVehicles, fetchLogs, fetchBudgetGoals, addBudgetGoal, updateBudgetGoal, deleteBudgetGoal } from '../services/firestoreService';
+import { Vehicle, ServiceLog, BudgetGoal, BudgetCategory } from '../types';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type BudgetCategory = 'fuel' | 'maintenance' | 'insurance' | 'other' | 'total';
-
-interface BudgetGoal {
-  id: string;
-  vehicleId: string; // 'all' for all vehicles
-  category: BudgetCategory;
-  monthlyLimit: number;
-  createdAt: string;
-}
+// BudgetGoal and BudgetCategory moved to types.ts
 
 interface MonthlySpend {
   month: string; // YYYY-MM
@@ -61,13 +52,7 @@ const LOG_CATEGORY_MAP: Record<string, BudgetCategory> = {
 const LS_KEY = 'carsync_budget_goals';
 const MONTHS_TR = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const loadGoals = (): BudgetGoal[] => {
-  return getSetting<BudgetGoal[]>('budgetGoals', []);
-};
-const saveGoals = (goals: BudgetGoal[]) =>
-  saveSetting('budgetGoals', goals);
+// Helpers removed - using firestoreService
 
 const getCurrentMonth = () => {
   const now = new Date();
@@ -362,10 +347,10 @@ export const BudgetGoals: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-      const [v, l] = await Promise.all([fetchVehicles(), fetchLogs()]);
+      const [v, l, bg] = await Promise.all([fetchVehicles(), fetchLogs(), fetchBudgetGoals()]);
       setVehicles(v);
       setLogs(l);
-      setGoals(loadGoals());
+      setGoals(bg);
       setLoading(false);
     };
     load();
@@ -390,30 +375,27 @@ export const BudgetGoals: React.FC = () => {
   const getHistory = (vehicleId: string): MonthlySpend[] =>
     buildMonthlySpends(logs, vehicleId);
 
-  const handleSave = (data: Omit<BudgetGoal, 'id' | 'createdAt'>) => {
+  const handleSave = async (data: Omit<BudgetGoal, 'id' | 'createdAt'>) => {
+    setLoading(true);
     if (editingGoal) {
-      const updated = goals.map(g =>
-        g.id === editingGoal.id ? { ...g, ...data } : g
-      );
-      setGoals(updated);
-      saveGoals(updated);
+      await updateBudgetGoal(editingGoal.id, data);
     } else {
-      const newGoal: BudgetGoal = {
-        ...data,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-      };
-      const updated = [...goals, newGoal];
-      setGoals(updated);
-      saveGoals(updated);
+      await addBudgetGoal(data as any);
     }
+    const bg = await fetchBudgetGoals();
+    setGoals(bg);
+    setLoading(false);
     setEditingGoal(null);
   };
 
-  const handleDelete = (id: string) => {
-    const updated = goals.filter(g => g.id !== id);
-    setGoals(updated);
-    saveGoals(updated);
+  const handleDelete = async (id: string) => {
+    if (window.confirm(t('budget.confirm_delete'))) {
+      setLoading(true);
+      await deleteBudgetGoal(id);
+      const bg = await fetchBudgetGoals();
+      setGoals(bg);
+      setLoading(false);
+    }
   };
 
   // Summary stats

@@ -7,7 +7,7 @@ import { addLog, addAppointment } from '../services/firestoreService';
 import { useData } from '../context/DataContext';
 import { OnboardingGuide } from '../components/OnboardingGuide';
 import { toast } from '../services/toast';
-
+import { hapticFeedback } from '../services/hapticService';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import { tr, enUS } from 'date-fns/locale';
@@ -17,7 +17,7 @@ export const AddRecord: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { t, i18n } = useTranslation();
-    const { optimisticAddLog } = useData();
+    const { optimisticAddLog, gainXP } = useData();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [loading, setLoading] = useState(false);
@@ -149,6 +149,10 @@ export const AddRecord: React.FC = () => {
             optimisticAddLog({ id: 'temp-' + Date.now(), ...newLogData } as any);
             await addLog(newLogData);
 
+            // Gain XP based on type
+            const isFuel = formData.serviceType.includes('Yakıt') || formData.serviceType.includes('Fuel');
+            await gainXP(isFuel ? 'FUEL_LOG' : 'SERVICE_LOG');
+
             if (formData.reminder) {
                 const reminderDate = new Date(formData.date);
                 reminderDate.setMonth(reminderDate.getMonth() + 6); // Default 6 months
@@ -163,6 +167,7 @@ export const AddRecord: React.FC = () => {
             }
 
             toast.success(t('add_record.success_save'));
+            hapticFeedback.success();
             navigate(-1);
         } catch (err) {
             console.error('Log kaydetme hatası:', err);

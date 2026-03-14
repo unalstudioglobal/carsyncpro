@@ -75,7 +75,7 @@ export const TransferHistory: React.FC = () => {
     }
 
     return (
-        <div className="p-5 h-full flex flex-col">
+        <div className="p-5 h-full flex flex-col pt-safe pb-safe">
             <header className="flex justify-between items-center pt-2 relative mb-2">
                 <button onClick={() => navigate(-1)} className="text-blue-500 flex items-center text-sm font-medium p-2 -ml-2 active:text-blue-400">
                     <ChevronLeft size={24} /> <span className="text-base ml-1">{t('importExport.back')}</span>
@@ -241,7 +241,7 @@ export const ScanImport: React.FC = () => {
     };
 
     return (
-        <div className="h-screen bg-black flex flex-col relative overflow-hidden">
+        <div className="h-screen bg-black flex flex-col relative overflow-hidden pt-safe pb-safe">
             {/* Header */}
             <header className="absolute top-0 left-0 right-0 z-20 p-5 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
                 <button onClick={() => navigate(-1)} className="p-2 -m-2 text-white">

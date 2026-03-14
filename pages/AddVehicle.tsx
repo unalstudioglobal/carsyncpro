@@ -428,7 +428,7 @@ export const AddVehicle: React.FC = () => {
   );
 
   return (
-    <div className="p-5 h-full flex flex-col">
+    <div className="p-5 h-full flex flex-col pt-safe pb-safe">
       {/* Header */}
       <header className="flex items-center justify-between pt-2 mb-6">
         <button onClick={handleBack} className="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 active:bg-slate-600 transition">

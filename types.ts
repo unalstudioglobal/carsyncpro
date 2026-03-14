@@ -44,6 +44,26 @@ export interface Appointment {
   date: string;
   status: 'Pending' | 'Completed' | 'Cancelled';
   notes?: string;
+  location?: string;
+  phone?: string;
+  reminderDays?: number;
+  estimatedCost?: string;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: string;
+}
+
+export interface GamificationData {
+  xp: number;
+  level: number;
+  achievements: Achievement[];
+  lastDailyCheckIn?: string;
+  streakDays: number;
 }
 
 export interface UserProfile {
@@ -56,6 +76,7 @@ export interface UserProfile {
   avatar?: string;
   isPremium?: boolean;
   role?: 'user' | 'admin';
+  gamification?: GamificationData;
 }
 
 export interface ChartData {
@@ -92,4 +113,24 @@ export interface WidgetConfig {
   id: string;
   enabled: boolean;
   order: number;
+}
+
+export interface GarageGroup {
+  id: string;
+  name: string;
+  ownerId: string;
+  inviteCode: string;
+  memberUids: string[];
+  vehicleIds: string[];
+  createdAt?: any;
+}
+
+export type BudgetCategory = 'fuel' | 'maintenance' | 'insurance' | 'other' | 'total';
+
+export interface BudgetGoal {
+  id: string;
+  vehicleId: string;
+  category: BudgetCategory;
+  monthlyLimit: number;
+  createdAt: any;
 }

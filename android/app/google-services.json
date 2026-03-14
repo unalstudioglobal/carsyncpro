@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "893696369365",
+    "firebase_url": "https://car-sync-pro-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "car-sync-pro",
+    "storage_bucket": "car-sync-pro.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:893696369365:android:fb696ab99877893ceeb85c",
+        "android_client_info": {
+          "package_name": "com.carsync.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "893696369365-d8i16653ebctp0jlti825fleb92ml4gt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQe64zBVzPwS_8juWJZ6fuLBsT8lIzSBw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "893696369365-d8i16653ebctp0jlti825fleb92ml4gt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

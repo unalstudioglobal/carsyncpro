@@ -25,7 +25,9 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../firebaseConfig';
-import { Vehicle, ServiceLog, Appointment } from '../types';
+import { Vehicle, ServiceLog, Appointment, GamificationData } from '../types';
+import { gamificationService, XP_RULES } from '../services/GamificationService';
+import { updateDoc } from 'firebase/firestore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +44,9 @@ interface DataContextValue {
   loading:      boolean;       // true = ilk yükleme devam ediyor
   synced:       boolean;       // en az bir kez Firestore'dan veri geldi mi
   syncStatus:   SyncStatus;
+  gamification: GamificationData;
+  /** XP kazanma tetikleyicisi */
+  gainXP: (action: keyof typeof XP_RULES) => Promise<void>;
   /** Anlık snapshot yerine manuel yenileme zorunluysa (örn. offline sonrası) */
   refetch:      () => Promise<void>;
   /** Optimistik UI: local state'e anında yansıtır, Firestore'a async yazar */
@@ -83,21 +88,21 @@ const docToVehicle = (id: string, data: Record<string, any>): Vehicle => ({
   id,
   createdAt:  tsToISO(data.createdAt),
   updatedAt:  tsToISO(data.updatedAt),
-} as Vehicle);
+} as unknown as Vehicle);
 
 const docToLog = (id: string, data: Record<string, any>): ServiceLog => ({
   ...data,
   id,
   date:       data.date ?? tsToISO(data.createdAt),
   createdAt:  tsToISO(data.createdAt),
-} as ServiceLog);
+} as unknown as ServiceLog);
 
 const docToAppt = (id: string, data: Record<string, any>): Appointment => ({
   ...data,
   id,
   date:      data.date ?? tsToISO(data.createdAt),
   createdAt: tsToISO(data.createdAt),
-} as Appointment);
+} as unknown as Appointment);
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -105,6 +110,8 @@ const DataContext = createContext<DataContextValue>({
   vehicles: [], logs: [], appointments: [],
   loading: true, synced: false,
   syncStatus: { vehicles: 'idle', logs: 'idle', appointments: 'idle' },
+  gamification: { xp: 0, level: 1, achievements: [], streakDays: 0 },
+  gainXP: async () => {},
   refetch: async () => {},
   optimisticAddVehicle:    () => {},
   optimisticUpdateVehicle: () => {},
@@ -125,6 +132,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [synced,       setSynced]       = useState(false);
   const [syncStatus,   setSyncStatus]   = useState<SyncStatus>({
     vehicles: 'idle', logs: 'idle', appointments: 'idle',
+  });
+  const [gamification, setGamification] = useState<GamificationData>({
+    xp: 0, level: 1, achievements: [], streakDays: 0
   });
 
   const unsubsRef = useRef<Unsubscribe[]>([]);
@@ -204,7 +214,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    unsubsRef.current = [unsubV, unsubL, unsubA];
+    // ── Oyunlaştırma ──
+    const unsubG = onSnapshot(doc(db, 'users', userId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.gamification) {
+          setGamification(data.gamification as GamificationData);
+        }
+      }
+    });
+
+    unsubsRef.current = [unsubV, unsubL, unsubA, unsubG];
   }, [clearListeners]);
 
   // ── Auth state ───────────────────────────────────────────────────────────
@@ -228,6 +248,29 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     return () => { unsub(); clearListeners(); };
   }, [setupListeners, clearListeners]);
+
+  // ── Gain XP ─────────────────────────────────────────────────────────────
+  const gainXP = useCallback(async (action: keyof typeof XP_RULES) => {
+    if (!uid) return;
+
+    const { newData, unlockedAchievements } = gamificationService.processAction(gamification, action);
+    
+    // UI'da anlık göster (optimistik)
+    setGamification(newData);
+
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        gamification: newData
+      });
+      
+      if (unlockedAchievements.length > 0) {
+        // Achievement unlock haptic (service içinde yapılıyor ama burada bildirim eklenebilir)
+        console.log('Achievements unlocked:', unlockedAchievements);
+      }
+    } catch (err) {
+      console.error('XP update error:', err);
+    }
+  }, [uid, gamification]);
 
   // ── Manuel refetch (offline recovery için) ───────────────────────────────
 
@@ -275,11 +318,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     optimisticAddLog,
     optimisticUpdateLog,
     optimisticRemoveLog,
+    gamification,
+    gainXP,
   }), [
     vehicles, logs, appointments,
     loading, synced, syncStatus, refetch,
     optimisticAddVehicle, optimisticUpdateVehicle, optimisticRemoveVehicle,
     optimisticAddLog, optimisticUpdateLog, optimisticRemoveLog,
+    gamification, gainXP,
   ]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 service-account.json
+.env
+*.jks
+*.keystore
+audit_results.md

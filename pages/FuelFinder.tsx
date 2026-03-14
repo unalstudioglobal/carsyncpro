@@ -379,9 +379,6 @@ export const FuelFinder: React.FC = () => {
       .then(setNationalPrices)
       .catch(() => {});
   }, []);
-  const [radiusKm, setRadiusKm] = useState(5);
-  const [reportingStation, setReportingStation] = useState<string | null>(null);
-  const [showOpenOnly, setShowOpenOnly] = useState(false);
 
   const getLocation = useCallback(() => {
     setLoading(true);

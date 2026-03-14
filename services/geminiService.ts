@@ -237,3 +237,30 @@ export const getMaintenanceSchedule = async (
     return [];
   }
 };
+// ── 10. YENİ: Prediktif Bakım (OBD Tabanlı) ─────────────
+export const getPredictiveMaintenance = async (
+  vehicle: Vehicle,
+  obdData: any
+): Promise<{ riskLevel: string; findings: string[]; recommendations: string[] }> => {
+  if (!isOnline()) throw new Error('offline');
+  try {
+    return await apiPost<any>('predictive-maintenance', {
+      vehicle: {
+        brand: vehicle.brand, model: vehicle.model, year: vehicle.year, mileage: vehicle.mileage
+      },
+      obdData: {
+        rpm: obdData.rpm,
+        speed: obdData.speed,
+        temp: obdData.coolantTemp,
+        voltage: obdData.voltage,
+        activeDTCs: obdData.activeDTCs
+      }
+    });
+  } catch {
+    return {
+      riskLevel: 'Düşük',
+      findings: ['Bağlantı hatası nedeniyle analiz yapılamadı.'],
+      recommendations: ['Lütfen internet bağlantınızı kontrol edin.']
+    };
+  }
+};

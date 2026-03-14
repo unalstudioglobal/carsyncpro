@@ -13,17 +13,12 @@ import {
   addAppointment, updateAppointment, deleteAppointment
 } from '../services/firestoreService';
 import { Vehicle, Appointment } from '../types';
-import { getSetting, saveSetting } from '../services/settingsService';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface RichAppointment extends Appointment {
   vehicleName: string;
   daysUntil: number;
-  reminderDays: number;
-  location: string;
-  phone: string;
-  estimatedCost: string;
 }
 
 type ApptStatus = 'upcoming' | 'today' | 'overdue' | 'completed';
@@ -80,30 +75,23 @@ const STATUS_CONFIG = (t: any): Record<ApptStatus, { label: string; color: strin
   completed: { label: t('appt.completed'), color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-700/30', dotColor: 'bg-slate-500' },
 });
 
-const LS_EXTRA = 'carsync_appt_extra'; // extra fields not in Appointment type
-
-interface ApptExtra { location: string; phone: string; reminderDays: number; estimatedCost: string; }
-const loadExtra = (): Record<string, ApptExtra> => {
-  return getSetting<Record<string, ApptExtra>>('apptExtra', {});
-};
-const saveExtra = (d: Record<string, ApptExtra>) => saveSetting('apptExtra', d);
+// Helpers removed - using unified Appointment type
 
 // ─── Add/Edit Modal ──────────────────────────────────────────────────────────
 
 const ApptModal: React.FC<{
   vehicles: Vehicle[];
   editing: Appointment | null;
-  editingExtra: ApptExtra | null;
-  onSave: (appt: Omit<Appointment, 'id'>, extra: ApptExtra) => void;
+  onSave: (appt: Omit<Appointment, 'id'>) => void;
   onClose: () => void;
-}> = ({ vehicles, editing, editingExtra, onSave, onClose }) => {
+}> = ({ vehicles, editing, onSave, onClose }) => {
   const { t } = useTranslation();
   const [vehicleId, setVehicleId] = useState(editing?.vehicleId || vehicles[0]?.id || '');
   const [serviceType, setServiceType] = useState(editing?.serviceType || 'Yağ Değişimi');
   const [date, setDate] = useState(editing?.date || '');
-  const [location, setLocation] = useState(editingExtra?.location || '');
-  const [phone, setPhone] = useState(editingExtra?.phone || '');
-  const [reminderDays, setReminderDays] = useState(editingExtra?.reminderDays ?? 3);
+  const [location, setLocation] = useState(editing?.location || '');
+  const [phone, setPhone] = useState(editing?.phone || '');
+  const [reminderDays, setReminderDays] = useState(editing?.reminderDays ?? 3);
   const [notes, setNotes] = useState(editing?.notes || '');
 
   const meta = getMeta(serviceType);
@@ -213,10 +201,17 @@ const ApptModal: React.FC<{
 
         <button disabled={!isValid}
           onClick={() => {
-            onSave(
-              { vehicleId, serviceType, date, status: editing?.status || 'Pending', notes },
-              { location, phone, reminderDays, estimatedCost: meta.estimatedCost }
-            );
+            onSave({ 
+                vehicleId, 
+                serviceType, 
+                date, 
+                status: editing?.status || 'Pending', 
+                notes,
+                location,
+                phone,
+                reminderDays,
+                estimatedCost: meta.estimatedCost
+            });
             onClose();
           }}
           className="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-bold text-sm disabled:opacity-30 hover:bg-blue-500 transition-all">
@@ -324,7 +319,7 @@ const ApptCard: React.FC<{
         </div>
 
         {/* Reminder badge */}
-        {status !== 'completed' && days > 0 && days <= appt.reminderDays && (
+        {status !== 'completed' && days > 0 && appt.reminderDays && days <= appt.reminderDays && (
           <div className="mt-3 flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2">
             <BellRing size={12} className="text-blue-400 animate-pulse flex-shrink-0" />
             <p className="text-blue-300 text-xs font-medium">{t('appt.reminder_active', { days })}</p>
@@ -449,7 +444,6 @@ export const ServiceAppointment: React.FC = () => {
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [appts, setAppts] = useState<Appointment[]>([]);
-  const [extras, setExtras] = useState<Record<string, ApptExtra>>({});
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
@@ -461,7 +455,6 @@ export const ServiceAppointment: React.FC = () => {
       const [v, a] = await Promise.all([fetchVehicles(), fetchAppointments()]);
       setVehicles(v);
       setAppts(a);
-      setExtras(loadExtra());
       setLoading(false);
     };
     load();
@@ -474,16 +467,12 @@ export const ServiceAppointment: React.FC = () => {
   }, [vehicles]);
 
   const richAppts: RichAppointment[] = useMemo(() =>
-    appts.map(a => {
-      const extra = extras[a.id] || { location: '', phone: '', reminderDays: 3, estimatedCost: getMeta(a.serviceType).estimatedCost };
-      return {
+    appts.map(a => ({
         ...a,
         vehicleName: vehicleMap[a.vehicleId] || 'Bilinmiyor',
         daysUntil: getDaysUntil(a.date),
-        ...extra,
-      };
-    }).sort((a, b) => a.date.localeCompare(b.date)),
-    [appts, extras, vehicleMap]
+    })).sort((a, b) => a.date.localeCompare(b.date)),
+    [appts, vehicleMap]
   );
 
   const filtered = useMemo(() => richAppts.filter(a => {
@@ -500,18 +489,14 @@ export const ServiceAppointment: React.FC = () => {
     upcoming: richAppts.filter(a => getApptStatus(a) === 'upcoming').length,
   }), [richAppts]);
 
-  const handleSave = async (data: Omit<Appointment, 'id'>, extra: ApptExtra) => {
+  const handleSave = async (data: Omit<Appointment, 'id'>) => {
     if (editing) {
       await updateAppointment(editing.id, data);
       setAppts(prev => prev.map(a => a.id === editing.id ? { ...a, ...data } : a));
-      const newExtras = { ...extras, [editing.id]: extra };
-      setExtras(newExtras); saveExtra(newExtras);
     } else {
       const id = await addAppointment(data);
       const newAppt: Appointment = { ...data, id };
       setAppts(prev => [...prev, newAppt]);
-      const newExtras = { ...extras, [id]: extra };
-      setExtras(newExtras); saveExtra(newExtras);
     }
     setEditing(null);
   };
@@ -657,7 +642,6 @@ export const ServiceAppointment: React.FC = () => {
         <ApptModal
           vehicles={vehicles}
           editing={editing}
-          editingExtra={editing ? (extras[editing.id] || null) : null}
           onSave={handleSave}
           onClose={() => { setShowModal(false); setEditing(null); }}
         />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, Settings, Fuel, Wrench, Wallet, Calendar, ChevronRight, AlertCircle, RefreshCw, TrendingUp, Activity, Search, ShieldAlert, Sparkles, CheckCircle2, Receipt, MessageCircle, AlertTriangle, Info, XCircle, Gauge, Droplet, RotateCw, Battery, Camera, Car, GripVertical, Eye, EyeOff, ChevronUp, ChevronDown, Sliders } from 'lucide-react';
+import { Bell, Settings, Fuel, Wrench, Wallet, Calendar, ChevronRight, AlertCircle, RefreshCw, TrendingUp, Activity, Award, Search, ShieldAlert, Sparkles, CheckCircle2, Receipt, MessageCircle, AlertTriangle, Info, XCircle, Gauge, Droplet, RotateCw, Battery, Camera, Car, GripVertical, Eye, EyeOff, ChevronUp, ChevronDown, Sliders } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip } from 'recharts';
 import { addAppointment, deleteAppointment, updateLog, updateVehicle } from '../services/firestoreService';
 import { getHealthInsight, explainTroubleCodes, getMaintenanceRecommendations } from '../services/geminiService';
@@ -10,9 +10,13 @@ import { AdBanner } from '../components/AdBanner';
 import { PaymentModal } from '../components/PaymentModal';
 import { Vehicle, ServiceLog, Appointment, WidgetConfig } from '../types';
 import { toast } from '../services/toast';
+import { hapticFeedback } from '../services/hapticService';
 import { getSetting, saveSetting } from '../services/settingsService';
 import { triggerConfetti } from '../services/confetti';
+import { virtualOBD, OBDData } from '../services/VirtualOBDService';
+import { getPredictiveMaintenance } from '../services/geminiService';
 import { useData } from '../context/DataContext';
+import { AchievementsModal } from '../components/AchievementsModal';
 
 interface DtcResult {
     code: string;
@@ -35,6 +39,8 @@ export const Dashboard: React.FC = () => {
       loading: dataLoading,
       optimisticUpdateVehicle,
       optimisticUpdateLog,
+      gamification,
+      gainXP
     } = useData();
 
     const [vehicle, setVehicle] = useState<Vehicle | null>(null);
@@ -76,6 +82,13 @@ export const Dashboard: React.FC = () => {
 
     // Payment Modal State
     const [selectedLogForPayment, setSelectedLogForPayment] = useState<ServiceLog | null>(null);
+
+    // OBD Simulation State
+    const [obdConnected, setObdConnected] = useState(false);
+    const [obdData, setObdData] = useState<OBDData>(virtualOBD.getCurrentData());
+    const [obdPrediction, setObdPrediction] = useState<{ riskLevel: string; findings: string[]; recommendations: string[] } | null>(null);
+    const [obdAnalyzing, setObdAnalyzing] = useState(false);
+    const [showAchievements, setShowAchievements] = useState(false);
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -190,16 +203,17 @@ export const Dashboard: React.FC = () => {
             setTimeout(() => { setAnimatedHealthScore(foundVehicle.healthScore); }, 300);
 
             const defaultWidgets: WidgetConfig[] = [
-                { id: 'health',         enabled: true, order: 0 },
-                { id: 'dtc',            enabled: true, order: 1 },
-                { id: 'stats',          enabled: true, order: 2 },
-                { id: 'fuel_analysis',  enabled: true, order: 3 },
-                { id: 'expense_chart',  enabled: true, order: 4 },
-                { id: 'market_value',   enabled: true, order: 5 },
-                { id: 'maintenance',    enabled: true, order: 6 },
-                { id: 'last_log',       enabled: true, order: 7 },
-                { id: 'appointments',   enabled: true, order: 8 },
-                { id: 'recent_logs',    enabled: true, order: 9 },
+                { id: 'obd',            enabled: true, order: 0 },
+                { id: 'health',         enabled: true, order: 1 },
+                { id: 'dtc',            enabled: true, order: 2 },
+                { id: 'stats',          enabled: true, order: 3 },
+                { id: 'fuel_analysis',  enabled: true, order: 4 },
+                { id: 'expense_chart',  enabled: true, order: 5 },
+                { id: 'market_value',   enabled: true, order: 6 },
+                { id: 'maintenance',    enabled: true, order: 7 },
+                { id: 'last_log',       enabled: true, order: 8 },
+                { id: 'appointments',   enabled: true, order: 9 },
+                { id: 'recent_logs',    enabled: true, order: 10 },
             ];
             const savedWidgets = getSetting<WidgetConfig[]>('dashboard_widgets', defaultWidgets);
             setWidgets(savedWidgets.sort((a, b) => a.order - b.order));
@@ -216,7 +230,17 @@ export const Dashboard: React.FC = () => {
             });
         } catch { /* ignore */ }
 
+        // OBD Subscription
+        const unsubscribeOBD = virtualOBD.subscribe((data) => {
+            setObdData(data);
+            setObdConnected(virtualOBD.isConnected());
+        });
+
         setLoading(false);
+
+        return () => {
+            unsubscribeOBD();
+        };
     }, [id, allVehicles, allLogs, allAppointments, dataLoading]);
 
 
@@ -238,6 +262,7 @@ export const Dashboard: React.FC = () => {
             setShowAppointmentModal(false);
             setAppointmentForm({ serviceType: t('dashboard.periodic_maintenance'), date: '', notes: '' });
             toast.success(t('dashboard.appt_success'));
+            hapticFeedback.success();
             triggerConfetti();
         } catch (error) {
             console.error(t('dashboard.appt_add_error'), error);
@@ -335,6 +360,31 @@ export const Dashboard: React.FC = () => {
         );
         setWidgets(updatedWidgets);
         saveSetting('dashboard_widgets', updatedWidgets);
+    };
+
+    const handleToggleOBD = () => {
+        if (obdConnected) {
+            virtualOBD.stopSimulation();
+            setObdPrediction(null);
+        } else if (vehicle) {
+            virtualOBD.startSimulation(vehicle.mileage);
+            gainXP('OBD_CONNECTION');
+            hapticFeedback.impactMedium();
+        }
+    };
+
+    const runOBDAnalysis = async () => {
+        if (!vehicle || !obdConnected || obdAnalyzing) return;
+        setObdAnalyzing(true);
+        try {
+            const result = await getPredictiveMaintenance(vehicle, obdData);
+            setObdPrediction(result);
+            gainXP('ACHIEVEMENT_UNLOCK'); // AI kullanımı ekstra puan
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setObdAnalyzing(false);
+        }
     };
 
     if (loading || !vehicle) {
@@ -519,6 +569,89 @@ export const Dashboard: React.FC = () => {
                         const delayClass = `delay-${Math.min(idx, 7)}`;
                         const widgetContent = (() => {
                             switch (widget.id) {
+                                case 'obd':
+                                    return (
+                                        <div key="obd" className={`animate-card ${delayClass} bento-col-span-4`}>
+                                            <div className="glass-panel-premium p-5 relative overflow-hidden">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${obdConnected ? 'bg-green-500/20 text-green-400' : 'bg-slate-700/30 text-slate-500'}`}>
+                                                            <Activity size={18} />
+                                                        </div>
+                                                        <h3 className="font-bold text-black dark:text-white">OBD {t('common.ai_live')}</h3>
+                                                    </div>
+                                                    <button 
+                                                        onClick={handleToggleOBD}
+                                                        className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${obdConnected ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-blue-500 text-white shadow-lg shadow-blue-500/40 hover:scale-105'}`}
+                                                    >
+                                                        {obdConnected ? t('common.disconnect') : t('common.connect')}
+                                                    </button>
+                                                </div>
+
+                                                {obdConnected ? (
+                                                    <div className="space-y-4">
+                                                        <div className="grid grid-cols-4 gap-3">
+                                                            <div className="text-center">
+                                                                <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">RPM</div>
+                                                                <div className="text-sm font-black text-black dark:text-white font-mono">{Math.round(obdData.rpm)}</div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Hız</div>
+                                                                <div className="text-sm font-black text-black dark:text-white font-mono">{Math.round(obdData.speed)} <span className="text-[8px]">km/h</span></div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Sıcaklık</div>
+                                                                <div className="text-sm font-black text-black dark:text-white font-mono">{Math.round(obdData.coolantTemp)}°C</div>
+                                                            </div>
+                                                            <div className="text-center border-l border-white/5">
+                                                                <div className="text-[10px] text-blue-400 font-bold uppercase mb-1">KM (Canlı)</div>
+                                                                <div className="text-sm font-black text-blue-400 font-mono">{obdData.odometer.toFixed(2)}</div>
+                                                            </div>
+                                                        </div>
+
+                                                        {obdPrediction ? (
+                                                            <div className="bg-slate-900/50 rounded-2xl p-4 border border-blue-500/20 animate-in fade-in slide-in-from-bottom duration-500">
+                                                                <div className="flex items-center justify-between mb-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Sparkles size={14} className="text-blue-400" />
+                                                                        <span className="text-xs font-bold text-black dark:text-white">AI Arıza Tahmini</span>
+                                                                    </div>
+                                                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${obdPrediction.riskLevel === 'Yüksek' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                                        Risk: {obdPrediction.riskLevel}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    {obdPrediction.findings.slice(0, 2).map((f, i) => (
+                                                                        <div key={i} className="flex items-start gap-1.5 text-[10px] text-slate-400">
+                                                                            <div className="w-1 h-1 rounded-full bg-blue-400 mt-1" />
+                                                                            <p>{f}</p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={runOBDAnalysis}
+                                                                disabled={obdAnalyzing}
+                                                                className="w-full py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/5 text-blue-400 text-xs font-bold hover:bg-blue-500/10 transition flex items-center justify-center gap-2"
+                                                            >
+                                                                {obdAnalyzing ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                                                                {obdAnalyzing ? 'AI Analiz Ediyor...' : 'AI Arıza Tahmini Çalıştır'}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-12 text-slate-500 text-xs gap-2 italic">
+                                                        <Info size={14} />
+                                                        Cihaz bekleniyor (Simülasyonu başlatmak için bağlanın)
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Gradient line for flow animation */}
+                                                {obdConnected && <div className="absolute bottom-0 left-0 h-0.5 w-full bg-gradient-to-r from-blue-500 via-green-500 to-blue-500 animate-pulse" />}
+                                            </div>
+                                        </div>
+                                    );
                                 case 'health':
                                     return (
                                         <div key="health" className={`animate-card ${delayClass} bento-col-span-4 lg:col-span-2`}>

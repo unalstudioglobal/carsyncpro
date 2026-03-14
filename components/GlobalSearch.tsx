@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom';
 import {
   Search, X, Car, Wrench, Fuel, BarChart2, Bell, Settings,
-  FileText, ChevronRight, Clock, Droplet, RotateCw, Battery,
+  FileText, ChevronRight, ChevronLeft, Clock, Droplet, RotateCw, Battery,
   ClipboardCheck, Sparkles, Disc, Shield, Calendar, Users,
   QrCode, Gauge, TrendingUp, Zap, Hash, ArrowUpRight,
   Navigation, MapPin
@@ -11,6 +11,7 @@ import { fetchVehicles, fetchLogs } from '../services/firestoreService';
 import { Vehicle, ServiceLog } from '../types';
 import { getSetting, saveSetting, removeSetting } from '../services/settingsService';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -84,6 +85,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const { t, i18n } = useTranslation();
+  const { isDarkMode } = useTheme();
 
   const STATIC_RESULTS: SearchResult[] = useMemo(() => [
     // Pages
@@ -250,7 +252,8 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex flex-col bg-slate-950/80 backdrop-blur-xl animate-fadeIn overflow-hidden"
+      className="fixed inset-0 z-[200] flex flex-col bg-slate-950/80 dark:bg-slate-950/80 light:bg-slate-200/80 backdrop-blur-xl animate-fadeIn overflow-hidden"
+      style={{ background: isDarkMode ? 'rgba(5, 5, 8, 0.8)' : 'rgba(241, 245, 249, 0.8)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       {/* Ambient Animated Blobs */}
@@ -260,25 +263,32 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
 
       <div className="relative w-full max-w-2xl mx-auto h-full px-4 pt-16 flex flex-col pb-6">
         {/* Search input */}
-        <div className="glass-panel-premium flex items-center gap-3 px-5 py-3 mb-4 relative z-10 transition-all focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-400/50">
-          <Search size={18} className="text-indigo-400 shrink-0" />
+        <div className="glass-panel-premium flex items-center gap-2 px-3 py-3 mb-4 relative z-10 transition-all focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:border-indigo-400/50" style={{ background: isDarkMode ? '' : 'rgba(255, 255, 255, 0.9)', borderColor: isDarkMode ? '' : 'rgba(0,0,0,0.1)' }}>
+          <button 
+            onClick={onClose} 
+            className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 rounded-xl transition-all shrink-0"
+            aria-label={t('nav.back')}
+          >
+            <ChevronLeft size={22} strokeWidth={2.5} className="text-indigo-400" />
+          </button>
+          {/* <Search size={18} className="text-indigo-400 shrink-0" /> */}
           <input
             ref={inputRef}
             value={query}
             onChange={e => { setQuery(e.target.value); setActiveIdx(0); }}
             placeholder={t('search.placeholder')}
-            className="flex-1 bg-transparent border-none outline-none text-slate-50 text-base py-1"
+            className="flex-1 bg-transparent border-none outline-none text-primary text-base py-1"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="bg-transparent border-none cursor-pointer p-1 text-slate-400 hover:text-slate-300 transition-colors">
+            <button onClick={() => setQuery('')} className="bg-transparent border-none cursor-pointer p-1 text-slate-400 hover:text-primary transition-colors">
               <X size={16} />
             </button>
           )}
-          <kbd className="bg-slate-800/80 border border-slate-700/60 rounded-md px-2 py-1 text-slate-400 text-[11px] shrink-0 font-medium">ESC</kbd>
+          <kbd className="bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-md px-2 py-1 text-slate-500 dark:text-slate-400 text-[11px] shrink-0 font-medium">ESC</kbd>
         </div>
 
         {/* Results */}
-        <div className="glass-panel-premium flex-1 overflow-y-auto relative z-10 hide-scrollbar flex flex-col">
+        <div className="glass-panel-premium flex-1 overflow-y-auto relative z-10 hide-scrollbar flex flex-col" style={{ background: isDarkMode ? '' : 'rgba(255, 255, 255, 0.9)', borderColor: isDarkMode ? '' : 'rgba(0,0,0,0.1)' }}>
           {/* Empty state — show recent + shortcuts */}
           {!query && (
             <div style={{ padding: 20 }}>
@@ -286,14 +296,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-slate-500 text-xs font-bold tracking-wider">{t('search.recent')}</p>
-                    <button onClick={() => { clearRecent(); setRecent([]); }} className="text-slate-500 hover:text-slate-300 text-xs font-medium transition-colors">
+                    <button onClick={() => { clearRecent(); setRecent([]); }} className="text-slate-500 hover:text-primary text-xs font-medium transition-colors">
                       {t('search.clear')}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {recent.map(r => (
-                      <button key={r} onClick={() => handleRecentClick(r)} className="flex items-center gap-2 bg-slate-800/50 hover:bg-slate-700/80 border border-slate-700/50 hover:border-slate-600 rounded-xl px-3 py-1.5 text-slate-300 hover:text-white text-xs font-medium transition-all group">
-                        <Clock size={12} className="text-slate-500 group-hover:text-amber-400 transition-colors" />
+                      <button key={r} onClick={() => handleRecentClick(r)} className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/80 border border-slate-200 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl px-3 py-1.5 text-slate-600 dark:text-slate-300 hover:text-primary transition-all group">
+                        <Clock size={12} className="text-slate-400 dark:text-slate-500 group-hover:text-amber-500 transition-colors" />
                         {r}
                       </button>
                     ))}
@@ -308,12 +318,12 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
                 ).slice(0, 6).map((r, index) => {
                   const RIcon = r.icon;
                   return (
-                    <button key={r.id} onClick={() => handleSelect(r)} className="group flex items-center gap-3 bg-slate-800/40 hover:bg-slate-700/60 border border-slate-700/50 hover:border-indigo-500/50 rounded-2xl p-3 cursor-pointer text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] animate-slideDown" style={{ animationDelay: `${index * 0.05}s` }}>
+                    <button key={r.id} onClick={() => handleSelect(r)} className="group flex items-center gap-3 bg-white/50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/50 hover:border-indigo-500/50 rounded-2xl p-3 cursor-pointer text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(99,102,241,0.15)] animate-slideDown shadow-sm" style={{ animationDelay: `${index * 0.05}s` }}>
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110" style={{ background: r.iconBg }}>
                         <RIcon size={18} color={r.iconColor} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-slate-200 text-sm font-bold whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-white transition-colors">{r.title}</p>
+                        <p className="text-primary text-sm font-bold whitespace-nowrap overflow-hidden text-ellipsis transition-colors">{r.title}</p>
                       </div>
                     </button>
                   );
@@ -338,14 +348,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
                         key={r.id}
                         onClick={() => handleSelect(r)}
                         onMouseEnter={() => setActiveIdx(flatResults.indexOf(r))}
-                        className={`w-full flex items-center gap-3 px-4 py-3 border-l-2 cursor-pointer text-left transition-all duration-200 ${isActive ? 'bg-indigo-500/10 border-indigo-500' : 'bg-transparent border-transparent hover:bg-slate-800/50'}`}
+                        className={`w-full flex items-center gap-3 px-4 py-3 border-l-2 cursor-pointer text-left transition-all duration-200 ${isActive ? 'bg-indigo-500/10 border-indigo-500' : 'bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-slate-800/50'}`}
                       >
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: r.iconBg }}>
                           <RIcon size={18} color={r.iconColor} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                            <p style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {r.title}
                             </p>
                             {r.badge && (
@@ -355,12 +365,12 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
                             )}
                           </div>
                           {r.subtitle && (
-                            <p style={{ color: '#64748b', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <p style={{ color: 'var(--text-muted)', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {r.subtitle}
                             </p>
                           )}
                         </div>
-                        <ArrowUpRight size={14} color={isActive ? '#6366f1' : '#334155'} style={{ flexShrink: 0 }} />
+                        <ArrowUpRight size={14} color={isActive ? '#6366f1' : 'var(--text-muted)'} style={{ opacity: 0.5, flexShrink: 0 }} />
                       </button>
                     );
                   })}
@@ -412,11 +422,11 @@ export const SearchTrigger: React.FC<{ onClick: () => void }> = ({ onClick }) =>
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2.5 bg-slate-800/60 hover:bg-indigo-500/10 border border-slate-700/50 hover:border-indigo-500/50 rounded-xl px-3.5 py-2.5 cursor-pointer w-full text-left transition-all group"
+      className="flex items-center gap-2.5 bg-slate-100 dark:bg-slate-800/60 hover:bg-indigo-500/10 border border-slate-200 dark:border-slate-700/50 hover:border-indigo-500/50 rounded-xl px-3.5 py-2.5 cursor-pointer w-full text-left transition-all group"
     >
-      <Search size={15} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
-      <span className="flex-1 text-slate-400 text-sm group-hover:text-slate-300 transition-colors">{t('search.trigger_placeholder')}</span>
-      <kbd className="bg-slate-900/80 border border-slate-700/50 rounded-md px-2 py-0.5 text-slate-500 text-[11px] font-medium group-hover:text-indigo-300 transition-colors">
+      <Search size={15} className="text-slate-400 dark:text-slate-400 group-hover:text-indigo-400 transition-colors" />
+      <span className="flex-1 text-slate-500 dark:text-slate-400 text-sm group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">{t('search.trigger_placeholder')}</span>
+      <kbd className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/50 rounded-md px-2 py-0.5 text-slate-400 dark:text-slate-500 text-[11px] font-medium group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">
         ⌘K
       </kbd>
     </button>

@@ -73,7 +73,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
   const NAV = [
     { path: '/analytics', icon: BarChart2, label: t('nav.analytics') },
     { path: '/logs', icon: FileText, label: t('nav.logs') },
-    { path: '/documents', icon: FileStack, label: t('nav.documents') },
+    { path: '/documents', icon: FileStack, label: t('nav.docs') },
   ];
 
   const isActive = (p: string) => p === '/' ? location.pathname === '/' : location.pathname.startsWith(p);
@@ -127,16 +127,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                 { path: '/', icon: Car, label: t('nav.garage') },
                 { path: '/analytics', icon: BarChart2, label: t('nav.analytics') },
                 { path: '/logs', icon: FileText, label: t('nav.logs') },
-                { path: '/documents', icon: FileStack, label: t('nav.documents') },
+                { path: '/documents', icon: FileStack, label: t('nav.docs') },
               ].map((item) => {
                 const active = isActive(item.path);
                 return (
                   <button
                     key={item.path}
                     onClick={() => go(item.path)}
-                    className={`w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all duration-300 group ${active ? 'bg-gold/10 text-gold border border-gold/20' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'}`}
+                    className={`w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all duration-300 group ${active ? 'bg-gold/10 text-gold border border-gold/20' : 'text-slate-400 hover:bg-white/5 hover:text-primary border border-transparent'}`}
                   >
-                    <item.icon size={20} className={active ? 'text-gold' : 'group-hover:text-white transition-colors'} strokeWidth={active ? 2.5 : 2} />
+                    <item.icon size={20} className={active ? 'text-gold' : 'group-hover:text-primary transition-colors'} strokeWidth={active ? 2.5 : 2} />
                     <span className="font-bold text-sm tracking-wide">{item.label}</span>
                     {active && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_var(--gold)]" />}
                   </button>
@@ -152,9 +152,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
               ].map((item) => {
                 const active = isActive(item.route);
                 return (
-                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-white/5 shadow-sm' : 'hover:bg-white/5'}`}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10" style={{ color: active ? item.color : 'rgba(255,255,255,0.7)' }}><item.icon size={16} /></div>
-                    <span className={`text-[13px] font-semibold ${active ? 'text-white' : 'text-slate-400'}`}>{item.label}</span>
+                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-black/5 dark:bg-white/5 shadow-sm' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10" style={{ color: active ? item.color : 'var(--text-secondary)' }}><item.icon size={16} /></div>
+                    <span className={`text-[13px] font-semibold ${active ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>{item.label}</span>
                   </button>
                 );
               })}
@@ -168,9 +168,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
               ].map((item) => {
                 const active = isActive(item.route);
                 return (
-                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-white/5 shadow-sm' : 'hover:bg-white/5'}`}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10" style={{ color: active ? item.color : 'rgba(255,255,255,0.7)' }}><item.icon size={16} /></div>
-                    <span className={`text-[13px] font-semibold ${active ? 'text-white' : 'text-slate-400'}`}>{item.label}</span>
+                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-black/5 dark:bg-white/5 shadow-sm' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10" style={{ color: active ? item.color : 'var(--text-secondary)' }}><item.icon size={16} /></div>
+                    <span className={`text-[13px] font-semibold ${active ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>{item.label}</span>
                   </button>
                 );
               })}
@@ -188,9 +188,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
               ].map((item) => {
                 const active = isActive(item.route);
                 return (
-                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-white/5 shadow-sm' : 'hover:bg-white/5'}`}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10" style={{ color: active ? item.color : 'rgba(255,255,255,0.7)' }}><item.icon size={16} /></div>
-                    <span className={`text-[13px] font-semibold ${active ? 'text-white' : 'text-slate-400'}`}>{item.label}</span>
+                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-black/5 dark:bg-white/5 shadow-sm' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10" style={{ color: active ? item.color : 'var(--text-secondary)' }}><item.icon size={16} /></div>
+                    <span className={`text-[13px] font-semibold ${active ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>{item.label}</span>
                   </button>
                 );
               })}
@@ -204,9 +204,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
               ].map((item) => {
                 const active = isActive(item.route);
                 return (
-                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-white/5 shadow-sm' : 'hover:bg-white/5'}`}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10" style={{ color: active ? item.color : 'rgba(255,255,255,0.7)' }}><item.icon size={16} /></div>
-                    <span className={`text-[13px] font-semibold ${active ? 'text-white' : 'text-slate-400'}`}>{item.label}</span>
+                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-black/5 dark:bg-white/5 shadow-sm' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10" style={{ color: active ? item.color : 'var(--text-secondary)' }}><item.icon size={16} /></div>
+                    <span className={`text-[13px] font-semibold ${active ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>{item.label}</span>
                   </button>
                 );
               })}
@@ -221,9 +221,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
               ].map((item) => {
                 const active = isActive(item.route);
                 return (
-                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-white/5 shadow-sm' : 'hover:bg-white/5'}`}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10" style={{ color: active ? item.color : 'rgba(255,255,255,0.7)' }}><item.icon size={16} /></div>
-                    <span className={`text-[13px] font-semibold ${active ? 'text-white' : 'text-slate-400'}`}>{item.label}</span>
+                  <button key={item.route} onClick={() => go(item.route)} className={`w-full flex items-center gap-4 py-2.5 px-2 rounded-xl transition-all ${active ? 'bg-black/5 dark:bg-white/5 shadow-sm' : 'hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10" style={{ color: active ? item.color : 'var(--text-secondary)' }}><item.icon size={16} /></div>
+                    <span className={`text-[13px] font-semibold ${active ? 'text-primary' : 'text-slate-500 dark:text-slate-400'}`}>{item.label}</span>
                   </button>
                 );
               })}
@@ -240,7 +240,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
             >
               <div className="flex items-center gap-3 relative z-10">
                 {isDarkMode ? <Moon size={18} className="text-violet-400" /> : <Sun size={18} className="text-amber-400" />}
-                <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">{t('settings.dark_mode')}</span>
+                <span className="text-sm font-bold text-slate-500 dark:text-slate-300 group-hover:text-primary transition-colors">{t('settings.dark_mode')}</span>
               </div>
               <div className={`w-10 h-5 rounded-full relative transition-colors z-10 ${isDarkMode ? 'bg-violet-600' : 'bg-slate-700'}`}>
                 <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${isDarkMode ? 'right-1' : 'left-1'}`} />
@@ -281,7 +281,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
         <div
           style={{
             position: 'fixed', inset: 0, zIndex: 50,
-            background: 'rgba(4,4,8,0.98)',
+            background: 'var(--bg-void)',
             backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)',
             display: 'flex', flexDirection: 'column',
             animation: 'menuSlideIn 0.32s cubic-bezier(0.22,1,0.36,1)',
@@ -299,7 +299,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
           {/* ── Header ── */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '22px 22px 0', position: 'relative', zIndex: 2 }}>
             <div style={{ animation: 'fadeSlideRight 0.4s ease both' }}>
-              <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 9, fontWeight: 700, letterSpacing: 3.5, marginBottom: 5, textTransform: 'uppercase' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: 9, fontWeight: 700, letterSpacing: 3.5, marginBottom: 5, textTransform: 'uppercase', opacity: 0.6 }}>
                 {t('nav.quick_access')}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -312,14 +312,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                 <SyncIndicator variant="compact" className="ml-2" />
               </div>
             </div>
-            <button
+              <button
               onClick={() => setIsMenuOpen(false)}
               style={{
                 width: 42, height: 42, borderRadius: 13,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--bg-raised)',
+                border: '1px solid var(--border-mid)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+                color: 'var(--text-secondary)', cursor: 'pointer',
                 transition: 'all 0.2s', animation: 'fadeSlideLeft 0.4s ease both',
               }}
             >
@@ -339,9 +339,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
               ].map((cat) => (
                 <div key={cat.label} style={{
                   flexShrink: 0, padding: '6px 14px', borderRadius: 20,
-                  background: cat.active ? 'linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.08))' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${cat.active ? 'rgba(201,168,76,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                  color: cat.active ? '#E8C96B' : 'rgba(255,255,255,0.35)',
+                  background: cat.active ? 'linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.08))' : 'var(--bg-raised)',
+                  border: `1px solid ${cat.active ? 'rgba(201,168,76,0.4)' : 'var(--border-dim)'}`,
+                  color: cat.active ? '#E8C96B' : 'var(--text-muted)',
                   fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
                   fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 5,
                   cursor: 'default',
@@ -358,7 +358,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
 
             {/* ── Featured Row: AI Tools ── */}
             <div style={{ marginBottom: 10, animation: 'fadeSlideUp 0.4s 0.08s ease both', opacity: 0, animationFillMode: 'forwards' }}>
-              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 9, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: 9, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4, opacity: 0.5 }}>
                 {t('nav.ai_tools')}
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
@@ -374,8 +374,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                       style={{
                         background: active
                           ? `linear-gradient(135deg, ${grad}0.22) 0%, ${grad}0.1) 100%)`
-                          : `linear-gradient(135deg, ${grad}0.14) 0%, ${grad}0.05) 100%)`,
-                        border: `1px solid ${active ? `${color}55` : `${color}28`}`,
+                          : `var(--bg-raised)`,
+                        border: `1px solid ${active ? `${color}55` : 'var(--border-dim)'}`,
                         borderRadius: 20, padding: '18px 16px',
                         display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14,
                         cursor: 'pointer', textAlign: 'left', position: 'relative', overflow: 'hidden',
@@ -406,7 +406,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
 
             {/* ── Section: AI & Akıllı Özellikler ── */}
             <div style={{ marginBottom: 10, animation: 'fadeSlideUp 0.4s 0.08s ease both', opacity: 0, animationFillMode: 'forwards' }}>
-              <p style={{ color: 'rgba(255,255,255,0.2)', fontSize: 9, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: 9, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4, opacity: 0.5 }}>
                 Yapay Zeka
               </p>
               {/* AI Insights Hero Card */}
@@ -426,10 +426,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <p style={{ color: '#d8b4fe', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>AI İçgörüler</p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>AI İçgörüler</p>
                     <span style={{ background: 'rgba(168,85,247,0.25)', color: '#d8b4fe', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, letterSpacing: 1, textTransform: 'uppercase', border: '1px solid rgba(168,85,247,0.35)' }}>YENİ</span>
                   </div>
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, fontWeight: 500, lineHeight: 1.4 }}>Proaktif uyarılar, sağlık analizi, 12 aylık bakım takvimi</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 500, lineHeight: 1.4 }}>Proaktif uyarılar, sağlık analizi, 12 aylık bakım takvimi</p>
                 </div>
               </button>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
@@ -444,8 +444,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                         <Icon size={17} color={color} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ color: active ? color : '#D4D2CC', fontSize: 12, fontWeight: 700, marginBottom: 2, fontFamily: 'var(--font-body)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</p>
-                        <p style={{ color: 'rgba(255,255,255,0.27)', fontSize: 10, fontWeight: 500 }}>{sub}</p>
+                        <p style={{ color: active ? color : 'var(--text-primary)', fontSize: 12, fontWeight: 700, marginBottom: 2, fontFamily: 'var(--font-body)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}>{sub}</p>
                       </div>
                     </button>
                   );
@@ -619,7 +619,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                   }}
                 >
                   <Zap size={18} color="#06b6d4" />
-                  <span style={{ color: '#E8E6E0', fontSize: 13, fontWeight: 600 }}>{t('nav.theme')}</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>{t('nav.theme')}</span>
                 </button>
                 <button
                   onClick={toggleDarkMode}
@@ -636,10 +636,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                     <div style={{ width: 38, height: 38, borderRadius: 12, background: isDarkMode ? 'rgba(168,85,247,0.15)' : 'rgba(245,158,11,0.15)', border: `1px solid ${isDarkMode ? 'rgba(168,85,247,0.3)' : 'rgba(245,158,11,0.3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {isDarkMode ? <Moon size={18} color="#a855f7" /> : <Sun size={18} color="#f59e0b" />}
                     </div>
-                    <span style={{ color: '#E8E6E0', fontSize: 13, fontWeight: 600 }}>{t('settings.dark_mode')}</span>
+                    <span style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>{t('settings.dark_mode')}</span>
                   </div>
-                  <div style={{ width: 44, height: 24, borderRadius: 12, background: isDarkMode ? '#a855f7' : 'rgba(255,255,255,0.1)', position: 'relative', transition: 'background 0.3s' }}>
-                    <div style={{ position: 'absolute', top: 2, left: isDarkMode ? 22 : 2, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.3s cubic-bezier(0.34,1.56,0.64,1)' }} />
+                  <div style={{ width: 44, height: 24, borderRadius: 12, background: isDarkMode ? '#a855f7' : 'var(--bg-deep)', position: 'relative', transition: 'background 0.3s', border: '1px solid var(--border-dim)' }}>
+                    <div style={{ position: 'absolute', top: 2, left: isDarkMode ? 20 : 2, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.3s cubic-bezier(0.34,1.56,0.64,1)', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
                   </div>
                 </button>
               </div>
@@ -653,7 +653,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
           </div>
 
           {/* ── Bottom fade ── */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 150, background: 'linear-gradient(to top, rgba(4,4,8,0.98) 30%, transparent)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 150, background: 'linear-gradient(to top, var(--bg-void) 30%, transparent)', pointerEvents: 'none' }} />
         </div>
       )}
 

@@ -166,9 +166,9 @@ export const ThemeCustomizer: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: '#0a0f1e' }}>
+    <div className="min-h-screen pb-24" style={{ background: 'var(--bg-void)' }}>
       {/* Header */}
-      <div className="sticky top-0 z-20 backdrop-blur-xl border-b border-slate-800/50 px-4 pt-12 pb-4" style={{ background: 'rgba(10,15,30,0.92)' }}>
+      <div className="sticky top-0 z-20 backdrop-blur-xl border-b border-slate-800/50 px-4 pt-12 pb-4" style={{ background: 'var(--bg-void)' }}>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-slate-800/60 flex items-center justify-center">
             <ChevronLeft size={20} className="text-slate-300" />

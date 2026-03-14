@@ -36,8 +36,9 @@ function extractText(data: any): string {
 }
 
 // ── Server ────────────────────────────────────────────────
+export const app = express();
+
 async function startServer() {
-  const app = express();
   const PORT = parseInt(process.env.PORT || "3000");
 
   app.use(express.json({ limit: "10mb" }));   // base64 image'lar için
@@ -199,6 +200,24 @@ async function startServer() {
       status: "ok",
       gemini: !!GEMINI_API_KEY,
       firebaseAdmin: admin.apps.length > 0,
+    });
+  });
+
+  // ── Fuel Prices ──────────────────────────────────────────
+  app.get("/api/fuel/national-prices", (_req, res) => {
+    // Gerçek bir API'den çekilebilir veya güncel verilerle güncellenebilir
+    // TR Ortalama Fiyatlar (Mart 2024 bazlı)
+    res.json({
+      success: true,
+      lastUpdate: new Date().toISOString(),
+      prices: {
+        gasoline: 43.45,  // Kurşunsuz 95
+        diesel: 42.12,    // Motorin
+        lpg: 21.85,       // Otogaz
+        electricity: 7.45 // AC/DC Ort (EV için)
+      },
+      currency: "TL",
+      unit: "L"
     });
   });
 
@@ -407,6 +426,38 @@ Sadece JSON. Türkçe.` }
     }
   });
 
+  // ── 10. YENİ: Prediktif Bakım (OBD Tabanlı) ─────────────
+  app.post("/api/gemini/predictive-maintenance", requireApiKey, async (req, res) => {
+    const { vehicle, obdData } = req.body;
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [{
+            text: `Araç: ${vehicle.brand} ${vehicle.model} (${vehicle.year}), ${vehicle.mileage} km.
+Canlı OBD Verileri: RPM: ${obdData.rpm}, Hız: ${obdData.speed}, Isı: ${obdData.temp}°C, Voltaj: ${obdData.voltage}V.
+Hata Kodları (DTC): ${obdData.activeDTCs.join(", ") || "Yok"}.
+
+Bu verilere dayanarak aracın mevcut durumunu analiz et ve potansiyel arızaları tahmin et.
+Şu yapıda JSON döndür:
+{
+  "riskLevel": "Düşük|Orta|Yüksek",
+  "findings": ["bulgu1", "bulgu2"],
+  "recommendations": ["öneri1", "öneri2"]
+}
+Sadece JSON. Türkçe.` }]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json(JSON.parse(text || "{}"));
+    } catch (err: any) {
+      console.error("predictive-maintenance hatası:", err);
+      res.status(500).json({ error: "Arıza tahmini yapılamadı." });
+    }
+  });
+
   // ── Push Notification Endpoints ────────────────────────
 
   /**
@@ -581,122 +632,6 @@ Sadece JSON. Türkçe.` }
     }
   });
 
-  // ── 8. Iyzico Ödeme Sistemi ──────────────────────────────
-
-  /** Ödeme sayfası başlatma */
-  app.post("/api/payment/initialize", optionalAuth, async (req, res) => {
-    const uid = (req as any).uid;
-    if (!uid) return res.status(401).json({ error: "Oturum açmalısınız" });
-
-    // Kullanıcı bilgisini çek (İsim/Soyisim gerekebilir)
-    let user: any = { name: 'Kullanıcı', email: 'user@example.com' };
-    if (admin.apps.length > 0) {
-      const userDoc = await admin.firestore().collection("users").doc(uid).get();
-      if (userDoc.exists) user = userDoc.data();
-    }
-
-    const basketId = `B_${crypto.randomUUID().substring(0, 8)}`;
-    const paymentId = crypto.randomUUID();
-
-    const request = {
-      locale: Iyzipay.LOCALE.TR,
-      conversationId: paymentId,
-      price: '125.0',
-      paidPrice: '125.0',
-      currency: Iyzipay.CURRENCY.TRY,
-      basketId: basketId,
-      paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
-      callbackUrl: `${process.env.APP_URL || 'http://localhost:3000'}/api/payment/callback?uid=${uid}`,
-      enabledInstallments: [1, 2, 3, 6, 9],
-      buyer: {
-        id: uid,
-        name: user.name || 'İsimsiz',
-        surname: user.surname || 'Kullanıcı',
-        gsmNumber: user.phoneNumber || '+905000000000',
-        email: user.email,
-        identityNumber: '11111111111',
-        lastLoginDate: '2023-01-01 00:00:00',
-        registrationDate: '2023-01-01 00:00:00',
-        registrationAddress: 'Istanbul',
-        ip: req.ip || '127.0.0.1',
-        city: 'Istanbul',
-        country: 'Turkey',
-        zipCode: '34000'
-      },
-      shippingAddress: {
-        contactName: user.name || 'Kullanıcı',
-        city: 'Istanbul',
-        country: 'Turkey',
-        address: 'Istanbul',
-        zipCode: '34000'
-      },
-      billingAddress: {
-        contactName: user.name || 'Kullanıcı',
-        city: 'Istanbul',
-        country: 'Turkey',
-        address: 'Istanbul',
-        zipCode: '34000'
-      },
-      basketItems: [
-        {
-          id: 'PRM_001',
-          name: 'CarSync Pro Premium (1 Yıllık)',
-          category1: 'Subscription',
-          itemType: Iyzipay.BASKET_ITEM_TYPE.VIRTUAL,
-          price: '125.0'
-        }
-      ]
-    };
-
-    iyzipay.checkoutFormInitialize.create(request, (err, result) => {
-      if (err || result.status !== 'success') {
-        console.error("Iyzico Init Hata:", err || result);
-        return res.status(500).json({ error: "Ödeme başlatılamadı" });
-      }
-      res.json({ checkoutFormContent: result.checkoutFormContent, token: result.token });
-    });
-  });
-
-  /** Ödeme Callback (Iyzico'dan dönüş) */
-  app.post("/api/payment/callback", async (req, res) => {
-    const { token } = req.body;
-    const uid = req.query.uid as string;
-
-    if (!token || !uid) {
-      return res.redirect('/#/premium?status=error');
-    }
-
-    iyzipay.checkoutForm.retrieve({ token }, async (err, result) => {
-      if (err || result.paymentStatus !== 'SUCCESS') {
-        console.error("Iyzico Callback Hata:", err || result);
-        return res.redirect('/#/premium?status=failed');
-      }
-
-      // Ödeme başarılı! Firestore'da kullanıcıyı Premium yap
-      if (admin.apps.length > 0) {
-        try {
-          await admin.firestore().collection("users").doc(uid).set({
-            isPremium: true,
-            premiumSince: admin.firestore.FieldValue.serverTimestamp(),
-            lastPaymentId: result.paymentId
-          }, { merge: true });
-
-          // Ödeme kaydı oluştur
-          await admin.firestore().collection("payments").add({
-            uid,
-            amount: 125.0,
-            status: 'success',
-            paymentId: result.paymentId,
-            timestamp: admin.firestore.FieldValue.serverTimestamp()
-          });
-        } catch (fsErr) {
-          console.error("Firestore Update Error:", fsErr);
-        }
-      }
-
-      res.redirect('/#/premium?status=success');
-    });
-  });
 
   // ── 9. Yönetici Kullanıcı Yönetimi ─────────────────────
 
@@ -748,14 +683,6 @@ Sadece JSON. Türkçe.` }
     app.get("*", (_req, res) => res.sendFile("index.html", { root: "dist" }));
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server: http://localhost:${PORT}`);
-    console.log(`🔑 Gemini API: ${GEMINI_API_KEY ? "✅ Hazır" : "❌ GEMINI_API_KEY eksik!"}`);
-    console.log(`📢 VAPID Key: ${process.env.VITE_VAPID_KEY ? "✅ Mevcut" : "⚠️  Eksik (Client'da push çalışmayabilir)"}`);
-  });
-}
-
-startServer();
   // ── 7. Proaktif AI Uyarıları ──────────────────────────
   /**
    * POST /api/gemini/proactive-alerts
@@ -956,6 +883,9 @@ Sadece JSON. Türkçe. Fiyatlar Türkiye piyasasına uygun olsun.`
       if (err.code === "QUOTA") return res.status(429).json({ schedule: [] });
       console.error("maintenance-schedule hatası:", err);
       res.status(500).json({ schedule: [] });
+    }
+  });
+
   // ── 7. Türkiye Ulusal Yakıt Fiyatları ─────────────────
   /**
    * GET /api/fuel/national-prices
@@ -980,7 +910,7 @@ Sadece JSON. Türkçe. Fiyatlar Türkiye piyasasına uygun olsun.`
         { headers: { 'content-type': 'application/json', authorization: `apikey ${process.env.COLLECT_API_KEY || ''}` }, signal: AbortSignal.timeout(5000) }
       ).catch(() => null);
 
-      let prices: Record<string, number>;
+      let prices: any;
 
       if (response?.ok) {
         const json = await response.json();
@@ -1016,6 +946,11 @@ Sadece JSON. Türkçe. Fiyatlar Türkiye piyasasına uygun olsun.`
 
       (app as any)[CACHE_KEY] = { data: prices, ts: Date.now() };
       res.json(prices);
+    } catch (err: any) {
+      console.error("Fuel price fetch error:", err);
+      res.status(500).json({ error: "Yakıt fiyatları alınamadı" });
+    }
+  });
   app.post("/api/payment/initialize", optionalAuth, async (req, res) => {
     const uid = (req as any).uid;
     if (!uid) return res.status(401).json({ error: "Oturum açmalısınız" });
@@ -1149,3 +1084,28 @@ Sadece JSON. Türkçe. Fiyatlar Türkiye piyasasına uygun olsun.`
               subscriptionId: result.paymentId,
               verifiedAt: new Date().toISOString(),
             }, { merge: true });
+        } catch (fsErr) {
+          console.error("Firestore Update Error:", fsErr);
+        }
+      }
+
+      res.redirect('/#/premium?status=success');
+    });
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Server: http://localhost:${PORT}`);
+      console.log(`🔑 Gemini API: ${GEMINI_API_KEY ? "✅ Hazır" : "❌ GEMINI_API_KEY eksik!"}`);
+      console.log(`📢 VAPID Key: ${process.env.VITE_VAPID_KEY ? "✅ Mevcut" : "⚠️  Eksik (Client'da push çalışmayabilir)"}`);
+    });
+  }
+}
+
+// Global scope'ta app'i dışa aktar (Vercel için)
+export default app;
+
+// Doğrudan çalıştırıldığında server'ı başlat
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('server.ts')) {
+    startServer();
+}

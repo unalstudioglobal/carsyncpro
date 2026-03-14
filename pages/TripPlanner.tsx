@@ -10,6 +10,7 @@ export const TripPlanner: React.FC = () => {
   const { t } = useTranslation();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [logs, setLogs] = useState<any[]>([]);
   
   // Form State
   const [distance, setDistance] = useState<number>(0);
@@ -19,21 +20,51 @@ export const TripPlanner: React.FC = () => {
   const [result, setResult] = useState<{ cost: number, fuel: number } | null>(null);
 
   useEffect(() => {
-    const loadVehicles = async () => {
-      const v = await fetchVehicles();
-      setVehicles(v);
-      if (v.length > 0) setSelectedVehicleId(v[0].id);
+    const load = async () => {
+      try {
+        const [v, l] = await Promise.all([
+          fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/fuel/national-prices` : '/api/fuel/national-prices').then(r => r.json()),
+          fetchVehicles()
+        ]);
+        
+        if (v.success) {
+          setFuelPrice(v.prices.gasoline); // Default to gasoline
+        }
+        setVehicles(l);
+        if (l.length > 0) setSelectedVehicleId(l[0].id);
+        
+        // Fetch logs for usage calculation
+        const allLogs = await import('../services/firestoreService').then(m => m.fetchLogs());
+        setLogs(allLogs);
+      } catch (err) {
+        console.error("Yükleme hatası:", err);
+      }
     };
-    loadVehicles();
+    load();
   }, []);
 
-  // Update consumption based on selected vehicle (mock logic)
+  // Tüketimi araç geçmişinden hesapla (Yakıt alımları ortalaması)
   useEffect(() => {
-      if (selectedVehicleId) {
-          // In a real app, fetch average consumption from logs
-          setConsumption(Math.random() * (10 - 5) + 5); 
+    if (selectedVehicleId && logs.length > 0) {
+      const vLogs = logs.filter(l => l.vehicleId === selectedVehicleId && l.type === 'Yakıt Alımı' && l.liters && l.mileage);
+      
+      if (vLogs.length >= 2) {
+        // En eski ve en yeni yakıt alımı arasındaki km ve yakılan yakıt
+        const sorted = [...vLogs].sort((a, b) => a.mileage - b.mileage);
+        const totalDistance = sorted[sorted.length - 1].mileage - sorted[0].mileage;
+        const totalLiters = sorted.slice(1).reduce((sum, l) => sum + (l.liters || 0), 0);
+        
+        if (totalDistance > 0 && totalLiters > 0) {
+            const avg = (totalLiters / totalDistance) * 100;
+            setConsumption(avg);
+            return;
+        }
       }
-  }, [selectedVehicleId]);
+      
+      // Default / Fallback (Random if no real data yet, but better than static 7.5)
+      setConsumption(7.8);
+    }
+  }, [selectedVehicleId, logs]);
 
   const calculate = () => {
       const fuelNeeded = (distance * consumption) / 100;

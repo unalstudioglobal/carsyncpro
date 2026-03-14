@@ -158,24 +158,15 @@ const applyCSS = (config: ThemeConfig) => {
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<ThemeConfig>(loadConfig);
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const stored = getSetting<string>('theme', '');
-    if (stored) return stored === 'dark';
-    return document.documentElement.classList.contains('dark');
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      saveSetting('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      saveSetting('theme', 'light');
-    }
-  }, [isDarkMode]);
+  const isDarkMode = config.appTheme !== 'light';
 
   const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(prev => !prev);
+    setConfig(prev => {
+      const nextTheme = prev.appTheme === 'light' ? 'dark' : 'light';
+      const next = { ...prev, appTheme: nextTheme as AppTheme };
+      saveSetting('themeConfig', next);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
