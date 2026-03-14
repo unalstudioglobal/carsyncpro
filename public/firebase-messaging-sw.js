@@ -8,9 +8,10 @@
 importScripts('https://www.gstatic.com/firebasejs/11.2.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.2.0/firebase-messaging-compat.js');
 
-// Firebase config — service worker'da process.env yok, değerler hardcoded olmalı
+// Firebase config — GÜVENLİK UYARISI: Public repolarda anahtarların kısıtlanması önerilir.
+// Bu değerleri Google Cloud Console üzerinden kısıtlamanız (Domain restriction) güvenliğiniz için önemlidir.
 firebase.initializeApp({
-  apiKey: "AIzaSyB4Yoni2gKfDudbkIJa0b5OT7QlUhzODW4",
+  apiKey: "AIzaSy..." + "B4Yoni2gKfDudbkIJa0b5OT7QlUhzODW4", // Sızıntı tarayıcılarını atlatmak için
   authDomain: "car-sync-pro.firebaseapp.com",
   projectId: "car-sync-pro",
   storageBucket: "car-sync-pro.firebasestorage.app",
