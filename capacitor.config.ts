@@ -16,6 +16,10 @@ const config: CapacitorConfig = {
       spinnerColor: "#3b82f6",
     },
   },
+  server: {
+    androidScheme: "https",
+    allowNavigation: ["carsyncpro.vercel.app"],
+  },
 };
 
 export default config;
