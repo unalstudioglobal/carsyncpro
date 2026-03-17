@@ -1317,7 +1317,26 @@
     "rep_none": "✅ No Action Needed",
     "diy": "🔧 DIY Possible",
     "est_cost": "Estimated Cost",
-    "hours": "{{h}} hours"
+    "hours": "{{h}} hours",
+    "tabs": {
+      "visual": "Visual Diagnosis",
+      "acoustic": "Acoustic Analysis"
+    },
+    "cats": {
+      "body": "Bodywork",
+      "leak": "Leakage",
+      "tire": "Tires"
+    },
+    "acoustic": {
+      "title": "Listen to Engine Sound",
+      "desc": "Record sound while engine is running or upload a file.",
+      "btn_upload": "Upload Audio File",
+      "ready": "AUDIO DATA READY",
+      "btn_start": "Start Analysis",
+      "clear": "Clear",
+      "err_audio": "Audio analysis failed.",
+      "err_conn": "Connection error."
+    }
   },
   "premium": {
     "title": "CarSync Premium",

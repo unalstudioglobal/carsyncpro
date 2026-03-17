@@ -396,10 +396,10 @@ export const DamageDetection: React.FC = () => {
         };
         setReport(adaptedReport);
       } else {
-        setError(result?.error || 'Ses analizi başarısız.');
+        setError(result?.error || t('damageDetect.acoustic.err_audio'));
       }
     } catch (err) {
-      setError('Bağlantı hatası.');
+      setError(t('damageDetect.acoustic.err_conn'));
     }
     setAnalyzing(false);
   };
@@ -464,7 +464,7 @@ export const DamageDetection: React.FC = () => {
               activeTab === 'visual' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'
             }`}
           >
-            <Camera size={14} /> Görsel Teşhis
+            <Camera size={14} /> {t('damageDetect.tabs.visual')}
           </button>
           <button
             onClick={() => { setActiveTab('acoustic'); reset(); }}
@@ -472,7 +472,7 @@ export const DamageDetection: React.FC = () => {
               activeTab === 'acoustic' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'
             }`}
           >
-            <Mic size={14} /> Akustik Analiz
+            <Mic size={14} /> {t('damageDetect.tabs.acoustic')}
           </button>
         </div>
       </div>
@@ -483,9 +483,9 @@ export const DamageDetection: React.FC = () => {
             {/* Category Selector */}
             <div className="grid grid-cols-3 gap-2 bg-slate-900/50 p-1 rounded-2xl border border-slate-800/50">
               {[
-                { id: 'damage', label: 'Kaporta', icon: Eye },
-                { id: 'leak', label: 'Sızıntı', icon: Sparkles },
-                { id: 'tire', label: 'Lastik', icon: TrendingUp }
+                { id: 'damage', label: t('damageDetect.cats.body'), icon: Eye },
+                { id: 'leak', label: t('damageDetect.cats.leak'), icon: Sparkles },
+                { id: 'tire', label: t('damageDetect.cats.tire'), icon: TrendingUp }
               ].map((cat) => {
                 const Icon = cat.icon;
                 const active = detectionType === cat.id;
@@ -509,20 +509,20 @@ export const DamageDetection: React.FC = () => {
             <div className="w-16 h-16 rounded-2xl bg-slate-700/60 flex items-center justify-center mx-auto mb-4">
               <Activity size={28} className="text-rose-400" />
             </div>
-            <p className="text-white font-semibold mb-1">Motor Sesini Dinlet</p>
-            <p className="text-slate-500 text-sm mb-4">Motor çalışırken sesi kaydedin veya bir dosya yükleyin.</p>
+            <p className="text-white font-semibold mb-1">{t('damageDetect.acoustic.title')}</p>
+            <p className="text-slate-500 text-sm mb-4">{t('damageDetect.acoustic.desc')}</p>
             
             {!audioBase64 ? (
               <label className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-500 transition-all cursor-pointer mx-auto w-fit">
                 <Mic size={16} />
-                Ses Dosyası Yükle
+                {t('damageDetect.acoustic.btn_upload')}
                 <input type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} />
               </label>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-2 text-rose-400">
                   <Volume2 size={24} />
-                  <span className="text-xs font-mono">SES VERİSİ HAZIR</span>
+                  <span className="text-xs font-mono">{t('damageDetect.acoustic.ready')}</span>
                 </div>
                 <button
                   onClick={handleAnalyzeSound}
@@ -530,9 +530,9 @@ export const DamageDetection: React.FC = () => {
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-orange-600 text-white font-bold"
                 >
                   {analyzing ? <RefreshCw className="animate-spin" /> : <Activity size={18} />}
-                  Analizi Başlat
+                  {t('damageDetect.acoustic.btn_start')}
                 </button>
-                <button onClick={() => setAudioBase64(null)} className="text-slate-500 text-xs">Temizle</button>
+                <button onClick={() => setAudioBase64(null)} className="text-slate-500 text-xs">{t('damageDetect.acoustic.clear')}</button>
               </div>
             )}
           </div>

@@ -1436,7 +1436,26 @@
     "rep_none": "✅ Tespit Edilemedi",
     "diy": "🔧 DIY (Kendin Yap)",
     "est_cost": "Tahmini Maliyet",
-    "hours": "{{h}} saat"
+    "hours": "{{h}} saat",
+    "tabs": {
+      "visual": "Görsel Teşhis",
+      "acoustic": "Akustik Analiz"
+    },
+    "cats": {
+      "body": "Kaporta",
+      "leak": "Sızıntı",
+      "tire": "Lastik"
+    },
+    "acoustic": {
+      "title": "Motor Sesini Dinlet",
+      "desc": "Motor çalışırken sesi kaydedin veya bir dosya yükleyin.",
+      "btn_upload": "Ses Dosyası Yükle",
+      "ready": "SES VERİSİ HAZIR",
+      "btn_start": "Analizi Başlat",
+      "clear": "Temizle",
+      "err_audio": "Ses analizi başarısız.",
+      "err_conn": "Bağlantı hatası."
+    }
   },
   "smart_notifs": {
     "title": "Akıllı Bildirimler",
