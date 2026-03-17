@@ -7,13 +7,13 @@ import {
   Wrench, Fuel, Shield, DollarSign, FileText, Calendar,
   ChevronRight, Clock, Car
 } from 'lucide-react';
-import { fetchVehicles, fetchLogs, fetchAppointments } from '../services/firestoreService';
+import { fetchVehicles, fetchLogs, fetchAppointments, fetchOBDData } from '../services/firestoreService';
 import { useData } from '../context/DataContext';
 import {
   getProactiveAlerts, getDetailedHealthScore, getMaintenanceSchedule,
   type ProactiveAlert, type HealthScoreDetail, type MaintenanceScheduleItem,
 } from '../services/geminiService';
-import { Vehicle, ServiceLog, Appointment } from '../types';
+import { Vehicle, ServiceLog, Appointment, OBDData } from '../types';
 import { toast } from '../services/toast';
 
 // ── Yardımcı bileşenler ───────────────────────────────────
@@ -98,7 +98,19 @@ export const AIInsights: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(true);
 
   // Araç ve log verilerini yükle
-    // [DataContext] fetch kaldırıldı — useData() kullanıyor
+  useEffect(() => {
+    if (!loading && vehicles.length > 0) {
+      if (id) {
+        const found = vehicles.find(v => v.id === id);
+        setSelectedVehicle(found || vehicles[0]);
+      } else {
+        setSelectedVehicle(vehicles[0]);
+      }
+      setPageLoading(false);
+    } else if (!loading && vehicles.length === 0) {
+      setPageLoading(false);
+    }
+  }, [loading, vehicles, id]);
 
   // Araç değişince tüm AI analizlerini yenile
   const runAllAnalyses = useCallback(async () => {
@@ -108,17 +120,16 @@ export const AIInsights: React.FC = () => {
     setLoadingHealth(true);
     setLoadingSchedule(true);
 
-    const [ls, as] = await Promise.all([
+    const [ls, as, os] = await Promise.all([
       fetchLogs(selectedVehicle.id),
       fetchAppointments(selectedVehicle.id),
+      fetchOBDData(selectedVehicle.id)
     ]);
-    setLogs(ls);
-    setAppointments(as);
 
     // Paralel AI çağrıları
     const [alertsRes, healthRes, scheduleRes] = await Promise.allSettled([
-      getProactiveAlerts(selectedVehicle, ls, as),
-      getDetailedHealthScore(selectedVehicle, ls),
+      getProactiveAlerts(selectedVehicle, ls, as, os[0]),
+      getDetailedHealthScore(selectedVehicle, ls, os[0]),
       getMaintenanceSchedule(selectedVehicle, ls),
     ]);
 

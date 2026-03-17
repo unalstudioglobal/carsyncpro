@@ -385,13 +385,20 @@ Sahibinle 1. tekil şahıs olarak konuş. Cevaplar kısa ve eğlenceli. Emoji ku
     }
   });
 
-  // ── 6. Hasar Tespiti ───────────────────────────────────
   app.post("/api/gemini/damage-detection", requireApiKey, async (req, res) => {
-    const { base64Image, mimeType = "image/jpeg" } = req.body;
+    const { base64Image, mimeType = "image/jpeg", detectionType = "damage" } = req.body;
 
     if (!base64Image) {
       res.status(400).json({ error: "base64Image gerekli" });
       return;
+    }
+
+    let prompt = `Bu araç fotoğrafını analiz et ve hasarları tespit et.`;
+
+    if (detectionType === 'leak') {
+      prompt = `Bu araç fotoğrafını (motor haznesi, alt kısım veya hortumlar) analiz et. Yağ sızıntısı, soğutma sıvısı kaçağı veya terleme olup olmadığını kontrol et.`;
+    } else if (detectionType === 'tire') {
+      prompt = `Bu lastik fotoğrafını analiz et. Diş derinliği (aşınma), yanak çatlakları veya düzensiz aşınma olup olmadığını kontrol et.`;
     }
 
     try {
@@ -400,12 +407,12 @@ Sahibinle 1. tekil şahıs olarak konuş. Cevaplar kısa ve eğlenceli. Emoji ku
           parts: [
             { inline_data: { mime_type: mimeType, data: base64Image } },
             {
-              text: `Bu araç fotoğrafını analiz et ve hasarları tespit et.
+              text: `${prompt}
 Şu yapıda JSON döndür:
 {
-  "hasDamage": boolean,
+  "hasIssue": boolean,
   "severity": "Yok|Hafif|Orta|Ciddi",
-  "damages": [{"area": "bölge", "description": "açıklama", "severity": "Hafif|Orta|Ciddi"}],
+  "findings": [{"area": "bölge", "description": "açıklama", "severity": "Hafif|Orta|Ciddi"}],
   "estimatedCost": "tahmini maliyet aralığı (TL)",
   "recommendation": "kısa öneri"
 }
@@ -423,6 +430,45 @@ Sadece JSON. Türkçe.` }
       } else {
         res.status(500).json({ error: "Hasar tespiti yapılamadı." });
       }
+    }
+  });
+
+  // ── Akustik Analiz (Ses) ───────────────────────────────
+  app.post("/api/gemini/analyze-sound", requireApiKey, async (req, res) => {
+    const { audioData, mimeType = "audio/wav" } = req.body;
+
+    if (!audioData) {
+      res.status(400).json({ error: "audioData (base64) gerekli" });
+      return;
+    }
+
+    try {
+      const data = await callGemini({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: mimeType, data: audioData } },
+            {
+              text: `Bu araç sesini (motor sesi) dinle ve analiz et. 
+Kayış ıslığı, yatak vurma, düzensiz devirlenme veya sürtünme sesleri olup olmadığını tespit et.
+Şu yapıda JSON döndür:
+{
+  "hasIssue": boolean,
+  "severity": "Yok|Hafif|Orta|Ciddi",
+  "analysis": "Sesin teknik analizi (neye benziyor?)",
+  "possibleCauses": ["neden 1", "neden 2"],
+  "recommendation": "ne yapmalı?"
+}
+Sadece JSON. Türkçe.` }
+          ]
+        }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = extractText(data);
+      res.json(JSON.parse(text || "{}"));
+    } catch (err: any) {
+      console.error("Akustik analiz hatası:", err);
+      res.status(500).json({ error: "Ses analizi yapılamadı." });
     }
   });
 

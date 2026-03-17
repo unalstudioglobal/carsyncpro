@@ -5,10 +5,12 @@ import {
   ChevronLeft, Camera, Upload, X, Scan, AlertTriangle,
   CheckCircle2, Info, ZoomIn, RotateCw, TrendingUp,
   Wrench, ShieldAlert, CircleDollarSign, Eye, RefreshCw,
-  ChevronDown, ChevronUp, Sparkles, ImagePlus, FileImage
+  ChevronDown, ChevronUp, Sparkles, ImagePlus, FileImage,
+  Mic, Volume2, Play, Pause, Activity
 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { AdBanner } from '../components/AdBanner';
+import { analyzeDamage, analyzeSound } from '../services/geminiService';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -35,6 +37,11 @@ interface DamageReport {
   safetyRisk: boolean;
   summary: string;
   recommendations: string[];
+  findings?: { area: string; description: string; severity: string }[];
+  hasIssue?: boolean;
+  // Acoustic fields
+  analysis?: string;
+  possibleCauses?: string[];
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -269,6 +276,9 @@ export const DamageDetection: React.FC = () => {
   const [report, setReport] = useState<DamageReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAllDamages, setShowAllDamages] = useState(false);
+  const [detectionType, setDetectionType] = useState<'damage' | 'leak' | 'tire'>('damage');
+  const [activeTab, setActiveTab] = useState<'visual' | 'acoustic'>('visual');
+  const [audioBase64, setAudioBase64] = useState<string | null>(null);
 
   const [showJson, setShowJson] = useState(false);
 
@@ -327,18 +337,89 @@ export const DamageDetection: React.FC = () => {
     setError(null);
     setReport(null);
 
-    const result = await analyzeDamageFromImage(imageBase64, imageMime, t('damageDetect.ai_prompt_lang'));
-    if (result) {
-      setReport(result);
-    } else {
+    try {
+      const result = await analyzeDamage(imageBase64, detectionType, imageMime);
+      if (result && !result.error) {
+        // Adapt backend response to frontend UI if needed
+        const adaptedReport: DamageReport = {
+          overallCondition: result.severity === 'Yok' ? 'perfect' : 'damaged' as any,
+          conditionScore: result.hasIssue ? 40 : 100,
+          damages: (result.findings || result.damages || []).map((d: any) => ({
+            ...d,
+            severity: d.severity?.toLowerCase().includes('ciddi') ? 'critical' 
+                    : d.severity?.toLowerCase().includes('orta') ? 'major' 
+                    : d.severity?.toLowerCase().includes('hafif') ? 'minor' : 'none',
+            estimatedCostMin: parseInt(result.estimatedCost?.split('-')[0]) || 0,
+            estimatedCostMax: parseInt(result.estimatedCost?.split('-')[1]) || 0,
+            repairType: 'mechanical',
+            repairTimeHours: 2,
+            diyPossible: false
+          })),
+          totalCostMin: parseInt(result.estimatedCost?.split('-')[0]) || 0,
+          totalCostMax: parseInt(result.estimatedCost?.split('-')[1]) || 0,
+          priorityAction: result.recommendation || '',
+          safetyRisk: result.severity === 'Ciddi',
+          summary: result.recommendation || '',
+          recommendations: [result.recommendation].filter(Boolean)
+        };
+        setReport(adaptedReport);
+      } else {
+        setError(result?.error || t('damageDetect.err_title'));
+      }
+    } catch (err) {
       setError(t('damageDetect.err_title'));
     }
     setAnalyzing(false);
   };
 
+  const handleAnalyzeSound = async () => {
+    if (!audioBase64) return;
+    setAnalyzing(true);
+    setError(null);
+    setReport(null);
+
+    try {
+      const result = await analyzeSound(audioBase64);
+      if (result && !result.error) {
+        const adaptedReport: DamageReport = {
+          overallCondition: result.severity === 'Yok' ? 'perfect' : 'damaged' as any,
+          conditionScore: result.hasIssue ? 50 : 100,
+          damages: [],
+          totalCostMin: 0,
+          totalCostMax: 0,
+          priorityAction: result.recommendation || '',
+          safetyRisk: result.severity === 'Ciddi',
+          summary: result.analysis || '',
+          recommendations: result.possibleCauses || [],
+          analysis: result.analysis,
+          possibleCauses: result.possibleCauses
+        };
+        setReport(adaptedReport);
+      } else {
+        setError(result?.error || 'Ses analizi başarısız.');
+      }
+    } catch (err) {
+      setError('Bağlantı hatası.');
+    }
+    setAnalyzing(false);
+  };
+
+  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        setAudioBase64(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const reset = () => {
     setImagePreview(null);
     setImageBase64(null);
+    setAudioBase64(null);
     setReport(null);
     setError(null);
     setShowAllDamages(false);
@@ -374,7 +455,88 @@ export const DamageDetection: React.FC = () => {
         </div>
       </div>
 
+      {/* Tab Selector */}
+      <div className="px-4 mt-2">
+        <div className="flex bg-slate-900/50 p-1 rounded-2xl border border-slate-800/50">
+          <button
+            onClick={() => { setActiveTab('visual'); reset(); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'visual' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'
+            }`}
+          >
+            <Camera size={14} /> Görsel Teşhis
+          </button>
+          <button
+            onClick={() => { setActiveTab('acoustic'); reset(); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'acoustic' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'
+            }`}
+          >
+            <Mic size={14} /> Akustik Analiz
+          </button>
+        </div>
+      </div>
+
       <div className="px-4 py-5 space-y-5">
+        {activeTab === 'visual' ? (
+          <>
+            {/* Category Selector */}
+            <div className="grid grid-cols-3 gap-2 bg-slate-900/50 p-1 rounded-2xl border border-slate-800/50">
+              {[
+                { id: 'damage', label: 'Kaporta', icon: Eye },
+                { id: 'leak', label: 'Sızıntı', icon: Sparkles },
+                { id: 'tire', label: 'Lastik', icon: TrendingUp }
+              ].map((cat) => {
+                const Icon = cat.icon;
+                const active = detectionType === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => { setDetectionType(cat.id as any); reset(); }}
+                    className={`flex flex-col items-center gap-1.5 py-2.5 rounded-xl transition-all ${
+                      active ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div className="rounded-3xl border-2 border-dashed border-slate-700 bg-slate-800/20 p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-slate-700/60 flex items-center justify-center mx-auto mb-4">
+              <Activity size={28} className="text-rose-400" />
+            </div>
+            <p className="text-white font-semibold mb-1">Motor Sesini Dinlet</p>
+            <p className="text-slate-500 text-sm mb-4">Motor çalışırken sesi kaydedin veya bir dosya yükleyin.</p>
+            
+            {!audioBase64 ? (
+              <label className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-500 transition-all cursor-pointer mx-auto w-fit">
+                <Mic size={16} />
+                Ses Dosyası Yükle
+                <input type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} />
+              </label>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-2 text-rose-400">
+                  <Volume2 size={24} />
+                  <span className="text-xs font-mono">SES VERİSİ HAZIR</span>
+                </div>
+                <button
+                  onClick={handleAnalyzeSound}
+                  disabled={analyzing}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-orange-600 text-white font-bold"
+                >
+                  {analyzing ? <RefreshCw className="animate-spin" /> : <Activity size={18} />}
+                  Analizi Başlat
+                </button>
+                <button onClick={() => setAudioBase64(null)} className="text-slate-500 text-xs">Temizle</button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Upload area */}
         {!imagePreview ? (

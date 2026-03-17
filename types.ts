@@ -55,6 +55,11 @@ export interface OBDData {
   vehicleId: string;
   timestamp: any;
   rpm: number;
+  speed: number;
+  coolantTemp: number;
+  engineLoad: number;
+  odometer: number;
+  intakeTemp: number;
   engineTemp: number;
   fuelRate: number;
   errorCodes: string[];

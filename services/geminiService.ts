@@ -151,17 +151,35 @@ export const chatWithVehicle = async (
   }
 };
 
-// ── 6. Hasar Tespiti ─────────────────────────────────────
+// ── 6. Çok Modlu Analizler (Görsel & İşitsel) ───────────
 export const analyzeDamage = async (
   base64Image: string,
+  type: 'damage' | 'leak' | 'tire' = 'damage',
   mimeType = 'image/jpeg'
 ): Promise<any> => {
   if (!isOnline()) return { error: 'İnternet bağlantısı yok.' };
   try {
-    return await apiPost<any>('damage-detection', { base64Image, mimeType });
+    return await apiPost<any>('gemini/damage-detection', { 
+      base64Image, 
+      mimeType, 
+      detectionType: type 
+    });
   } catch (err: any) {
     if (err.code === 'QUOTA') return { error: 'YZ kotası doldu.' };
-    return { error: 'Hasar tespiti yapılamadı.' };
+    return { error: 'Görsel analiz yapılamadı.' };
+  }
+};
+
+export const analyzeSound = async (
+  audioData: string, // base64
+  mimeType = 'audio/wav'
+): Promise<any> => {
+  if (!isOnline()) return { error: 'İnternet bağlantısı yok.' };
+  try {
+    return await apiPost<any>('gemini/analyze-sound', { audioData, mimeType });
+  } catch (err: any) {
+    if (err.code === 'QUOTA') return { error: 'YZ kotası doldu.' };
+    return { error: 'Ses analizi yapılamadı.' };
   }
 };
 
@@ -169,7 +187,8 @@ export const analyzeDamage = async (
 export const getProactiveAlerts = async (
   vehicle: Vehicle,
   logs: ServiceLog[],
-  appointments: Appointment[]
+  appointments: Appointment[],
+  obdData?: any
 ): Promise<ProactiveAlert[]> => {
   if (!isOnline()) return [];
   try {
@@ -186,6 +205,7 @@ export const getProactiveAlerts = async (
       appointments: appointments.map(a => ({
         serviceType: a.serviceType, date: a.date, status: a.status,
       })),
+      obdData
     });
     return data.alerts || [];
   } catch {
@@ -196,7 +216,8 @@ export const getProactiveAlerts = async (
 // ── 8. YENİ: Detaylı Sağlık Skoru ────────────────────────
 export const getDetailedHealthScore = async (
   vehicle: Vehicle,
-  logs: ServiceLog[]
+  logs: ServiceLog[],
+  obdData?: any
 ): Promise<HealthScoreDetail | null> => {
   if (!isOnline()) return null;
   try {
@@ -210,6 +231,7 @@ export const getDetailedHealthScore = async (
       logs: logs.slice(0, 40).map(l => ({
         type: l.type, date: l.date, cost: l.cost, mileage: l.mileage, liters: l.liters,
       })),
+      obdData
     });
   } catch {
     return null;

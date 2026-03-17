@@ -13,10 +13,11 @@ import { toast } from '../services/toast';
 import { hapticFeedback } from '../services/hapticService';
 import { getSetting, saveSetting } from '../services/settingsService';
 import { triggerConfetti } from '../services/confetti';
-import { virtualOBD, OBDData } from '../services/VirtualOBDService';
+import { virtualOBD } from '../services/VirtualOBDService';
 import { getPredictiveMaintenance } from '../services/geminiService';
 import { useData } from '../context/DataContext';
 import { AchievementsModal } from '../components/AchievementsModal';
+import { OBDData } from '../types';
 
 interface DtcResult {
     code: string;
@@ -367,7 +368,7 @@ export const Dashboard: React.FC = () => {
             virtualOBD.stopSimulation();
             setObdPrediction(null);
         } else if (vehicle) {
-            virtualOBD.startSimulation(vehicle.mileage);
+            virtualOBD.startSimulation(vehicle.id, vehicle.mileage);
             gainXP('OBD_CONNECTION');
             hapticFeedback.impactMedium();
         }

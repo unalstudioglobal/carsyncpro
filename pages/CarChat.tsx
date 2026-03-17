@@ -5,9 +5,9 @@ import {
     ChevronLeft, Send, Sparkles, Trash2, Mic, Volume2, VolumeX, Car,
     Wrench, Fuel, BarChart2, CalendarClock, AlertCircle, ShieldCheck, Zap
 } from 'lucide-react';
-import { fetchVehicles, fetchLogs } from '../services/firestoreService';
+import { fetchVehicles, fetchLogs, fetchOBDData } from '../services/firestoreService';
 import { chatWithVehicle } from '../services/geminiService';
-import { Vehicle, ServiceLog } from '../types';
+import { Vehicle, ServiceLog, OBDData } from '../types';
 import { toast } from '../services/toast';
 
 interface Message {
@@ -176,10 +176,16 @@ export const CarChat: React.FC = () => {
         setIsTyping(true);
         setShowQuickActions(false);
 
-        // Build rich system context with service log data
+        // Build rich system context with service log and OBD data
         const recentLogs = logs.slice(0, 5).map(l =>
             `- ${l.date}: ${l.type} (${l.mileage ?? '?'} km, ₺${l.cost ?? 0}${l.notes ? ' — ' + l.notes : ''})`
         ).join('\n');
+
+        const obdDataList = await fetchOBDData(vehicle.id);
+        const latestOBD = obdDataList[0];
+        const obdContext = latestOBD ? 
+            `Current OBD Data: RPM: ${latestOBD.rpm}, Speed: ${latestOBD.speed}, Coolant Temp: ${latestOBD.coolantTemp}, Engine Load: ${latestOBD.engineLoad}%, Intakes: ${latestOBD.intakeTemp}C, Error Codes: ${latestOBD.errorCodes.join(', ') || 'None'}` : 
+            'No live OBD data available.';
 
         const history = messages.map(m => ({
             role: m.sender === 'user' ? 'user' : 'model',
@@ -189,7 +195,7 @@ export const CarChat: React.FC = () => {
         try {
             const responseText = await chatWithVehicle(
                 audioBase64 ? '' : text,
-                { ...vehicle, _contextLogs: recentLogs } as any,
+                { ...vehicle, _contextLogs: recentLogs, _obdContext: obdContext } as any,
                 history,
                 audioBase64
             );
