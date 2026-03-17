@@ -141,6 +141,7 @@
   },
   "settings": {
     "title": "Settings",
+    "language": "Language",
     "save": "Save",
     "upload_gallery": "Upload from Gallery",
     "take_photo": "Take Photo",
@@ -464,7 +465,18 @@
     "expired": "Expired",
     "code_lbl": "Code:",
     "no_inv": "No pending invites.",
-    "title": "My Garage",
+    "title": "Garage",
+    "onboarding": {
+      "step1_title": "My Garage",
+      "step1_desc": "Manage all your vehicles from one place.",
+      "step2_title": "Detailed Analysis",
+      "step2_desc": "Track your vehicle's health status and costs.",
+      "step3_title": "QR Transfer",
+      "step3_desc": "Easily transfer vehicle history to the new owner via QR code.",
+      "step4_title": "New Vehicle",
+      "step4_desc": "Start by adding your first vehicle now!"
+    },
+    "free_plan_limit": "You can add up to 2 vehicles on the free plan.",
     "search_placeholder": "Search brand, model or plate...",
     "filter_all": "All",
     "filter_brand": "Brand",

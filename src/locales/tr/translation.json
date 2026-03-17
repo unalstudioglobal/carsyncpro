@@ -39,7 +39,7 @@
     "garage": "Garajım",
     "garage_subtitle": "Tüm araçlarını görüntüle",
     "services": "Servisler",
-    "notifications": "Bildirimler",
+    "notifications": "Bildirim Yönetimi",
     "notifications_subtitle": "Uyarılar ve hatırlatmalar",
     "settings": "Ayarlar",
     "settings_subtitle": "Hesap ve uygulama ayarları",
@@ -91,7 +91,7 @@
     "fuel_tracking_subtitle": "Menzil tahmini ve tüketim",
     "quick_access": "HIZLI ERİŞİM",
     "all": "Tümü",
-    "ai_tools": "✦ YAPAY ZEKA",
+    "ai_tools": "✦ YAPAY ZEKAI",
     "chat_sub": "Araçınla konuş",
     "ai_sub": "Yapay zeka analizi",
     "detection_field": "▦ TESPİT & SAHA",
@@ -141,6 +141,7 @@
   },
   "settings": {
     "title": "Ayarlar",
+    "language": "Dil",
     "save": "Kaydet",
     "upload_gallery": "Galeriden Seç",
     "take_photo": "Fotoğraf Çek",
@@ -193,7 +194,7 @@
     "msg_err": "Profil güncellenirken bir hata oluştu.",
     "reminders_saved": "Hatırlatıcı tercihleri kaydedildi.",
     "notif_saved": "Bildirim tercihleri başarıyla kaydedildi.",
-    "notif_saved_full": "Ayarlar kaydedildi. \\\"Yaklaşan Servis\\\" ve \\\"Yakıt Uyarıları\\\" aktif!",
+    "notif_saved_full": "Ayarlar kaydedildi. \"Yaklaşan Servis\" ve \"Yakıt Uyarıları\" aktif!",
     "pass_mismatch": "Yeni şifreler eşleşmiyor!",
     "pass_short": "Şifre en az 6 karakter olmalıdır.",
     "pass_success": "Şifreniz başarıyla güncellendi.",
@@ -275,6 +276,7 @@
     "wipe_yes": "Evet, Sil"
   },
   "dashboard": {
+    "title": "Panel",
     "analyzing_history": "Araç geçmişi analiz ediliyor...",
     "load_error": "Ayarlar yüklenirken bir hata oluştu.",
     "periodic_maintenance": "Periyodik Bakım",
@@ -363,17 +365,7 @@
     "sec_2fa_err": "2FA güncelleme hatası.",
     "sub_cancel_confirm": "Premium aboneliğinizi iptal etmek istediğinize emin misiniz? Premium özelliklere erişiminizi kaybedeceksiniz.",
     "sub_cancelled": "Aboneliğiniz iptal edildi.",
-    "restore_confirm": "Araç geri yüklendi! Garaja gitmek ister misiniz?",
-    "onboarding": {
-      "step1_title": "Araç Paneli",
-      "step1_desc": "Aracınızın sağlık durumu, yaklaşan bakımları ve tahmini piyasa değeri gibi kritik bilgilere buradan ulaşın.",
-      "step2_title": "Aracınla Sohbet Et",
-      "step2_desc": "Yeni! Sağ alttaki butonu kullanarak aracınla yapay zeka destekli sohbet edebilirsin.",
-      "step3_title": "Hızlı İşlemler",
-      "step3_desc": "Yakıt veya servis kaydı eklemek için buradaki kısayolları kullanabilirsiniz.",
-      "step4_title": "Arıza Tanılama (DTC)",
-      "step4_desc": "Arıza kodlarını girerek yapay zeka destekli çözüm önerileri ve açıklamalar alın."
-    }
+    "restore_confirm": "Araç geri yüklendi! Garaja gitmek ister misiniz?"
   },
   "budget": {
     "title": "Bütçe Hedefleri",
@@ -468,7 +460,18 @@
     "expired": "Süresi doldu",
     "code_lbl": "Kod:",
     "no_inv": "Bekleyen davet yok.",
-    "title": "Garajım",
+    "title": "Garaj",
+    "onboarding": {
+      "step1_title": "Garajım",
+      "step1_desc": "Tüm araçlarınızı tek bir yerden yönetin.",
+      "step2_title": "Detaylı Analiz",
+      "step2_desc": "Aracınızın sağlık durumunu ve maliyetlerini takip edin.",
+      "step3_title": "QR Transfer",
+      "step3_desc": "Araç geçmişini QR kod ile yeni sahibine kolayca aktarın.",
+      "step4_title": "Yeni Araç",
+      "step4_desc": "Hemen ilk aracınızı ekleyerek başlayın!"
+    },
+    "free_plan_limit": "Ücretsiz planda en fazla 2 araç ekleyebilirsiniz.",
     "search_placeholder": "Marka, model veya plaka ara...",
     "filter_all": "Tümü",
     "filter_brand": "Marka",
