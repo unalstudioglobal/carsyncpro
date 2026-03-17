@@ -5,6 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 // Dil dosyalarını import ediyoruz
 import translationTR from './src/locales/tr/translation.json';
 import translationEN from './src/locales/en/translation.json';
+import translationES from './src/locales/es/translation.json';
 
 i18n
     // Dili tarayıcıdan, localStorage'dan vs algıla
@@ -15,6 +16,7 @@ i18n
         resources: {
             tr: { translation: translationTR },
             en: { translation: translationEN },
+            es: { translation: translationES },
         },
         // fallbackLng: Tarayıcının dili bulunamazsa kullanılacak dil
         fallbackLng: 'tr',

@@ -1,6 +1,7 @@
 import { toast } from './toast';
 import { addOBDData } from './firestoreService';
 import { OBDData } from '../types';
+import i18next from 'i18next';
 
 class VirtualOBDService {
   private interval: NodeJS.Timeout | null = null;
@@ -25,7 +26,7 @@ class VirtualOBDService {
     this.currentData.odometer = baseOdometer;
     if (this.interval) return;
 
-    toast.info('OBD Simülasyonu Başlatıldı');
+    toast.info(i18next.t('dashboard.obd_connected'));
     
     this.interval = setInterval(() => {
       // Rastgele dalgalanmalar üret
@@ -44,7 +45,7 @@ class VirtualOBDService {
       // Kritik durum simülasyonu (Binde 1 olasılıkla hata kodu)
       if (Math.random() > 0.999 && this.currentData.activeDTCs.length === 0) {
         this.currentData.activeDTCs = ['P0300'];
-        toast.warning('OBD: Kritik Hata Algılandı (P0300)');
+        toast.warning(i18next.t('dashboard.obd_critical_error', { code: 'P0300' }));
         this.saveToFirestore(); // Hata oluşunca hemen kaydet
       }
 
@@ -87,7 +88,7 @@ class VirtualOBDService {
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = null;
-      toast.info('OBD Bağlantısı Kesildi');
+      toast.info(i18next.t('dashboard.obd_disconnected'));
     }
   }
 

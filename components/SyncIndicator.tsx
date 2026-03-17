@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useData } from '../context/DataContext';
 import { Wifi, WifiOff, RefreshCw, CloudOff } from 'lucide-react';
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export const SyncIndicator: React.FC<Props> = ({ variant = 'compact', className = '' }) => {
+  const { t } = useTranslation();
   const { syncStatus, synced, loading, refetch } = useData();
   const [showTooltip, setShowTooltip] = useState(false);
   const [retrying,    setRetrying]    = useState(false);
@@ -44,7 +46,7 @@ export const SyncIndicator: React.FC<Props> = ({ variant = 'compact', className 
   // live ise gösterme (minimal UI)
   if (overallStatus === 'live' && variant === 'compact') {
     return (
-      <div className={`flex items-center gap-1 ${className}`} title="Gerçek zamanlı senkronize">
+      <div className={`flex items-center gap-1 ${className}`} title={t('common.live_sync_tooltip')}>
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
       </div>
     );
@@ -54,7 +56,7 @@ export const SyncIndicator: React.FC<Props> = ({ variant = 'compact', className 
     return (
       <div className={`flex items-center gap-1.5 ${className}`}>
         <RefreshCw size={11} className="text-blue-400 animate-spin" />
-        {variant === 'full' && <span className="text-[10px] text-blue-400 font-medium">Yükleniyor…</span>}
+        {variant === 'full' && <span className="text-[10px] text-blue-400 font-medium">{t('common.loading_dots')}</span>}
       </div>
     );
   }
@@ -68,7 +70,7 @@ export const SyncIndicator: React.FC<Props> = ({ variant = 'compact', className 
         >
           <CloudOff size={13} className="text-amber-400" />
           {variant === 'full' && (
-            <span className="text-[10px] text-amber-400 font-medium">Çevrimdışı</span>
+            <span className="text-[10px] text-amber-400 font-medium">{t('common.offline')}</span>
           )}
         </button>
 
@@ -78,20 +80,20 @@ export const SyncIndicator: React.FC<Props> = ({ variant = 'compact', className 
             disabled={retrying}
             className="ml-1 text-[10px] text-blue-400 underline font-medium disabled:opacity-50"
           >
-            {retrying ? 'Deneniyor…' : 'Yeniden dene'}
+            {retrying ? t('common.retrying') : t('common.retry')}
           </button>
         )}
 
         {/* Compact tooltip */}
         {variant === 'compact' && showTooltip && (
           <div className="absolute right-0 top-full mt-2 z-50 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white whitespace-nowrap shadow-xl">
-            <p className="font-bold text-amber-400 mb-1">Çevrimdışı mod</p>
-            <p className="text-slate-400">Önbellek kullanılıyor</p>
+            <p className="font-bold text-amber-400 mb-1">{t('common.offline_mode')}</p>
+            <p className="text-slate-400">{t('common.cache_used')}</p>
             <button
               onClick={handleRetry}
               className="mt-1.5 text-blue-400 underline block"
             >
-              {retrying ? 'Deneniyor…' : 'Yeniden bağlan'}
+              {retrying ? t('common.retrying') : t('common.reconnect')}
             </button>
           </div>
         )}
@@ -103,7 +105,7 @@ export const SyncIndicator: React.FC<Props> = ({ variant = 'compact', className 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-      {variant === 'full' && <span className="text-[10px] text-emerald-400 font-medium">Canlı</span>}
+      {variant === 'full' && <span className="text-[10px] text-emerald-400 font-medium">{t('common.live')}</span>}
     </div>
   );
 };

@@ -149,8 +149,8 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ isOpen, onClose }) =
       iconBg: 'rgba(99,102,241,0.12)',
       route: `/dashboard/${v.id}`,
       keywords: [v.brand, v.model, v.plate, String(v.year)].map(normalize),
-      badge: v.status === 'Acil' ? t('dashboard.vehicle_status.urgent') : v.status === 'Servis Gerekli' ? t('dashboard.vehicle_status.service_required') : undefined,
-      badgeColor: v.status === 'Acil' ? '#ef4444' : '#f59e0b',
+      badge: v.status === 'urgent' ? t('dashboard.vehicle_status.urgent') : v.status === 'warn' ? t('dashboard.vehicle_status.service_required') : undefined,
+      badgeColor: v.status === 'urgent' ? '#ef4444' : '#f59e0b',
     })),
     [vehicles]
   );

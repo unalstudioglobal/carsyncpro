@@ -9,6 +9,8 @@ import { fetchVehicles, fetchLogs, fetchOBDData } from '../services/firestoreSer
 import { chatWithVehicle } from '../services/geminiService';
 import { Vehicle, ServiceLog, OBDData } from '../types';
 import { toast } from '../services/toast';
+import { checkAiUsage, incrementAiUsage } from '../services/usageService';
+import { usePremium } from '../context/PremiumContext';
 
 interface Message {
     id: string;
@@ -73,6 +75,7 @@ export const CarChat: React.FC = () => {
     const navigate = useNavigate();
     const scrollRef = useRef<HTMLDivElement>(null);
     const { t, i18n } = useTranslation();
+    const { isPremium } = usePremium();
 
     const [vehicle, setVehicle] = useState<Vehicle | undefined>(undefined);
     const [logs, setLogs] = useState<ServiceLog[]>([]);
@@ -119,7 +122,7 @@ export const CarChat: React.FC = () => {
         if (vehicle && messages.length === 0) {
             setIsTyping(true);
             setTimeout(() => {
-                const initialGreeting = vehicle.status === 'Servis Gerekli'
+                const initialGreeting = vehicle.status === 'warn'
                     ? t('car_chat.greeting_maint', { mileage: vehicle.mileage.toLocaleString() })
                     : t('car_chat.greeting_ok');
                 setMessages([{ id: 'init', sender: 'car', text: initialGreeting, timestamp: new Date() }]);
@@ -165,6 +168,16 @@ export const CarChat: React.FC = () => {
     };
 
     const dispatchMessage = async (text: string, audioBase64?: string, attachedAction?: { label: string; route: string }) => {
+        // AI Limit Check for Free Users
+        if (!isPremium) {
+            const usage = await checkAiUsage();
+            if (!usage.allowed) {
+                toast.error(t('premium.limit_reached', 'Günlük YZ limitine ulaştınız. Sınırsız erişim için Premium\'a geçin!'));
+                navigate('/premium');
+                return;
+            }
+        }
+
         const userMsg: Message = {
             id: Date.now().toString(),
             sender: 'user',
@@ -208,6 +221,11 @@ export const CarChat: React.FC = () => {
             };
             setMessages(prev => [...prev, carMsg]);
             if (responseText) speakText(responseText);
+            
+            // Increment usage for free users
+            if (!isPremium) {
+                await incrementAiUsage();
+            }
         } catch {
             // silent
         } finally {

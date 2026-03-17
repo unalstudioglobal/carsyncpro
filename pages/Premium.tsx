@@ -38,90 +38,107 @@ interface PlanDef {
   };
 }
 
-const PLANS: PlanDef[] = [
+const getPlans = (t: any): PlanDef[] => [
   {
     tier: 'individual',
-    label: 'Bireysel',
-    description: 'Kendi aracınızı profesyonelce yönetin',
-    monthlyPrice: 49,
-    yearlyPrice: 499,
+    label: t('premium_plans.individual_label'),
+    description: t('premium_plans.individual_desc'),
+    monthlyPrice: 99,
+    yearlyPrice: 999,
     icon: Car,
     color: 'text-amber-400',
     gradient: 'from-amber-500 to-orange-600',
     ring: 'ring-amber-500/40',
     highlight: true,
-    badge: 'En Popüler',
-    limits: { vehicles: '10 araç', users: '1 kullanıcı', aiCalls: '100/ay', reports: 'Sınırsız', storage: '5 GB' },
+    badge: t('premium_plans.popular_badge'),
+    limits: { 
+      vehicles: t('premium_plans.limits_vehicles', { count: 10 }), 
+      users: t('premium_plans.limits_users', { count: 1 }), 
+      aiCalls: t('premium_plans.unlimited'), 
+      reports: t('premium_plans.unlimited'), 
+      storage: t('premium_plans.limits_storage', { count: 5 }) 
+    },
     features: [
-      'Sınırsız servis kaydı',
-      'AI hasar tespiti',
-      'AI bakım tahmini',
-      'AI araç sohbet',
-      'PDF rapor dışa aktarma',
-      'Araç karşılaştırma',
-      'Sigorta & muayene takvimi',
-      'Akıllı bildirimler',
-      'AI İçgörüler (YENİ)',
+      t('premium_plans.feat_ai_unlimited'),
+      t('premium_plans.feat_predictive'),
+      t('premium_plans.feat_obd'),
+      t('premium_plans.feat_acoustic'),
+      t('premium_plans.feat_pdf'),
+      t('premium_plans.feat_insurance'),
+      t('premium_plans.feat_smart_notif'),
+      t('premium_plans.feat_ai_insight_full'),
     ],
   },
   {
     tier: 'family',
-    label: 'Aile',
-    description: 'Tüm aile araçlarını tek çatı altında',
-    monthlyPrice: 99,
-    yearlyPrice: 999,
+    label: t('premium_plans.family_label'),
+    description: t('premium_plans.family_desc'),
+    monthlyPrice: 199,
+    yearlyPrice: 1999,
     icon: Users,
     color: 'text-violet-400',
     gradient: 'from-violet-500 to-purple-600',
     ring: 'ring-violet-500/40',
-    badge: '5 Kullanıcı',
-    limits: { vehicles: '20 araç', users: '5 kullanıcı', aiCalls: '300/ay', reports: 'Sınırsız', storage: '15 GB' },
+    badge: t('premium_plans.users_badge', { count: 5 }),
+    limits: { 
+      vehicles: t('premium_plans.limits_vehicles', { count: 20 }), 
+      users: t('premium_plans.limits_users', { count: 5 }), 
+      aiCalls: t('premium_plans.limits_ai', { count: 300 }), 
+      reports: t('premium_plans.unlimited'), 
+      storage: t('premium_plans.limits_storage', { count: 15 }) 
+    },
     features: [
-      'Bireysel plandaki her şey',
-      'Aile garajı paylaşımı',
-      '5 kullanıcı hesabı',
-      '20 araç desteği',
-      'Aile bazlı bütçe takibi',
-      'Kullanıcı başına ayrı bildirim',
-      'Yönetici & üye rolleri',
-      'Ortak belge deposu',
+      t('premium_plans.feat_individual_all'),
+      t('premium_plans.feat_family_garage'),
+      t('premium_plans.feat_user_accounts', { count: 5 }),
+      t('premium_plans.feat_vehicle_support', { count: 20 }),
+      t('premium_plans.feat_budget_tracking'),
+      t('premium_plans.feat_personal_notif'),
+      t('premium_plans.feat_roles'),
+      t('premium_plans.feat_docs'),
     ],
   },
   {
     tier: 'fleet',
-    label: 'Filo',
-    description: 'İşletmeler ve filo operatörleri için',
+    label: t('premium_plans.fleet_label'),
+    description: t('premium_plans.fleet_desc'),
     monthlyPrice: 699,
     yearlyPrice: 6999,
     icon: Building2,
     color: 'text-cyan-400',
     gradient: 'from-cyan-500 to-blue-600',
     ring: 'ring-cyan-500/40',
-    limits: { vehicles: 'Sınırsız', users: '10 kullanıcı', aiCalls: 'Sınırsız', reports: 'Sınırsız', storage: '100 GB' },
+    limits: { 
+      vehicles: t('premium_plans.unlimited'), 
+      users: t('premium_plans.limits_users', { count: 10 }), 
+      aiCalls: t('premium_plans.unlimited'), 
+      reports: t('premium_plans.unlimited'), 
+      storage: t('premium_plans.limits_storage', { count: 100 }) 
+    },
     features: [
-      'Aile plandaki her şey',
-      'Sınırsız araç & kullanıcı',
-      'Filo maliyet dashboard',
-      'Toplu PDF raporu',
-      'Sürücü ataması & yönetimi',
-      'SLA bazlı servis takibi',
-      'API erişimi (yakında)',
-      'Öncelikli destek',
-      'Özel onboarding',
+      t('premium_plans.feat_family_all'),
+      t('premium_plans.feat_fleet_unlimited'),
+      t('premium_plans.feat_fleet_dashboard'),
+      t('premium_plans.feat_bulk_pdf'),
+      t('premium_plans.feat_driver_mgt'),
+      t('premium_plans.feat_sla_service'),
+      t('premium_plans.feat_api_soon'),
+      t('premium_plans.feat_priority_support'),
+      t('premium_plans.feat_onboarding'),
     ],
   },
 ];
 
-const COMPARISON_ROWS = [
-  { label: 'Araç sayısı',        individual: '10', family: '20', fleet: 'Sınırsız', icon: Car },
-  { label: 'Kullanıcı',          individual: '1',  family: '5',  fleet: '10+',      icon: Users },
-  { label: 'AI çağrısı / ay',    individual: '100',family: '300',fleet: 'Sınırsız', icon: Brain },
-  { label: 'Servis kaydı',       individual: '✓',  family: '✓',  fleet: '✓',        icon: Wrench },
-  { label: 'Hasar tespiti (AI)', individual: '✓',  family: '✓',  fleet: '✓',        icon: Sparkles },
-  { label: 'PDF raporu',         individual: '✓',  family: '✓',  fleet: '✓',        icon: FileDown },
-  { label: 'Aile garajı',        individual: '✗',  family: '✓',  fleet: '✓',        icon: Users },
-  { label: 'Filo dashboard',     individual: '✗',  family: '✗',  fleet: '✓',        icon: BarChart2 },
-  { label: 'API erişimi',        individual: '✗',  family: '✗',  fleet: 'Yakında',  icon: Zap },
+const getComparisonRows = (t: any) => [
+  { label: t('premium_plans.vehicles_limit'), individual: '10',  family: '20', fleet: t('premium_plans.unlimited'), icon: Car },
+  { label: t('premium_plans.users_limit'),    individual: '1',   family: '5',  fleet: '10+', icon: Users },
+  { label: t('premium_plans.ai_calls'),       individual: t('premium_plans.unlimited'), family: t('premium_plans.unlimited'), fleet: t('premium_plans.unlimited'), icon: Brain },
+  { label: t('premium_plans.compare_service_record'), individual: '✓', family: '✓', fleet: '✓', icon: Wrench },
+  { label: t('premium_plans.compare_damage_ai'),      individual: '✓', family: '✓', fleet: '✓', icon: Sparkles },
+  { label: t('premium_plans.compare_pdf_report'),     individual: '✓', family: '✓', fleet: '✓', icon: FileDown },
+  { label: t('premium_plans.compare_family_garage'),  individual: '✗', family: '✓', fleet: '✓', icon: Users },
+  { label: t('premium_plans.compare_fleet_dashboard'), individual: '✗', family: '✗', fleet: '✓', icon: BarChart2 },
+  { label: t('premium_plans.compare_api_access'),      individual: '✗', family: '✗', fleet: t('premium_plans.compare_soon'), icon: Zap },
 ];
 
 // ── Yardımcı bileşenler ───────────────────────────────────
@@ -165,16 +182,19 @@ export const Premium: React.FC = () => {
     const status = params.get('status');
     const plan   = params.get('plan') || '';
     if (status === 'success') {
-      const tierLabel = plan.startsWith('family') ? 'Aile' : plan.startsWith('fleet') ? 'Filo' : 'Bireysel';
-      toast.success(`${tierLabel} Premium üyeliğiniz aktif edildi!`);
+      const tierKey = plan.startsWith('family') ? 'family' : plan.startsWith('fleet') ? 'fleet' : 'individual';
+      const tierLabel = t(`premium_plans.${tierKey}_label`);
+      toast.success(t(`premium_plans.success_${tierKey}`));
       refresh();
       navigate('/');
     } else if (status === 'failed') {
-      toast.error('Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.');
+      toast.error(t('premium_plans.failed'));
     }
-  }, [refresh, navigate]);
+  }, [refresh, navigate, t]);
 
-  const activePlan = PLANS.find(p => p.tier === selected)!;
+  const plans      = getPlans(t);
+  const comparisonRows = getComparisonRows(t);
+  const activePlan = plans.find(p => p.tier === selected)!;
   const price      = billing === 'yearly' ? activePlan.yearlyPrice : activePlan.monthlyPrice;
   const monthlyEq  = billing === 'yearly' ? Math.round(activePlan.yearlyPrice / 12) : activePlan.monthlyPrice;
   const savings    = Math.round((1 - activePlan.yearlyPrice / 12 / activePlan.monthlyPrice) * 100);
@@ -197,7 +217,7 @@ export const Premium: React.FC = () => {
         }
       }
     } catch (err: any) {
-      toast.error(err.message || 'Ödeme başlatılamadı');
+      toast.error(err.message || t('premium_plans.redirecting')); // Fallback to redirecting if no msg
     } finally {
       setIsLoading(false);
     }
@@ -222,7 +242,7 @@ export const Premium: React.FC = () => {
         {isPremium && (
           <div className="flex items-center gap-2 bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-full">
             <Crown size={12} className="fill-amber-400" />
-            <span>{profile?.plan ? `${profile.plan} aktif` : 'Premium Aktif'}</span>
+            <span>{profile?.plan ? t('premium_plans.active_btn') : t('premium_plans.active_btn')}</span>
           </div>
         )}
       </header>
@@ -239,7 +259,7 @@ export const Premium: React.FC = () => {
               CarSync Pro
             </h1>
             <p className="text-slate-400 text-sm mt-1.5 max-w-[280px] mx-auto leading-relaxed">
-              Aracınızı, ailenizi veya filonuzu profesyonelce yönetin
+              {t('premium_plans.hero_desc')}
             </p>
           </div>
           <div className="flex items-center justify-center gap-4 pt-1">
@@ -252,7 +272,7 @@ export const Premium: React.FC = () => {
               <div className="flex items-center gap-0.5">
                 {[1,2,3,4,5].map(i => <Star key={i} size={11} className="fill-amber-400 text-amber-400" />)}
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5"><span className="text-white font-bold">12.000+</span> kullanıcı</p>
+              <p className="text-[11px] text-slate-400 mt-0.5"><Trans i18nKey="premium_plans.users_count" components={{ b: <span className="text-white font-bold" /> }} /></p>
             </div>
           </div>
         </div>
@@ -263,22 +283,22 @@ export const Premium: React.FC = () => {
             onClick={() => setBilling('monthly')}
             className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${billing === 'monthly' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            Aylık
+            {t('premium_plans.billing_monthly')}
           </button>
           <button
             onClick={() => setBilling('yearly')}
             className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all relative ${billing === 'yearly' ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            Yıllık
+            {t('premium_plans.billing_yearly')}
             <span className="absolute -top-3 -right-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded-full border border-slate-900 font-black">
-              -%{savings}
+              {t('premium_plans.save_badge', { pct: savings })}
             </span>
           </button>
         </div>
 
         {/* Plan kartları */}
         <div className="space-y-3">
-          {PLANS.map(plan => {
+          {plans.map(plan => {
             const isSelected = selected === plan.tier;
             const planPrice  = billing === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
             const perMonth   = billing === 'yearly' ? Math.round(plan.yearlyPrice / 12) : plan.monthlyPrice;
@@ -324,10 +344,10 @@ export const Premium: React.FC = () => {
                         <span className={`text-2xl font-black leading-none ${isSelected ? 'text-white' : 'text-white/60'}`}>
                           {billing === 'yearly' ? perMonth : planPrice}
                         </span>
-                        <span className="text-[10px] text-white/30">/ay</span>
+                        <span className="text-[10px] text-white/30">{t('premium_plans.per_month')}</span>
                       </div>
                       {billing === 'yearly' && (
-                        <p className="text-[10px] text-white/30 mt-0.5">₺{planPrice}/yıl</p>
+                        <p className="text-[10px] text-white/30 mt-0.5">₺{planPrice}{t('premium_plans.per_year')}</p>
                       )}
                     </div>
                   </div>
@@ -361,13 +381,13 @@ export const Premium: React.FC = () => {
         {/* Karşılaştırma tablosu */}
         <div>
           <h2 className="text-[10px] font-black text-white/30 uppercase tracking-widest text-center mb-4">
-            Plan Karşılaştırması
+            {t('premium_plans.compare_title')}
           </h2>
           <div className="rounded-2xl border border-white/8 overflow-hidden bg-white/[0.02]">
             {/* Başlık satırı */}
             <div className="grid grid-cols-4 border-b border-white/8 bg-white/[0.03]">
-              <div className="p-3 text-[10px] text-white/30 font-bold uppercase tracking-wide">Özellik</div>
-              {PLANS.map(p => (
+              <div className="p-3 text-[10px] text-white/30 font-bold uppercase tracking-wide">{t('premium_plans.vehicles_limit')}</div>
+              {plans.map(p => (
                 <button
                   key={p.tier}
                   onClick={() => setSelected(p.tier)}
@@ -377,7 +397,7 @@ export const Premium: React.FC = () => {
                 </button>
               ))}
             </div>
-            {COMPARISON_ROWS.map((row, i) => (
+            {comparisonRows.map((row, i) => (
               <FeatureRow key={i} {...row} activeCol={selected} />
             ))}
           </div>
@@ -390,35 +410,35 @@ export const Premium: React.FC = () => {
           {billing === 'yearly' && (
             <div className="inline-flex items-center gap-1.5 bg-green-500/15 border border-green-500/30 text-green-400 text-xs font-bold px-3 py-1 rounded-full mb-4">
               <Check size={11} />
-              <span>Yıllık seçimle ₺{activePlan.monthlyPrice * 12 - activePlan.yearlyPrice} tasarruf</span>
+              <span>{t('premium_plans.savings_note', { amount: activePlan.monthlyPrice * 12 - activePlan.yearlyPrice })}</span>
             </div>
           )}
 
-          <p className="text-xs text-white/40 mb-1">{activePlan.label} Plan · {billing === 'yearly' ? 'Yıllık' : 'Aylık'}</p>
+          <p className="text-xs text-white/40 mb-1">{activePlan.label} Plan · {billing === 'yearly' ? t('premium_plans.billing_yearly') : t('premium_plans.billing_monthly')}</p>
           <div className="flex items-baseline justify-center gap-1">
             <span className="text-lg text-white/40 self-start mt-2">₺</span>
             <span className="text-6xl font-black text-white tracking-tight leading-none">{price}</span>
             <span className="text-white/40 text-sm font-medium self-end mb-1">
-              {billing === 'yearly' ? '/yıl' : '/ay'}
+              {billing === 'yearly' ? t('premium_plans.per_year') : t('premium_plans.per_month')}
             </span>
           </div>
           {billing === 'yearly' && (
             <p className="text-xs text-amber-400/80 mt-2 font-medium">
-              Aylık yalnızca ₺{monthlyEq} — %{savings} indirimli
+              {t('premium_plans.yearly_equiv', { amount: monthlyEq, pct: savings })}
             </p>
           )}
           <div className="mt-4 pt-4 border-t border-white/8 flex items-center justify-center gap-2 text-xs text-white/40">
             <Shield size={13} className="text-green-400" />
-            <span>İlk 7 gün iade garantisi</span>
+            <span>{t('premium_plans.guarantee')}</span>
           </div>
         </div>
 
         {/* Güven rozetleri */}
         <div className="grid grid-cols-3 gap-3 text-center">
           {[
-            { icon: Shield,   label: '7 Gün\nİade',       color: 'text-green-400' },
-            { icon: Lock,     label: '256-bit\nSSL',       color: 'text-blue-400'  },
-            { icon: Star,     label: '12.000+\nKullanıcı', color: 'text-amber-400' },
+            { icon: Shield,   label: t('premium_plans.guarantee').replace(' ', '\n'),       color: 'text-green-400' },
+            { icon: Lock,     label: `${t('premium_plans.ssl')}\nSSL`,       color: 'text-blue-400'  },
+            { icon: Star,     label: t('premium_plans.users_count'), color: 'text-amber-400' },
           ].map(({ icon: Icon, label, color }) => (
             <div key={label} className="bg-white/[0.03] border border-white/8 rounded-2xl p-3">
               <Icon size={20} className={`${color} mx-auto mb-1.5`} />
@@ -433,7 +453,7 @@ export const Premium: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <Shield className="text-amber-500" />
-                <span>Güvenli Ödeme</span>
+                <span>{t('settings.payment_redirect')}</span>
               </h2>
               <button
                 onClick={() => { setShowIyzico(false); const c = document.getElementById('iyzico-form-container'); if (c) c.innerHTML = ''; }}
@@ -458,7 +478,7 @@ export const Premium: React.FC = () => {
             <div className="flex items-center gap-2">
               <activePlan.icon size={16} className={activePlan.color} />
               <span className="text-sm font-bold text-white">{activePlan.label}</span>
-              <span className="text-xs text-white/40">{billing === 'yearly' ? 'Yıllık' : 'Aylık'}</span>
+              <span className="text-xs text-white/40">{billing === 'yearly' ? t('premium_plans.billing_yearly') : t('premium_plans.billing_monthly')}</span>
             </div>
             <div className="flex items-baseline gap-0.5">
               <span className="text-xs text-white/40">₺</span>
@@ -479,16 +499,16 @@ export const Premium: React.FC = () => {
           {isLoading ? (
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Yönlendiriliyor…</span>
+              <span>{t('premium_plans.redirecting')}</span>
             </>
           ) : isPremium ? (
-            <><Crown size={18} className="fill-amber-400 text-amber-400" /><span>Premium Aktif — Geri Dön</span></>
+            <><Crown size={18} className="fill-amber-400 text-amber-400" /><span>{t('premium_plans.active_btn')}</span></>
           ) : (
-            <><Zap size={20} className="fill-white" /><span>{activePlan.label} Premium Başlat</span></>
+            <><Zap size={20} className="fill-white" /><span>{t('premium_plans.start_btn')}</span></>
           )}
         </button>
         <p className="text-[10px] text-center text-slate-600">
-          İptal politikası ve kullanım koşulları için lütfen destek sayfasını inceleyin.
+          {t('premium_plans.footer_note')}
         </p>
       </div>
     </div>

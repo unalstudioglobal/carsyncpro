@@ -559,7 +559,7 @@ export const FamilyGarage: React.FC = () => {
   };
 
   const inviteCode = activeGroup?.inviteCode || '...';
-  const pendingInvites = garage?.invites.filter(i => i.status === 'pending') || [];
+  const pendingInvites: GarageInvite[] = [];
 
   if (loading) {
     return (

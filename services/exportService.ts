@@ -8,6 +8,9 @@
 
 import { fetchVehicles, fetchLogs } from './firestoreService';
 import { Vehicle, ServiceLog } from '../types';
+import i18next from 'i18next';
+
+const t = (key: string, options?: any) => i18next.t(key, options);
 
 // ── Yardımcı: dosya indirme ───────────────────────────────
 function downloadFile(content: string, filename: string, mime: string): void {
@@ -42,7 +45,7 @@ export async function exportLogsCsv(vehicleId?: string): Promise<void> {
   const filtered = vehicleId ? logs.filter(l => l.vehicleId === vehicleId) : logs;
   const sorted   = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  const header = ['Tarih', 'Araç', 'İşlem Türü', 'Kilometre', 'Maliyet (TL)', 'Yakıt (L)', 'Notlar', 'Ödeme Durumu'];
+  const header = [t('common.date'), t('nav.vehicle'), t('common.service_type'), t('dashboard.mileage'), t('dashboard.total_cost'), t('add_record.liters'), t('common.notes_optional'), t('records.payment_status')];
   const rows = sorted.map(log => [
     log.date,
     vehicleMap[log.vehicleId] ?? log.vehicleId,
@@ -51,7 +54,7 @@ export async function exportLogsCsv(vehicleId?: string): Promise<void> {
     log.cost,
     log.liters ?? '',
     (log.notes ?? '').replace(/\n/g, ' '),
-    log.paymentStatus === 'Paid' ? 'Ödendi' : 'Bekliyor',
+    log.paymentStatus === 'Paid' ? t('records.paid') : t('records.pending'),
   ]);
 
   const csv = [header, ...rows].map(rowToCsv).join('\n');
@@ -63,7 +66,7 @@ export async function exportLogsCsv(vehicleId?: string): Promise<void> {
 export async function exportVehiclesCsv(): Promise<void> {
   const vehicles = await fetchVehicles();
 
-  const header = ['Marka', 'Model', 'Yıl', 'Plaka', 'Kilometre', 'Durum', 'Sağlık Puanı', 'Son İşlem'];
+  const header = [t('garage.filter_brand'), t('garage.filter_model'), t('vehicle.year'), t('vehicle.plate'), t('dashboard.mileage'), t('qr_card.status'), t('dashboard.health_score'), t('qr_card.last_service')];
   const rows = vehicles.map(v => [
     v.brand, v.model, v.year, v.plate, v.mileage,
     v.status, v.healthScore, v.lastLogDate,
@@ -93,7 +96,7 @@ export async function exportMonthlySummaryCsv(): Promise<void> {
   const vehicleMap: Record<string, string> = {};
   vehicles.forEach(v => { vehicleMap[v.id] = `${v.brand} ${v.model}`; });
 
-  const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const TR_MONTHS = t('analytics.months_short', { returnObjects: true }) as string[];
 
   // Group by year-month
   const monthly: Record<string, { yakıt: number; bakım: number; sigorta: number; diğer: number; kayıt: number }> = {};
@@ -112,7 +115,7 @@ export async function exportMonthlySummaryCsv(): Promise<void> {
     monthly[key].kayıt++;
   });
 
-  const header = ['Yıl', 'Ay', 'Yakıt (TL)', 'Bakım (TL)', 'Sigorta (TL)', 'Diğer (TL)', 'Toplam (TL)', 'Kayıt Sayısı'];
+  const header = [t('vehicle.year'), t('common.month'), t('dashboard.fuel'), t('dashboard.maintenance'), t('budget.insurance'), t('budget.other'), t('dashboard.total'), t('budget.record_count')];
   const rows = Object.entries(monthly)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, v]) => {

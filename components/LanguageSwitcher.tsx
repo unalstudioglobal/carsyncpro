@@ -16,6 +16,7 @@ interface Props {
 const LANGUAGES = [
   { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
 ];
 
 export const LanguageSwitcher: React.FC<Props> = ({ variant = 'compact', className = '' }) => {
@@ -23,11 +24,18 @@ export const LanguageSwitcher: React.FC<Props> = ({ variant = 'compact', classNa
   const [open, setOpen] = useState(false);
   const current = LANGUAGES.find(l => l.code === i18n.language.split('-')[0]) ?? LANGUAGES[0];
 
-  const change = (code: string) => {
+    const change = (code: string) => {
     if (code === current.code) { setOpen(false); return; }
     i18n.changeLanguage(code);
     localStorage.setItem('i18nextLng', code);
-    toast.success(code === 'tr' ? 'Dil değiştirildi — Türkçe' : 'Language changed — English');
+    
+    const messages: Record<string, string> = {
+      tr: 'Dil değiştirildi — Türkçe',
+      en: 'Language changed — English',
+      es: 'Idioma cambiado — Español'
+    };
+    
+    toast.success(messages[code] || `Language changed — ${code.toUpperCase()}`);
     setOpen(false);
   };
 

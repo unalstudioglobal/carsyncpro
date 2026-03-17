@@ -15,6 +15,7 @@ import { getSetting, saveSetting } from '../services/settingsService';
 import { triggerConfetti } from '../services/confetti';
 import { virtualOBD } from '../services/VirtualOBDService';
 import { getPredictiveMaintenance } from '../services/geminiService';
+import { usePremium } from '../context/PremiumContext';
 import { useData } from '../context/DataContext';
 import { AchievementsModal } from '../components/AchievementsModal';
 import { OBDData } from '../types';
@@ -43,6 +44,9 @@ export const Dashboard: React.FC = () => {
       gamification,
       gainXP
     } = useData();
+
+    const { isPremium } = usePremium();
+    const [showHook, setShowHook] = useState(!isPremium);
 
     const [vehicle, setVehicle] = useState<Vehicle | null>(null);
     const [logs, setLogs] = useState<ServiceLog[]>([]);
@@ -392,7 +396,7 @@ export const Dashboard: React.FC = () => {
         return <div className="flex items-center justify-center h-screen text-black dark:text-white">{t('dashboard.loading')}</div>;
     }
 
-    const isServiceNeeded = ['Servis Gerekli', 'Acil'].includes(vehicle.status);
+    const isServiceNeeded = ['warn', 'urgent'].includes(vehicle.status);
 
     // Calculate Simple Cost History for Chart
     // Group logs by month for the chart
@@ -445,6 +449,41 @@ export const Dashboard: React.FC = () => {
                         <Sparkles size={16} />
                     </div>
                     <p className="text-sm font-medium text-black dark:text-white/90">{announcement}</p>
+                </div>
+            )}
+
+            {/* Hook System: Fear of Failure Risk */}
+            {showHook && !isPremium && (
+                <div className="mx-4 mt-4 p-5 rounded-3xl bg-gradient-to-br from-red-600 to-rose-700 text-white shadow-2xl shadow-red-900/40 relative overflow-hidden animate-in zoom-in duration-500">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <AlertTriangle size={80} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-2">
+                            <ShieldAlert size={18} className="text-red-200" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-red-100">{t('common.critical_warning')}</span>
+                        </div>
+                        <h3 className="text-lg font-black mb-1">
+                            {t('dashboard.hook_title')}
+                        </h3>
+                        <p className="text-xs text-red-100 mb-4 leading-relaxed opacity-90">
+                            {t('dashboard.hook_desc')}
+                        </p>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => navigate('/premium')}
+                                className="flex-1 bg-white text-red-600 py-2.5 rounded-xl text-xs font-bold shadow-lg active:scale-95 transition"
+                            >
+                                {t('dashboard.hook_btn')}
+                            </button>
+                            <button 
+                                onClick={() => setShowHook(false)}
+                                className="px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition"
+                            >
+                                <XCircle size={18} />
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -597,15 +636,15 @@ export const Dashboard: React.FC = () => {
                                                                 <div className="text-sm font-black text-black dark:text-white font-mono">{Math.round(obdData.rpm)}</div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Hız</div>
+                                                                <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">{t('dashboard.obd_speed')}</div>
                                                                 <div className="text-sm font-black text-black dark:text-white font-mono">{Math.round(obdData.speed)} <span className="text-[8px]">km/h</span></div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Sıcaklık</div>
+                                                                <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">{t('dashboard.obd_temp')}</div>
                                                                 <div className="text-sm font-black text-black dark:text-white font-mono">{Math.round(obdData.coolantTemp)}°C</div>
                                                             </div>
                                                             <div className="text-center border-l border-white/5">
-                                                                <div className="text-[10px] text-blue-400 font-bold uppercase mb-1">KM (Canlı)</div>
+                                                                <div className="text-[10px] text-blue-400 font-bold uppercase mb-1">{t('dashboard.km_live')}</div>
                                                                 <div className="text-sm font-black text-blue-400 font-mono">{obdData.odometer.toFixed(2)}</div>
                                                             </div>
                                                         </div>
@@ -615,10 +654,14 @@ export const Dashboard: React.FC = () => {
                                                                 <div className="flex items-center justify-between mb-2">
                                                                     <div className="flex items-center gap-2">
                                                                         <Sparkles size={14} className="text-blue-400" />
-                                                                        <span className="text-xs font-bold text-black dark:text-white">AI Arıza Tahmini</span>
+                                                                        <span className="text-xs font-bold text-black dark:text-white">{t('dashboard.obd_prediction')}</span>
                                                                     </div>
-                                                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${obdPrediction.riskLevel === 'Yüksek' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
-                                                                        Risk: {obdPrediction.riskLevel}
+                                                                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase ${obdPrediction.riskLevel === 'Yüksek' || obdPrediction.riskLevel === 'High' ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                                        {t('dashboard.obd_risk')}: {
+                                                                            obdPrediction.riskLevel === 'Yüksek' || obdPrediction.riskLevel === 'High' ? t('dashboard.obd_risk_high') :
+                                                                            obdPrediction.riskLevel === 'Orta' || obdPrediction.riskLevel === 'Medium' ? t('dashboard.obd_risk_medium') :
+                                                                            t('dashboard.obd_risk_low')
+                                                                        }
                                                                     </span>
                                                                 </div>
                                                                 <div className="space-y-1">
@@ -637,14 +680,14 @@ export const Dashboard: React.FC = () => {
                                                                 className="w-full py-2.5 rounded-xl border border-blue-500/30 bg-blue-500/5 text-blue-400 text-xs font-bold hover:bg-blue-500/10 transition flex items-center justify-center gap-2"
                                                             >
                                                                 {obdAnalyzing ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                                                                {obdAnalyzing ? 'AI Analiz Ediyor...' : 'AI Arıza Tahmini Çalıştır'}
+                                                                {obdAnalyzing ? t('dashboard.obd_analyzing') : t('dashboard.obd_run_prediction')}
                                                             </button>
                                                         )}
                                                     </div>
                                                 ) : (
                                                     <div className="flex items-center justify-center h-12 text-slate-500 text-xs gap-2 italic">
                                                         <Info size={14} />
-                                                        Cihaz bekleniyor (Simülasyonu başlatmak için bağlanın)
+                                                        {t('dashboard.obd_waiting')}
                                                     </div>
                                                 )}
                                                 
@@ -826,7 +869,7 @@ export const Dashboard: React.FC = () => {
                 <AdBanner slotId="7103291209" format="fluid" layoutKey="-gw-3+1f-3d+2z" />
 
                 {/* Multiplex (Content Recommendation) Ad */}
-                <AdBanner slotId="1311433112" format="autorelaxed" label="Önerilen İçerikler" />
+                <AdBanner slotId="1311433112" format="autorelaxed" label={t('dashboard.recommended_content', 'Önerilen İçerikler')} />
 
                 {/* Widget Personalization Modal */}
                 {showWidgetSettings && (
@@ -855,8 +898,18 @@ export const Dashboard: React.FC = () => {
                                                 <GripVertical size={16} />
                                             </div>
                                             <div>
-                                                <div className="font-bold text-sm text-black dark:text-white capitalize">{t(`dashboard.widget_${widget.id}`)}</div>
-                                                <div className="text-[10px] text-slate-500 uppercase tracking-tight">{widget.enabled ? t('common.visible') : t('common.hidden')}</div>
+                                                <div className="font-bold text-sm text-black dark:text-white capitalize">
+                                                    {t(`dashboard.widget_${widget.id}`)}
+                                                </div>
+                                                <div className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                                                    {widget.id === 'obd' ? t('dashboard.widget_obd_desc') : 
+                                                     widget.id === 'health' ? t('dashboard.widget_health_desc') :
+                                                     widget.id === 'dtc' ? t('dashboard.widget_dtc_desc') :
+                                                     t('dashboard.widget_default_desc')}
+                                                </div>
+                                                <div className="text-[8px] text-slate-500 uppercase tracking-tight mt-1 opacity-60 font-medium">
+                                                    {widget.enabled ? t('common.visible') : t('common.hidden')}
+                                                </div>
                                             </div>
                                         </div>
 

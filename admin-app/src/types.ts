@@ -15,7 +15,7 @@ export interface Vehicle {
   images?: string[];
   mileage: number;
   lastLogDate: string;
-  status: 'Sorun Yok' | 'Servis Gerekli' | 'Acil' | 'Satıldı';
+  status: 'ok' | 'warn' | 'urgent' | 'sold';
   healthScore: number;
   marketValueMin: number;
   marketValueMax: number;

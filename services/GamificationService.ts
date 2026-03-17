@@ -10,11 +10,11 @@ export const XP_RULES = {
 };
 
 export const ACHIEVEMENTS: Achievement[] = [
-  { id: 'first_vehicle', title: 'Hoş Geldin!', description: 'İlk aracını garaja ekledin.', icon: 'Car' },
-  { id: 'eco_driver', title: 'Çevreci Sürücü', description: '5 kez yakıt kaydı girdin.', icon: 'Leaf' },
-  { id: 'maintenance_pro', title: 'Bakım Uzmanı', description: 'Aracının 3 bakımını geciktirmeden tamamladın.', icon: 'Wrench' },
-  { id: 'obd_master', title: 'Teknoloji Kurdu', description: 'OBD canlı veri bağlantısını başlattın.', icon: 'Zap' },
-  { id: 'streak_3', title: 'İstikrarlı', description: '3 gün üst üste uygulamayı kullandın.', icon: 'Flame' },
+  { id: 'first_vehicle', title: 'gamification.achievements.first_vehicle.title', description: 'gamification.achievements.first_vehicle.desc', icon: 'Car' },
+  { id: 'eco_driver', title: 'gamification.achievements.eco_driver.title', description: 'gamification.achievements.eco_driver.desc', icon: 'Leaf' },
+  { id: 'maintenance_pro', title: 'gamification.achievements.maintenance_pro.title', description: 'gamification.achievements.maintenance_pro.desc', icon: 'Wrench' },
+  { id: 'obd_master', title: 'gamification.achievements.obd_master.title', description: 'gamification.achievements.obd_master.desc', icon: 'Zap' },
+  { id: 'streak_3', title: 'gamification.achievements.streak_3.title', description: 'gamification.achievements.streak_3.desc', icon: 'Flame' },
 ];
 
 class GamificationService {

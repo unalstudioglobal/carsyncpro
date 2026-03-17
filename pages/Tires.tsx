@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Disc, MapPin, Plus, Ruler, Thermometer, Warehouse, ArrowRightLeft, Trash2 } from 'lucide-react';
 import { TireSet, Vehicle } from '../types';
 import { fetchVehicles, fetchTires, addTireSet, updateTireSet, deleteTireSet } from '../services/firestoreService';
 
 export const Tires: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
@@ -93,7 +95,7 @@ export const Tires: React.FC = () => {
             <button onClick={() => navigate(-1)} className="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition">
                 <ChevronLeft size={24} className="text-white" />
             </button>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Lastik Oteli</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('tires_page.hotel_title')}</h1>
         </div>
         <button 
             onClick={() => setShowAddModal(true)}
@@ -140,11 +142,11 @@ export const Tires: React.FC = () => {
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
                                 tire.location === 'OnVehicle' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'
                             }`}>
-                                {tire.type === 'Summer' ? 'Yazlık' : tire.type === 'Winter' ? 'Kışlık' : '4 Mevsim'}
+                                {tire.type === 'Summer' ? t('common.summer') : tire.type === 'Winter' ? t('common.winter') : t('common.all_season')}
                             </span>
                             {tire.location === 'OnVehicle' && (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-400 text-green-900 uppercase tracking-wider flex items-center">
-                                    <ArrowRightLeft size={10} className="mr-1" /> Takılı
+                                    <ArrowRightLeft size={10} className="mr-1" /> {t('common.mounted')}
                                 </span>
                             )}
                         </div>
@@ -167,20 +169,20 @@ export const Tires: React.FC = () => {
                 {tire.location !== 'OnVehicle' && (
                     <div className="flex items-center space-x-2 text-sm text-slate-500 mb-4 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-xl">
                         <Warehouse size={16} />
-                        <span>Konum: <span className="font-semibold text-slate-700 dark:text-slate-300">{tire.storageLocation || 'Belirtilmedi'}</span></span>
+                        <span>{t('tires_page.location_label')}: <span className="font-semibold text-slate-700 dark:text-slate-300">{tire.storageLocation || t('tires_page.not_specified')}</span></span>
                     </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-2">
                     <div className={`p-3 rounded-xl ${tire.location === 'OnVehicle' ? 'bg-blue-700/50' : 'bg-slate-50 dark:bg-slate-700/50'}`}>
-                        <div className={`text-[10px] uppercase font-bold mb-1 ${tire.location === 'OnVehicle' ? 'text-blue-200' : 'text-slate-400'}`}>Ön Diş Derinliği</div>
+                        <div className={`text-[10px] uppercase font-bold mb-1 ${tire.location === 'OnVehicle' ? 'text-blue-200' : 'text-slate-400'}`}>{t('tires_page.front_depth')}</div>
                         <div className="flex justify-between items-end">
                             <span className="text-lg font-bold">{tire.treadDepthFrontLeft} mm</span>
                             <Ruler size={14} className="opacity-50 mb-1" />
                         </div>
                     </div>
                     <div className={`p-3 rounded-xl ${tire.location === 'OnVehicle' ? 'bg-blue-700/50' : 'bg-slate-50 dark:bg-slate-700/50'}`}>
-                        <div className={`text-[10px] uppercase font-bold mb-1 ${tire.location === 'OnVehicle' ? 'text-blue-200' : 'text-slate-400'}`}>Arka Diş Derinliği</div>
+                        <div className={`text-[10px] uppercase font-bold mb-1 ${tire.location === 'OnVehicle' ? 'text-blue-200' : 'text-slate-400'}`}>{t('tires_page.rear_depth')}</div>
                         <div className="flex justify-between items-end">
                             <span className="text-lg font-bold">{tire.treadDepthRearLeft} mm</span>
                             <Ruler size={14} className="opacity-50 mb-1" />
@@ -193,13 +195,13 @@ export const Tires: React.FC = () => {
       
       {/* Swap Action */}
       <div className="bg-slate-800 rounded-2xl p-6 text-center">
-          <h3 className="text-white font-bold mb-2">Mevsim Değişimi</h3>
-          <p className="text-slate-400 text-sm mb-4">Lastiklerin yerini değiştirmek için tıklayın.</p>
+          <h3 className="text-white font-bold mb-2">{t('tires_page.season_change')}</h3>
+          <p className="text-slate-400 text-sm mb-4">{t('tires_page.change_desc')}</p>
           <button 
             onClick={swapTires}
             className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl w-full transition shadow-lg shadow-blue-900/20"
           >
-              Lastikleri Değiştir (Yaz ↔ Kış)
+              {t('tires_page.swap_btn')}
           </button>
       </div>
 
@@ -207,11 +209,11 @@ export const Tires: React.FC = () => {
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-6 space-y-6 animate-fadeIn max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Yeni Lastik Seti</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('tires_page.new_set')}</h2>
                 
                 <div className="space-y-4">
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Tip</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('tires_page.type')}</label>
                         <div className="grid grid-cols-3 gap-2">
                             {['Summer', 'Winter', 'AllSeason'].map(type => (
                                 <button
@@ -223,36 +225,36 @@ export const Tires: React.FC = () => {
                                         : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                     }`}
                                 >
-                                    {type === 'Summer' ? 'Yazlık' : type === 'Winter' ? 'Kışlık' : '4 Mevsim'}
+                                    {type === 'Summer' ? t('common.summer') : type === 'Winter' ? t('common.winter') : t('common.all_season')}
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Marka</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('tires_page.brand')}</label>
                         <input 
                             type="text" 
                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white"
-                            placeholder="Örn: Michelin"
+                            placeholder={t('tires_page.brand_ph')}
                             value={newTire.brand}
                             onChange={e => setNewTire({ ...newTire, brand: e.target.value })}
                         />
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Ebat</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('tires_page.size')}</label>
                         <input 
                             type="text" 
                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white"
-                            placeholder="Örn: 225/45 R17"
+                            placeholder={t('tires_page.size_ph')}
                             value={newTire.size}
                             onChange={e => setNewTire({ ...newTire, size: e.target.value })}
                         />
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Konum</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('tires_page.location')}</label>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setNewTire({ ...newTire, location: 'OnVehicle' })}
@@ -262,7 +264,7 @@ export const Tires: React.FC = () => {
                                     : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                 }`}
                             >
-                                Araç Üzerinde
+                                {t('common.on_vehicle')}
                             </button>
                             <button
                                 onClick={() => setNewTire({ ...newTire, location: 'Hotel' })}
@@ -272,18 +274,18 @@ export const Tires: React.FC = () => {
                                     : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                 }`}
                             >
-                                Otel / Depo
+                                {t('common.hotel_warehouse')}
                             </button>
                         </div>
                     </div>
 
                     {newTire.location === 'Hotel' && (
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Depo / Otel Adı</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('tires_page.storage_name')}</label>
                             <input 
                                 type="text" 
                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white"
-                                placeholder="Örn: Euromaster Maslak"
+                                placeholder={t('tires_page.storage_ph')}
                                 value={newTire.storageLocation}
                                 onChange={e => setNewTire({ ...newTire, storageLocation: e.target.value })}
                             />
@@ -292,7 +294,7 @@ export const Tires: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Ön Diş (mm)</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('tires_page.front_mm')}</label>
                             <input 
                                 type="number" 
                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white"
@@ -301,7 +303,7 @@ export const Tires: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Arka Diş (mm)</label>
+                            <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('tires_page.rear_mm')}</label>
                             <input 
                                 type="number" 
                                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white"
@@ -317,14 +319,14 @@ export const Tires: React.FC = () => {
                         onClick={() => setShowAddModal(false)}
                         className="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                     >
-                        İptal
+                        {t('common.cancel')}
                     </button>
                     <button 
                         onClick={handleAddTire}
                         disabled={loading}
                         className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/30 transition disabled:opacity-50"
                     >
-                        {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                        {loading ? t('common.saving') : t('common.save')}
                     </button>
                 </div>
             </div>

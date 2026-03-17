@@ -60,10 +60,10 @@ const THEMES: Record<CardTheme, {
 };
 
 const STATUS_LABELS: Record<string, { labelKey: string; icon: string; color: string }> = {
-  'Sorun Yok': { labelKey: 'qr_card.status_ok', icon: '✅', color: '#10b981' },
-  'Servis Gerekli': { labelKey: 'qr_card.status_service', icon: '⚠️', color: '#f59e0b' },
-  'Acil': { labelKey: 'qr_card.status_urgent', icon: '🚨', color: '#ef4444' },
-  'Satıldı': { labelKey: 'qr_card.status_sold', icon: '💰', color: '#64748b' },
+  'ok': { labelKey: 'qr_card.status_ok', icon: '✅', color: '#10b981' },
+  'warn': { labelKey: 'qr_card.status_service', icon: '⚠️', color: '#f59e0b' },
+  'urgent': { labelKey: 'qr_card.status_urgent', icon: '🚨', color: '#ef4444' },
+  'sold': { labelKey: 'qr_card.status_sold', icon: '💰', color: '#64748b' },
 };
 
 // ─── QR Generator (using qrcode-svg via canvas) ──────────────────────────────
@@ -87,7 +87,7 @@ const VehicleCardDisplay: React.FC<{
   const { t, i18n } = useTranslation();
   const { vehicle, lastService, totalServices, totalSpent, fuelCount } = data;
   const themeCfg = THEMES[theme];
-  const statusCfg = STATUS_LABELS[vehicle.status] || STATUS_LABELS['Sorun Yok'];
+  const statusCfg = STATUS_LABELS[vehicle.status] || STATUS_LABELS['ok'];
 
   const lastServiceDate = lastService
     ? new Date(lastService.date + 'T00:00:00').toLocaleDateString(i18n.language, {

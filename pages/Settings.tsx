@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, User, Mail, Camera, Save, LogOut, Bell, Shield, Moon, Lock, Key, Smartphone, ChevronRight, Fuel, Image, FileText, Zap, MessageSquare, Clock, Droplet, RotateCw, ClipboardCheck, Activity, Wallet, Trash2, Info, Globe, ScrollText, ExternalLink, Car, Type, FileDown, Lock as LockIcon, Crown, Archive, RefreshCcw, Star, CreditCard, CheckCircle2, Wrench, AlertTriangle, FileSpreadsheet, Table, AlertOctagon, Palette } from 'lucide-react';
+import { ChevronLeft, User, Users, Mail, Camera, Save, LogOut, Bell, Shield, Moon, Lock, Key, Smartphone, ChevronRight, Fuel, Image, FileText, Zap, MessageSquare, Clock, Droplet, RotateCw, ClipboardCheck, Activity, Wallet, Trash2, Info, Globe, ScrollText, ExternalLink, Car, Type, FileDown, Lock as LockIcon, Crown, Archive, RefreshCcw, Star, CreditCard, CheckCircle2, Wrench, AlertTriangle, FileSpreadsheet, Table, AlertOctagon, Palette } from 'lucide-react';
 import { Vehicle, ServiceLog } from '../types';
 import { AdBanner } from '../components/AdBanner';
 import { auth } from '../firebaseConfig';
@@ -687,6 +687,49 @@ export const Settings: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Referral System */}
+                <div className="pt-6">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-2 mb-3">{t('settings.referral_title', 'Arkadaşını Getir, Premium Kazan')}</h3>
+                    <div className={`${commonCardClass} bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20`}>
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                                <Users size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm text-slate-900 dark:text-white">{t('settings.referral_promo', '1 Arkadaş = 1 Hafta Premium')}</h4>
+                                <p className="text-xs text-slate-500 mt-0.5">{t('settings.referral_desc', 'Davet kodunla kayıt olan her arkadaşın için hesabına 1 hafta Premium ekleyelim.')}</p>
+                            </div>
+                        </div>
+                        <div className="bg-slate-100 dark:bg-slate-900/50 p-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-between mb-3">
+                            <span className="font-mono font-bold text-indigo-500 tracking-wider uppercase">CARSYNC-{auth.currentUser?.uid.slice(0, 5)}</span>
+                            <button 
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`https://carsyncpro.app/join?ref=CARSYNC-${auth.currentUser?.uid.slice(0, 5)}`);
+                                    toast.success(t('settings.link_copied', 'Davet linki kopyalandı!'));
+                                }}
+                                className="text-indigo-500 text-xs font-black p-2 hover:bg-indigo-500/10 rounded-lg transition"
+                            >
+                                {t('common.copy', 'Kopyala')}
+                            </button>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                if (navigator.share) {
+                                    navigator.share({
+                                        title: 'CarSync Pro',
+                                        text: 'Arabanın dilinden anlayan YZ ile tanış! Benim linkimle kayıt ol, hediyeni al:',
+                                        url: `https://carsyncpro.app/join?ref=CARSYNC-${auth.currentUser?.uid.slice(0, 5)}`
+                                    });
+                                }
+                            }}
+                            className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
+                        >
+                            <ExternalLink size={16} />
+                            <span>{t('settings.referral_share', 'Hemen Davet Et')}</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -1142,9 +1185,20 @@ export const Settings: React.FC = () => {
                 {/* Language Selector */}
                 <div className={`${commonCardClass} space-y-4`}>
                     <div className="flex items-center space-x-3"><div className="bg-green-500/10 p-2.5 rounded-lg text-green-500"><Globe size={20} /></div><span className="font-medium">{t('settings.language')}</span></div>
-                    <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg">
-                        <button onClick={() => i18n.changeLanguage('tr')} className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${i18n.language === 'tr' ? 'bg-green-600 text-white shadow' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}>Türkçe</button>
-                        <button onClick={() => i18n.changeLanguage('en')} className={`flex-1 py-2 rounded-md text-xs font-medium transition-all ${i18n.language === 'en' ? 'bg-green-600 text-white shadow' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}>English</button>
+                    <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg flex-wrap gap-1">
+                        {[
+                            { code: 'tr', label: 'Türkçe' },
+                            { code: 'en', label: 'English' },
+                            { code: 'es', label: 'Español' }
+                        ].map(lang => (
+                            <button
+                                key={lang.code}
+                                onClick={() => i18n.changeLanguage(lang.code)}
+                                className={`flex-1 min-w-[70px] py-2 rounded-md text-[10px] font-medium transition-all ${i18n.language.startsWith(lang.code) ? 'bg-green-600 text-white shadow' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
+                            >
+                                {lang.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 

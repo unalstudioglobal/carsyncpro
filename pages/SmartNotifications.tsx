@@ -67,16 +67,16 @@ const LS_NOTIFS = 'carsync_smart_notifs';
 const LS_RULES = 'carsync_notif_rules';
 
 const DEFAULT_RULES: NotifRule[] = [
-  { id: 'oil_due', label: 'Yağ Değişimi', description: 'Son yağ değişiminin üzerinden 10.000+ km geçtiyse', category: 'maintenance', icon: Droplet, enabled: true },
-  { id: 'service_due', label: 'Periyodik Bakım', description: 'Son bakımın üzerinden 15.000+ km geçtiyse', category: 'maintenance', icon: Wrench, enabled: true },
-  { id: 'tire_due', label: 'Lastik Rotasyonu', description: 'Son rotasyonun üzerinden 10.000+ km geçtiyse', category: 'maintenance', icon: RotateCw, enabled: true },
-  { id: 'brake_due', label: 'Fren Kontrolü', description: 'Son fren servisinin üzerinden 30.000+ km geçtiyse', category: 'maintenance', icon: Wrench, enabled: true },
-  { id: 'battery_due', label: 'Akü Uyarısı', description: 'Son akü değişiminin üzerinden 60.000+ km geçtiyse', category: 'maintenance', icon: Battery, enabled: true },
-  { id: 'inspection_due', label: 'Muayene Hatırlatma', description: 'Araç muayenesi 2 yılı aştıysa', category: 'insurance', icon: ClipboardCheck, enabled: true },
-  { id: 'low_health', label: 'Düşük Sağlık Skoru', description: 'Araç sağlık skoru 50\'nin altına düştüyse', category: 'system', icon: TrendingUp, enabled: true },
-  { id: 'no_fuel_log', label: 'Yakıt Takibi', description: '30 gün içinde yakıt kaydı girilmediyse', category: 'fuel', icon: Fuel, enabled: false },
-  { id: 'high_cost', label: 'Bütçe Uyarısı', description: 'Aylık harcama 5.000 TL\'yi aştıysa', category: 'budget', icon: Gauge, enabled: true },
-  { id: 'achievement', label: 'Başarılar', description: 'Kilometre ve bakım başarıları için kutlama bildirimi', category: 'achievement', icon: Sparkles, enabled: true },
+  { id: 'oil_due', label: 'oil_due', description: 'oil_due_desc', category: 'maintenance', icon: Droplet, enabled: true },
+  { id: 'service_due', label: 'service_due', description: 'service_due_desc', category: 'maintenance', icon: Wrench, enabled: true },
+  { id: 'tire_due', label: 'tire_due', description: 'tire_due_desc', category: 'maintenance', icon: RotateCw, enabled: true },
+  { id: 'brake_due', label: 'brake_due', description: 'brake_due_desc', category: 'maintenance', icon: Wrench, enabled: true },
+  { id: 'battery_due', label: 'battery_due', description: 'battery_due_desc', category: 'maintenance', icon: Battery, enabled: true },
+  { id: 'inspection_due', label: 'inspection_due', description: 'inspection_due_desc', category: 'insurance', icon: ClipboardCheck, enabled: true },
+  { id: 'low_health', label: 'low_health', description: 'low_health_desc', category: 'system', icon: TrendingUp, enabled: true },
+  { id: 'no_fuel_log', label: 'no_fuel_log', description: 'no_fuel_log_desc', category: 'fuel', icon: Fuel, enabled: false },
+  { id: 'high_cost', label: 'high_cost', description: 'high_cost_desc', category: 'budget', icon: Gauge, enabled: true },
+  { id: 'achievement', label: 'achievement', description: 'achievement_desc', category: 'achievement', icon: Sparkles, enabled: true },
 ];
 
 
@@ -160,7 +160,7 @@ const runRuleEngine = (
 
     // ── Oil Change ──
     if (ruleEnabled('oil_due')) {
-      const last = lastLog(v.id, 'Yağ Değişimi');
+      const last = lastLog(v.id, 'oil_change');
       const kmSince = last ? v.mileage - last.mileage : v.mileage;
       if (kmSince >= 12000) {
         push({
@@ -181,7 +181,7 @@ const runRuleEngine = (
 
     // ── Periodic Service ──
     if (ruleEnabled('service_due')) {
-      const last = lastLog(v.id, 'Periyodik Bakım');
+      const last = lastLog(v.id, 'periodic');
       const kmSince = last ? v.mileage - last.mileage : v.mileage;
       if (kmSince >= 17000) {
         push({
@@ -202,7 +202,7 @@ const runRuleEngine = (
 
     // ── Tire Rotation ──
     if (ruleEnabled('tire_due')) {
-      const last = lastLog(v.id, 'Lastik Rotasyonu');
+      const last = lastLog(v.id, 'tire_rotation');
       const kmSince = last ? v.mileage - last.mileage : v.mileage;
       if (kmSince >= 10000) {
         push({
@@ -216,7 +216,7 @@ const runRuleEngine = (
 
     // ── Brake Service ──
     if (ruleEnabled('brake_due')) {
-      const last = lastLog(v.id, 'Fren Servisi');
+      const last = lastLog(v.id, 'brake');
       const kmSince = last ? v.mileage - last.mileage : v.mileage;
       if (kmSince >= 30000) {
         push({
@@ -230,7 +230,7 @@ const runRuleEngine = (
 
     // ── Battery ──
     if (ruleEnabled('battery_due')) {
-      const last = lastLog(v.id, 'Akü Değişimi');
+      const last = lastLog(v.id, 'battery');
       const kmSince = last ? v.mileage - last.mileage : v.mileage;
       if (kmSince >= 60000) {
         push({
@@ -255,7 +255,7 @@ const runRuleEngine = (
 
     // ── No Fuel Log ──
     if (ruleEnabled('no_fuel_log')) {
-      const fuelLogs = logs.filter(l => l.vehicleId === v.id && l.type === 'Yakıt Alımı');
+      const fuelLogs = logs.filter(l => l.vehicleId === v.id && l.type === 'fuel');
       if (fuelLogs.length > 0) {
         const lastFuel = fuelLogs.sort((a, b) => b.date.localeCompare(a.date))[0];
         const daysSince = Math.floor((Date.now() - new Date(lastFuel.date + 'T00:00:00').getTime()) / 86400000);
@@ -666,19 +666,19 @@ export const SmartNotifications: React.FC = () => {
           {/* Diagnostic Button (Hidden unless error or manual check) */}
           <button
             onClick={async () => {
-              toast.info("Bildirim sistemi kontrol ediliyor...", { id: 'diag' });
+              toast.info(t('smart_notifs.diag_checking'), { id: 'diag' });
               try {
                 const { initNotifications } = await import('../services/notificationService');
                 await initNotifications();
-                toast.success("Bağlantı başarılı! Lütfen Admin panelinden tekrar deneyin.", { id: 'diag' });
+                toast.success(t('smart_notifs.diag_success'), { id: 'diag' });
               } catch (err: any) {
-                toast.error(`Hata: ${err.message || 'Bilinmiyor'}`, { id: 'diag' });
+                toast.error(`${t('common.error')}: ${err.message || t('common.unknown')}`, { id: 'diag' });
               }
             }}
             className="w-full py-2 text-[10px] uppercase font-black text-slate-600 hover:text-slate-400 transition-colors flex items-center justify-center gap-2"
           >
             <RefreshCw size={10} />
-            Bağlantıyı Yenile ve Sorun Gider
+            {t('smart_notifs.diag_btn')}
           </button>
         </div>
 

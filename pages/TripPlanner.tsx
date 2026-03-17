@@ -37,7 +37,7 @@ export const TripPlanner: React.FC = () => {
         const allLogs = await import('../services/firestoreService').then(m => m.fetchLogs());
         setLogs(allLogs);
       } catch (err) {
-        console.error("Yükleme hatası:", err);
+        console.error(t('common.load_error') + ":", err);
       }
     };
     load();

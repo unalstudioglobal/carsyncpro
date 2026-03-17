@@ -157,6 +157,8 @@ export const activatePremium = async (
   const profile: PremiumProfile = {
     isPremium: true,
     plan,
+    tier: 'individual',
+    billing: plan,
     expiresAt,
     subscriptionId,
     verifiedAt: new Date().toISOString(),

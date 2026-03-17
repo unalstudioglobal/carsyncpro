@@ -407,7 +407,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
             {/* ── Section: AI & Akıllı Özellikler ── */}
             <div style={{ marginBottom: 10, animation: 'fadeSlideUp 0.4s 0.08s ease both', opacity: 0, animationFillMode: 'forwards' }}>
               <p style={{ color: 'var(--text-muted)', fontSize: 9, fontWeight: 800, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4, opacity: 0.5 }}>
-                Yapay Zeka
+                {t('nav.ai_tools').replace('✦ ', '')}
               </p>
               {/* AI Insights Hero Card */}
               <button
@@ -426,16 +426,16 @@ export const Layout: React.FC<LayoutProps> = ({ children, announcement }) => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>AI İçgörüler</p>
-                    <span style={{ background: 'rgba(168,85,247,0.25)', color: '#d8b4fe', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, letterSpacing: 1, textTransform: 'uppercase', border: '1px solid rgba(168,85,247,0.35)' }}>YENİ</span>
+                    <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-body)' }}>{t('nav.ai_insights')}</p>
+                    <span style={{ background: 'rgba(168,85,247,0.25)', color: '#d8b4fe', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, letterSpacing: 1, textTransform: 'uppercase', border: '1px solid rgba(168,85,247,0.35)' }}>{t('nav.ai_insights_badge')}</span>
                   </div>
-                  <p style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 500, lineHeight: 1.4 }}>Proaktif uyarılar, sağlık analizi, 12 aylık bakım takvimi</p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 500, lineHeight: 1.4 }}>{t('nav.ai_insights_desc')}</p>
                 </div>
               </button>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
                 {[
-                  { route: '/predictive-maintenance', icon: Zap, label: t('nav.predictive_maintenance') || 'AI Bakım', sub: 'Tahmine dayalı', color: '#8b5cf6', grad: 'rgba(139,92,246,' },
-                  { route: '/car-chat', icon: Sparkles, label: t('nav.car_chat') || 'AI Asistan', sub: 'Araçla sohbet', color: '#a855f7', grad: 'rgba(168,85,247,' },
+                  { route: '/predictive-maintenance', icon: Zap, label: t('nav.predictive_maintenance'), sub: t('nav.ai_sub'), color: '#8b5cf6', grad: 'rgba(139,92,246,' },
+                  { route: '/car-chat', icon: Sparkles, label: t('nav.car_chat'), sub: t('nav.chat_sub'), color: '#a855f7', grad: 'rgba(168,85,247,' },
                 ].map(({ route, icon: Icon, label, sub, color, grad }) => {
                   const active = isActive(route);
                   return (

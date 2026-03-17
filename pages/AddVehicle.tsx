@@ -25,7 +25,7 @@ export const AddVehicle: React.FC = () => {
     year: new Date().getFullYear().toString(),
     plate: '',
     mileage: '',
-    status: 'Sorun Yok' as Vehicle['status'],
+    status: 'ok' as Vehicle['status'],
     image: null as string | null,
     images: [] as string[]
   });
@@ -410,7 +410,7 @@ export const AddVehicle: React.FC = () => {
       <div className="space-y-2">
         <label className="text-xs font-bold text-slate-400 ml-1">{t('add_vehicle.label_status')}</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {['Sorun Yok', 'Servis Gerekli', 'Acil'].map((status) => (
+          {['ok', 'warn', 'urgent'].map((status) => (
             <button
               key={status}
               onClick={() => setFormData({ ...formData, status: status as any })}
@@ -419,7 +419,7 @@ export const AddVehicle: React.FC = () => {
                 : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
                 }`}
             >
-              {status === 'Sorun Yok' ? t('vehicle_status.no_issue') : status === 'Servis Gerekli' ? t('vehicle_status.service_required') : t('vehicle_status.urgent')}
+              {status === 'ok' ? t('vehicle_status.no_issue') : status === 'warn' ? t('vehicle_status.service_required') : t('vehicle_status.urgent')}
             </button>
           ))}
         </div>

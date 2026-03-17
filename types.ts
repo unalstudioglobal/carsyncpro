@@ -17,7 +17,7 @@ export interface Vehicle {
   images?: string[];
   mileage: number;
   lastLogDate: string;
-  status: 'Sorun Yok' | 'Servis Gerekli' | 'Acil' | 'Satıldı';
+  status: 'ok' | 'warn' | 'urgent' | 'sold';
   healthScore: number;
   marketValueMin: number;
   marketValueMax: number;
@@ -70,7 +70,7 @@ export interface AIReport {
   id: string;
   vehicleId: string;
   timestamp: any;
-  reportType: 'ariza' | 'yakit' | 'saglik' | 'sürüş';
+  reportType: 'diagnostic' | 'fuel' | 'health' | 'driving';
   summary: string;
   detailedAnalysis: Record<string, any>;
 }

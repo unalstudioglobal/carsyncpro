@@ -4,10 +4,13 @@ import { ChevronLeft, FileText, Plus, Calendar, Upload, Trash2, AlertTriangle, C
 import { Document, Vehicle } from '../types';
 import { fetchVehicles, fetchDocuments, addDocument, deleteDocument } from '../services/firestoreService';
 import { format, differenceInDays } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { tr, enUS, es } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 
 export const Documents: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const dateLocale = i18n.language === 'tr' ? tr : i18n.language === 'es' ? es : enUS;
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -68,11 +71,11 @@ export const Documents: React.FC = () => {
   };
 
   const getExpiryStatus = (dateStr?: string) => {
-    if (!dateStr) return { color: 'text-slate-500', bg: 'bg-slate-100', text: 'Süresiz' };
+    if (!dateStr) return { color: 'text-slate-500', bg: 'bg-slate-100', text: t('documents.infinite') };
     const days = differenceInDays(new Date(dateStr), new Date());
-    if (days < 0) return { color: 'text-red-600', bg: 'bg-red-100', text: 'Süresi Dolmuş' };
-    if (days < 30) return { color: 'text-amber-600', bg: 'bg-amber-100', text: `${days} gün kaldı` };
-    return { color: 'text-emerald-600', bg: 'bg-emerald-100', text: 'Geçerli' };
+    if (days < 0) return { color: 'text-red-600', bg: 'bg-red-100', text: t('documents.expired') };
+    if (days < 30) return { color: 'text-amber-600', bg: 'bg-amber-100', text: t('documents.days_left', { days }) };
+    return { color: 'text-emerald-600', bg: 'bg-emerald-100', text: t('documents.valid') };
   };
 
   const getIcon = (type: string) => {
@@ -92,7 +95,7 @@ export const Documents: React.FC = () => {
               <button onClick={() => navigate(-1)} className="w-11 h-11 rounded-full bg-slate-800 flex items-center justify-center hover:bg-slate-700 transition">
                   <ChevronLeft size={24} className="text-white" />
               </button>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Dijital Torpido</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('documents.title')}</h1>
           </div>
           <button 
               onClick={() => setShowAddModal(true)}
@@ -132,7 +135,9 @@ export const Documents: React.FC = () => {
                               </div>
                               <div>
                                   <h3 className="font-bold text-slate-900 dark:text-white">{doc.title}</h3>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400">{doc.type === 'License' ? 'Ruhsat' : doc.type === 'Insurance' ? 'Sigorta' : 'Diğer'}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                      {doc.type === 'License' ? t('documents.license') : doc.type === 'Insurance' ? t('documents.insurance') : t('documents.other')}
+                                  </p>
                               </div>
                           </div>
                           <div className={`px-3 py-1 rounded-full text-xs font-bold ${status.bg} ${status.color}`}>
@@ -143,7 +148,7 @@ export const Documents: React.FC = () => {
                       <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700 pt-4 mt-2">
                           <div className="flex items-center space-x-2">
                               <Calendar size={16} />
-                              <span>Bitiş: {doc.expiryDate ? format(new Date(doc.expiryDate), 'd MMM yyyy', { locale: tr }) : '-'}</span>
+                              <span>{t('documents.expiry_label')} {doc.expiryDate ? format(new Date(doc.expiryDate), 'd MMM yyyy', { locale: dateLocale }) : '-'}</span>
                           </div>
                           <div className="flex items-center gap-3">
                               {doc.notes && <span className="text-xs truncate max-w-[120px]">{doc.notes}</span>}
@@ -168,11 +173,11 @@ export const Documents: React.FC = () => {
                 className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-6 space-y-6 relative shadow-2xl max-h-[90vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Yeni Belge Ekle</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('documents.new_doc')}</h2>
                 
                 <div className="space-y-4">
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Belge Tipi</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('documents.doc_type')}</label>
                         <div className="grid grid-cols-3 gap-2">
                             {['License', 'Insurance', 'Inspection'].map(type => (
                                 <button
@@ -184,25 +189,25 @@ export const Documents: React.FC = () => {
                                         : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                     }`}
                                 >
-                                    {type === 'License' ? 'Ruhsat' : type === 'Insurance' ? 'Sigorta' : 'Muayene'}
+                                    {type === 'License' ? t('documents.license') : type === 'Insurance' ? t('documents.insurance') : t('documents.inspection')}
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Başlık</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('documents.doc_title')}</label>
                         <input 
                             type="text" 
                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white"
-                            placeholder="Örn: Trafik Sigortası"
+                            placeholder={t('documents.type_ph')}
                             value={newDoc.title}
                             onChange={e => setNewDoc({ ...newDoc, title: e.target.value })}
                         />
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Bitiş Tarihi</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('documents.expiry_date')}</label>
                         <input 
                             type="date" 
                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white"
@@ -212,10 +217,10 @@ export const Documents: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Notlar</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">{t('documents.notes')}</label>
                         <textarea 
                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 outline-none focus:border-blue-500 transition text-slate-900 dark:text-white h-20 resize-none"
-                            placeholder="Poliçe no, detaylar..."
+                            placeholder={t('documents.notes_ph')}
                             value={newDoc.notes}
                             onChange={e => setNewDoc({ ...newDoc, notes: e.target.value })}
                         />
@@ -227,14 +232,14 @@ export const Documents: React.FC = () => {
                         onClick={() => setShowAddModal(false)}
                         className="flex-1 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                     >
-                        İptal
+                        {t('common.cancel')}
                     </button>
                     <button 
                         onClick={handleAddDocument}
                         disabled={loading}
                         className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-500/30 transition disabled:opacity-50"
                     >
-                        {loading ? 'Kaydediliyor...' : 'Kaydet'}
+                        {loading ? t('common.saving') : t('common.save')}
                     </button>
                 </div>
             </div>

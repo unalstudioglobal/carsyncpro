@@ -303,7 +303,7 @@ const AddVehicleStep: React.FC<{
         plate: vehicle.plate.toUpperCase(),
         mileage: Number(vehicle.mileage) || 0,
         image: '',
-        status: 'Sorun Yok',
+        status: 'ok',
         healthScore: 100,
         lastLogDate: '',
         marketValueMin: 0,

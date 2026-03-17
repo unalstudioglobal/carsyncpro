@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Award, Flame, Zap, ZapOff, Sparkles, Car, Leaf, Wrench } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { gamificationService } from '../services/GamificationService';
@@ -12,6 +13,7 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export const AchievementsModal: React.FC<AchievementsModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { gamification } = useData();
   const nextLevelXP = gamificationService.getXPForNextLevel(gamification.level);
   const progress = (gamification.xp / nextLevelXP) * 100;
@@ -35,15 +37,15 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({ onClose })
               <Award size={40} className="text-yellow-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-black">{gamification.level}. Seviye</h2>
-              <p className="text-blue-100 font-bold opacity-80 uppercase tracking-widest text-[10px]">Liderlik Tablosunda Yüksel</p>
+              <h2 className="text-2xl font-black">{t('common.level', { level: gamification.level })}</h2>
+              <p className="text-blue-100 font-bold opacity-80 uppercase tracking-widest text-[10px]">{t('achievements.leaderboard_tip')}</p>
             </div>
           </div>
 
           <div className="mt-6 space-y-2 relative z-10">
             <div className="flex justify-between text-xs font-black uppercase tracking-wider">
-              <span>XP: {gamification.xp}</span>
-              <span>Sonraki: {nextLevelXP}</span>
+              <span>{t('common.xp')}: {gamification.xp}</span>
+              <span>{t('common.next')}: {nextLevelXP}</span>
             </div>
             <div className="h-2.5 bg-black/20 rounded-full overflow-hidden border border-white/10">
               <div 
@@ -58,7 +60,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({ onClose })
         <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-900">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles size={16} className="text-blue-400" />
-            <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Kazanılan Başarımlar</h3>
+            <h3 className="font-bold text-slate-400 uppercase tracking-widest text-[10px]">{t('achievements.earned_title')}</h3>
           </div>
 
           <div className="grid gap-3">
@@ -71,8 +73,8 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({ onClose })
                       <Icon size={24} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-white text-sm">{ach.title}</h4>
-                      <p className="text-[10px] text-slate-500 font-medium">{ach.description}</p>
+                      <h4 className="font-bold text-white text-sm">{t(ach.title)}</h4>
+                      <p className="text-[10px] text-slate-500 font-medium">{t(ach.description)}</p>
                     </div>
                   </div>
                 );
@@ -82,7 +84,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({ onClose })
                 <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-600">
                   <ZapOff size={32} />
                 </div>
-                <p className="text-slate-500 text-xs font-medium">Henüz başarım kazanmadın.<br/>Uygulamayı kullanarak XP kazan!</p>
+                <p className="text-slate-500 text-xs font-medium" dangerouslySetInnerHTML={{ __html: t('achievements.earned_none').replace('\n', '<br/>') }} />
               </div>
             )}
           </div>
@@ -92,7 +94,7 @@ export const AchievementsModal: React.FC<AchievementsModalProps> = ({ onClose })
         <div className="p-6 bg-slate-950/50 border-t border-slate-800/50 flex justify-center">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-500">
             <Flame size={12} />
-            <span>{gamification.streakDays} Günlük Seri</span>
+            <span>{t('achievements.streak_days', { days: gamification.streakDays })}</span>
           </div>
         </div>
       </div>

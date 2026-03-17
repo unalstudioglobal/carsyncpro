@@ -81,7 +81,7 @@ export const Garage: React.FC = () => {
   // Enhanced Status Configuration for Better UI
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'Sorun Yok':
+      case 'ok':
       case t('dashboard.vehicle_status.no_issue'):
         return {
           icon: CheckCircle,
@@ -91,7 +91,7 @@ export const Garage: React.FC = () => {
           glow: '',
           iconAnim: ''
         };
-      case 'Servis Gerekli':
+      case 'warn':
       case t('dashboard.vehicle_status.service_required'):
         return {
           icon: AlertTriangle,
@@ -101,7 +101,7 @@ export const Garage: React.FC = () => {
           glow: 'ring-1 ring-amber-500/20',
           iconAnim: 'animate-bounce'
         };
-      case 'Acil':
+      case 'urgent':
       case t('dashboard.vehicle_status.urgent'):
         return {
           icon: AlertCircle,
@@ -112,7 +112,7 @@ export const Garage: React.FC = () => {
           iconAnim: 'animate-pulse'
         };
       case 'Satıldı':
-      case t('garage.status_sold'):
+      case t('dashboard.vehicle_status.sold'):
         return {
           icon: Tag,
           badgeClass: 'bg-slate-700/50 text-slate-400 border-slate-600',
@@ -219,7 +219,7 @@ export const Garage: React.FC = () => {
 
   const handleSellVehicle = async (id: string) => {
     try {
-      await updateVehicle(id, { status: 'Satıldı' });
+      await updateVehicle(id, { status: 'sold' });
     } catch (err) {
       console.error('Satıldı güncelleme hatası:', err);
     }
@@ -284,17 +284,17 @@ export const Garage: React.FC = () => {
 
   const getStatusMeta = (status: string) => {
     switch (status) {
-      case 'Sorun Yok':
+      case 'ok':
       case t('dashboard.vehicle_status.no_issue'):
         return { cardClass: 'card-ok', dot: 'var(--green)', label: t('garage.status_ok'), labelColor: '#00E878' };
-      case 'Servis Gerekli':
+      case 'warn':
       case t('dashboard.vehicle_status.service_required'):
         return { cardClass: 'card-warning', dot: 'var(--amber)', label: t('garage.status_warn'), labelColor: '#FF9A00' };
-      case 'Acil':
+      case 'urgent':
       case t('dashboard.vehicle_status.urgent'):
         return { cardClass: 'card-critical', dot: 'var(--red)', label: t('garage.status_urgent'), labelColor: '#FF3B3B' };
       case 'Satıldı':
-      case t('garage.status_sold'):
+      case t('dashboard.vehicle_status.sold'):
         return { cardClass: 'card-sold', dot: '#555', label: t('garage.status_sold'), labelColor: '#555' };
       default: return { cardClass: '', dot: '#555', label: status, labelColor: '#8A8899' };
     }
