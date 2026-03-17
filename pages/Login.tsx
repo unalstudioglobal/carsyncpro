@@ -296,15 +296,17 @@ export const Login: React.FC = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
-                            <div className="flex justify-end mt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                                    className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-4"
-                                >
-                                    {t('login.forgot_password')}
-                                </button>
-                            </div>
+                            {authMode === 'login' && (
+                                <div className="flex justify-end mt-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleForgotPassword}
+                                        className="text-[10px] font-semibold text-indigo-400/80 hover:text-indigo-300 transition-colors uppercase letter-spacing-wider"
+                                    >
+                                        {t('login.forgot_password')}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <button
@@ -315,18 +317,40 @@ export const Login: React.FC = () => {
                             {loginState === 'authenticating' ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    <span>{t('login.btn_login')}...</span>
+                                    <span>{authMode === 'login' ? t('login.btn_login') : t('login.btn_register')}...</span>
                                 </div>
                             ) : (
                                 <>
-                                    <LogIn size={20} />
+                                    {authMode === 'login' ? <LogIn size={20} /> : <UserPlus size={20} />}
                                     <span>{authMode === 'login' ? t('login.btn_login') : t('login.btn_register')}</span>
                                 </>
                             )}
                         </button>
+
+                        <div className="flex flex-col items-center gap-4 mt-6">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                                <span>{authMode === 'login' ? t('login.no_account') : t('login.has_account')}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setAuthMode(authMode === 'login' ? 'register' : 'login');
+                                        setErrorMessage('');
+                                    }}
+                                    className="text-indigo-400 hover:text-indigo-300 font-bold underline underline-offset-4"
+                                >
+                                    {authMode === 'login' ? t('login.btn_register') : t('login.btn_login')}
+                                </button>
+                            </div>
+                            
+                            <div className="flex items-center w-full gap-3 py-2">
+                                <div className="h-[1px] flex-1 bg-white/5"></div>
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{t('login.or')}</span>
+                                <div className="h-[1px] flex-1 bg-white/5"></div>
+                            </div>
+                        </div>
                     </form>
                 </div>
-                <div className="mt-8 w-full max-w-sm anim-fade-up" style={{ animationDelay: '0.4s' }}>
+                <div className="w-full max-w-sm anim-fade-up" style={{ animationDelay: '0.4s' }}>
                     <button
                         onClick={handleGoogleLogin}
                         className="w-full glass-chip py-4 px-6 flex items-center justify-center gap-3 hover:bg-white/10 transition-all active:scale-95 group relative overflow-hidden"
