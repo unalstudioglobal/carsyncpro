@@ -27,7 +27,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-import { Vehicle, ServiceLog, Appointment, Document, TireSet, GarageGroup, BudgetGoal } from "../types";
+import { Vehicle, ServiceLog, Appointment, Document, TireSet, GarageGroup, BudgetGoal, FuelLog, MaintenanceLog, OBDData, AIReport } from "../types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +40,10 @@ const logsCol = () => collection(db, "users", getUid(), "logs");
 const appointmentsCol = () => collection(db, "users", getUid(), "appointments");
 const groupsCol = () => collection(db, "groups");
 const budgetGoalsCol = () => collection(db, "users", getUid(), "budgetGoals");
+const fuelLogsCol = () => collection(db, "users", getUid(), "fuel_logs");
+const maintenanceLogsCol = () => collection(db, "users", getUid(), "maintenance_logs");
+const obdDataCol = () => collection(db, "users", getUid(), "obd_data");
+const aiReportsCol = () => collection(db, "users", getUid(), "ai_reports");
 
 // ─── localStorage keys ────────────────────────────────────────────────────────
 const LS_VEHICLES = "ls_vehicles";
@@ -933,4 +937,120 @@ export const deleteBudgetGoal = async (id: string): Promise<void> => {
       console.error("Error deleting budget goal:", err);
     }
   }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  NEW SCHEMA COLLECTIONS (Fuel, Maintenance, OBD, AI)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Yakıt kayıtlarını getirir. */
+export const fetchFuelLogs = async (vehicleId?: string): Promise<FuelLog[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const q = vehicleId 
+        ? query(fuelLogsCol(), where("vehicleId", "==", vehicleId), orderBy("date", "desc"))
+        : query(fuelLogsCol(), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as FuelLog));
+    } catch (err) {
+      console.error("Error fetching fuel logs:", err);
+    }
+  }
+  return [];
+};
+
+/** Yeni yakıt kaydı ekler. */
+export const addFuelLog = async (log: Omit<FuelLog, "id">): Promise<string> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const ref = await addDoc(fuelLogsCol(), { ...log, createdAt: serverTimestamp() });
+      return ref.id;
+    } catch (err) {
+      console.error("Error adding fuel log:", err);
+    }
+  }
+  return "";
+};
+
+/** Bakım kayıtlarını getirir. */
+export const fetchMaintenanceLogs = async (vehicleId?: string): Promise<MaintenanceLog[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const q = vehicleId 
+        ? query(maintenanceLogsCol(), where("vehicleId", "==", vehicleId), orderBy("date", "desc"))
+        : query(maintenanceLogsCol(), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as MaintenanceLog));
+    } catch (err) {
+      console.error("Error fetching maintenance logs:", err);
+    }
+  }
+  return [];
+};
+
+/** Yeni bakım kaydı ekler. */
+export const addMaintenanceLog = async (log: Omit<MaintenanceLog, "id">): Promise<string> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const ref = await addDoc(maintenanceLogsCol(), { ...log, createdAt: serverTimestamp() });
+      return ref.id;
+    } catch (err) {
+      console.error("Error adding maintenance log:", err);
+    }
+  }
+  return "";
+};
+
+/** OBD verilerini getirir. */
+export const fetchOBDData = async (vehicleId: string): Promise<OBDData[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const q = query(obdDataCol(), where("vehicleId", "==", vehicleId), orderBy("timestamp", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as OBDData));
+    } catch (err) {
+      console.error("Error fetching OBD data:", err);
+    }
+  }
+  return [];
+};
+
+/** Yeni OBD verisi ekler. */
+export const addOBDData = async (data: Omit<OBDData, "id">): Promise<string> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const ref = await addDoc(obdDataCol(), { ...data, timestamp: serverTimestamp() });
+      return ref.id;
+    } catch (err) {
+      console.error("Error adding OBD data:", err);
+    }
+  }
+  return "";
+};
+
+/** AI Raporlarını getirir. */
+export const fetchAIReports = async (vehicleId: string): Promise<AIReport[]> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const q = query(aiReportsCol(), where("vehicleId", "==", vehicleId), orderBy("timestamp", "desc"));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() } as AIReport));
+    } catch (err) {
+      console.error("Error fetching AI reports:", err);
+    }
+  }
+  return [];
+};
+
+/** Yeni AI raporu ekler. */
+export const addAIReport = async (report: Omit<AIReport, "id">): Promise<string> => {
+  if (await isFirestoreAvailable()) {
+    try {
+      const ref = await addDoc(aiReportsCol(), { ...report, timestamp: serverTimestamp() });
+      return ref.id;
+    } catch (err) {
+      console.error("Error adding AI report:", err);
+    }
+  }
+  return "";
 };

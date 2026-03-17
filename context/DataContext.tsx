@@ -25,7 +25,7 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../firebaseConfig';
-import { Vehicle, ServiceLog, Appointment, GamificationData } from '../types';
+import { Vehicle, ServiceLog, Appointment, GamificationData, FuelLog, MaintenanceLog, OBDData, AIReport } from '../types';
 import { gamificationService, XP_RULES } from '../services/GamificationService';
 import { updateDoc } from 'firebase/firestore';
 
@@ -35,12 +35,18 @@ export interface SyncStatus {
   vehicles:     'idle' | 'loading' | 'live' | 'offline';
   logs:         'idle' | 'loading' | 'live' | 'offline';
   appointments: 'idle' | 'loading' | 'live' | 'offline';
+  fuelLogs:     'idle' | 'loading' | 'live' | 'offline';
+  maintenance:  'idle' | 'loading' | 'live' | 'offline';
 }
 
 interface DataContextValue {
   vehicles:     Vehicle[];
   logs:         ServiceLog[];
   appointments: Appointment[];
+  fuelLogs:     FuelLog[];
+  maintenance:  MaintenanceLog[];
+  obdData:      OBDData[];
+  aiReports:    AIReport[];
   loading:      boolean;       // true = ilk yükleme devam ediyor
   synced:       boolean;       // en az bir kez Firestore'dan veri geldi mi
   syncStatus:   SyncStatus;
@@ -64,6 +70,8 @@ const LS = {
   vehicles:     'ls_vehicles',
   logs:         'ls_logs',
   appointments: 'ls_appointments',
+  fuelLogs:     'ls_fuel_logs',
+  maintenance:  'ls_maintenance_logs',
 } as const;
 
 function lsGet<T>(key: string): T[] {
@@ -107,9 +115,9 @@ const docToAppt = (id: string, data: Record<string, any>): Appointment => ({
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 const DataContext = createContext<DataContextValue>({
-  vehicles: [], logs: [], appointments: [],
+  vehicles: [], logs: [], appointments: [], fuelLogs: [], maintenance: [], obdData: [], aiReports: [],
   loading: true, synced: false,
-  syncStatus: { vehicles: 'idle', logs: 'idle', appointments: 'idle' },
+  syncStatus: { vehicles: 'idle', logs: 'idle', appointments: 'idle', fuelLogs: 'idle', maintenance: 'idle' },
   gamification: { xp: 0, level: 1, achievements: [], streakDays: 0 },
   gainXP: async () => {},
   refetch: async () => {},
@@ -128,10 +136,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [vehicles,     setVehicles]     = useState<Vehicle[]>(lsGet(LS.vehicles));
   const [logs,         setLogs]         = useState<ServiceLog[]>(lsGet(LS.logs));
   const [appointments, setAppointments] = useState<Appointment[]>(lsGet(LS.appointments));
+  const [fuelLogs,     setFuelLogs]     = useState<FuelLog[]>(lsGet(LS.fuelLogs));
+  const [maintenance,  setMaintenance]  = useState<MaintenanceLog[]>(lsGet(LS.maintenance));
+  const [obdData,      setObdData]      = useState<OBDData[]>([]);
+  const [aiReports,    setAiReports]    = useState<AIReport[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [synced,       setSynced]       = useState(false);
   const [syncStatus,   setSyncStatus]   = useState<SyncStatus>({
     vehicles: 'idle', logs: 'idle', appointments: 'idle',
+    fuelLogs: 'idle', maintenance: 'idle',
   });
   const [gamification, setGamification] = useState<GamificationData>({
     xp: 0, level: 1, achievements: [], streakDays: 0
@@ -224,7 +237,41 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    unsubsRef.current = [unsubV, unsubL, unsubA, unsubG];
+    // ── Yakıt Logları ──
+    setSyncStatus(s => ({ ...s, fuelLogs: 'loading' }));
+    const unsubFL = onSnapshot(
+      query(colRef('fuel_logs'), orderBy('date', 'desc')),
+      (snap) => {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as FuelLog));
+        setFuelLogs(data);
+        lsSet(LS.fuelLogs, data);
+        setSyncStatus(s => ({ ...s, fuelLogs: 'live' }));
+        tryDone();
+      },
+      (err) => {
+        setSyncStatus(s => ({ ...s, fuelLogs: 'offline' }));
+        tryDone();
+      }
+    );
+
+    // ── Bakım Logları ──
+    setSyncStatus(s => ({ ...s, maintenance: 'loading' }));
+    const unsubML = onSnapshot(
+      query(colRef('maintenance_logs'), orderBy('date', 'desc')),
+      (snap) => {
+        const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as MaintenanceLog));
+        setMaintenance(data);
+        lsSet(LS.maintenance, data);
+        setSyncStatus(s => ({ ...s, maintenance: 'live' }));
+        tryDone();
+      },
+      (err) => {
+        setSyncStatus(s => ({ ...s, maintenance: 'offline' }));
+        tryDone();
+      }
+    );
+
+    unsubsRef.current = [unsubV, unsubL, unsubA, unsubG, unsubFL, unsubML];
   }, [clearListeners]);
 
   // ── Auth state ───────────────────────────────────────────────────────────
@@ -243,7 +290,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAppointments([]);
         setLoading(false);
         setSynced(false);
-        setSyncStatus({ vehicles: 'idle', logs: 'idle', appointments: 'idle' });
+        setSyncStatus({ 
+          vehicles: 'idle', 
+          logs: 'idle', 
+          appointments: 'idle',
+          fuelLogs: 'idle',
+          maintenance: 'idle'
+        });
       }
     });
     return () => { unsub(); clearListeners(); };
@@ -309,7 +362,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Memoize value ────────────────────────────────────────────────────────
 
   const value = useMemo<DataContextValue>(() => ({
-    vehicles, logs, appointments,
+    vehicles, logs, appointments, fuelLogs, maintenance, obdData, aiReports,
     loading, synced, syncStatus,
     refetch,
     optimisticAddVehicle,
@@ -321,7 +374,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     gamification,
     gainXP,
   }), [
-    vehicles, logs, appointments,
+    vehicles, logs, appointments, fuelLogs, maintenance, obdData, aiReports,
     loading, synced, syncStatus, refetch,
     optimisticAddVehicle, optimisticUpdateVehicle, optimisticRemoveVehicle,
     optimisticAddLog, optimisticUpdateLog, optimisticRemoveLog,

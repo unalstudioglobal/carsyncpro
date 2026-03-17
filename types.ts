@@ -11,6 +11,8 @@ export interface Vehicle {
   model: string;
   year: number;
   plate: string;
+  vin?: string;
+  engineType?: string;
   image: string;
   images?: string[];
   mileage: number;
@@ -20,6 +22,52 @@ export interface Vehicle {
   marketValueMin: number;
   marketValueMax: number;
   damageReport?: DamageReport;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface FuelLog {
+  id: string;
+  vehicleId: string;
+  date: string;
+  liters: number;
+  price: number;
+  odometer: number;
+  fuelType: string;
+  location?: string;
+  createdAt?: any;
+}
+
+export interface MaintenanceLog {
+  id: string;
+  vehicleId: string;
+  date: string;
+  serviceType: string;
+  description: string;
+  odometer: number;
+  cost: number;
+  location?: string;
+  createdAt?: any;
+}
+
+export interface OBDData {
+  id: string;
+  vehicleId: string;
+  timestamp: any;
+  rpm: number;
+  engineTemp: number;
+  fuelRate: number;
+  errorCodes: string[];
+  otherSensors: Record<string, any>;
+}
+
+export interface AIReport {
+  id: string;
+  vehicleId: string;
+  timestamp: any;
+  reportType: 'ariza' | 'yakit' | 'saglik' | 'sürüş';
+  summary: string;
+  detailedAnalysis: Record<string, any>;
 }
 
 export interface ServiceLog {
