@@ -111,7 +111,7 @@ export const Garage: React.FC = () => {
           glow: 'animate-pulse',
           iconAnim: 'animate-pulse'
         };
-      case 'Satıldı':
+      case 'sold':
       case t('dashboard.vehicle_status.sold'):
         return {
           icon: Tag,
@@ -221,7 +221,7 @@ export const Garage: React.FC = () => {
     try {
       await updateVehicle(id, { status: 'sold' });
     } catch (err) {
-      console.error('Satıldı güncelleme hatası:', err);
+      console.error('Araç durumu güncellenirken hata oluştu:', err);
     }
     setActiveMenuId(null);
   };
@@ -293,7 +293,7 @@ export const Garage: React.FC = () => {
       case 'urgent':
       case t('dashboard.vehicle_status.urgent'):
         return { cardClass: 'card-critical', dot: 'var(--red)', label: t('garage.status_urgent'), labelColor: '#FF3B3B' };
-      case 'Satıldı':
+      case 'sold':
       case t('dashboard.vehicle_status.sold'):
         return { cardClass: 'card-sold', dot: '#555', label: t('garage.status_sold'), labelColor: '#555' };
       default: return { cardClass: '', dot: '#555', label: status, labelColor: '#8A8899' };

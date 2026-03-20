@@ -309,9 +309,9 @@ export const deleteVehicle = async (id: string): Promise<void> => {
   lsSet(LS_VEHICLES, vehicles);
 };
 
-/** Aracı arşivler (status'u "Satıldı" yapmaz, sadece gizler). */
+/** Aracı arşivler (status'u "sold" yapar ve gizler). */
 export const archiveVehicle = async (id: string): Promise<void> => {
-  await updateVehicle(id, { status: "Satıldı" } as Partial<Vehicle>);
+  await updateVehicle(id, { status: "sold" } as Partial<Vehicle>);
   // Eski yöntemle de uyumluluk
   const archivedIds: string[] = JSON.parse(localStorage.getItem("archived_vehicles") || "[]");
   if (!archivedIds.includes(id)) {
